@@ -8,11 +8,19 @@
 - 🔄 **Update Checker** — Each mod card now has a "Check for Update" button. It'll let you know if a newer version is available on Nexus Mods.
 - 📂 **Drag & Drop Install** — Just drag a mod archive (zip, rar, 7z) straight into the app to install it. No file browsing needed.
 - 🔍 **Conflict Details** — Click any mod in the conflict list to instantly see its full details without leaving the screen.
-- 🔎 **Smarter Search Bar** — Added a quick-clear button on the search bar. Sorting options are now in a tidy dropdown, with new options for Name and Favourites.
+- 🔎 **Smarter Search & Sorting** — Added a quick-clear button on the search bar. Sorting options are now in a tidy dropdown, with options for Name, Favourites, and a newly added **Uploaded** sort option.
+- 🚀 **Game Update Auto-detection** — Automatically detects Marvel Rivals updates on startup, rebuilding character/skin data if game files have changed.
+- 📁 **Mod Variants & File Tree** — Added a hierarchical file tree UI to easily select and toggle specific `.pak` files for mods with complex nested subfolder variants.
+- ⏱️ **Better Conflict Sorting** — Mod conflicts are now properly sorted by when they were first detected (newest first). Additionally, mod cards inside each conflict are sorted by install/update date.
+- 🏷️ **NXM Download Details** — Nexus Mod download notifications now cleanly show the actual mod name instead of a numeric ID.
+- 🗂️ **UI Components Revamp** — Skin filters in the sidebar have been refactored into clean, collapsible button groups.
 
 
-### 🐛 Bug Fixes
+### 🐛 Bug Fixes & Under the Hood
 
+- **Nested Pak Activation Fix** — Fixed a bug where mods inside nested subfolders wouldn't activate correctly gracefully utilizing smarter fallback path strategies.
+- **Empty Folder Cleanup** — Automatically cleans up leftover empty subdirectories after deactivating mods.
+- **False-Positive Updates** — Fixed false-positive update badges; the "Update" badge now only appears when the latest release matches the downloaded mod variant.
 - **No more duplicate downloads** — If a mod is already downloaded, it'll be skipped with a friendly notice instead of downloading again.
 - **Mod list now refreshes properly** — The installed mods list now updates correctly after you add or remove a custom image.
 - **Skin filter fix** — Skins with the same name across different characters (like "The Life Fantastic") now filter correctly.
