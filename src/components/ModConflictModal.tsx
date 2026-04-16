@@ -26,6 +26,7 @@ interface MockAssetConflict {
   conflicting_mod_count?: number;
   total_paks?: number;
   participants: Participant[];
+  detected_at?: string | null;
 }
 
 interface ModConflictModalProps {
@@ -61,7 +62,7 @@ export function ModConflictModal({
     (conflicts as any[]).length > 0 &&
     "asset_path" in (conflicts as any)[0];
 
-  const items: MockAssetConflict[] = isMockShape
+  const unsortedItems: MockAssetConflict[] = isMockShape
     ? (conflicts as MockAssetConflict[])
     : // otherwise attempt to map from the normalized { assetPath, sources } shape
       (conflicts as any[]).map((c) => ({
@@ -69,6 +70,7 @@ export function ModConflictModal({
         category: c.category,
         conflicting_mod_count: c.sources ? c.sources.length : 0,
         total_paks: c.total_paks || 0,
+        detected_at: c.detected_at ?? null,
         participants: (c.sources || c.participants || []).map((s: any) => ({
           pak_name: s.label || s.pak || s.pak_name || s.name || "pak",
           merged_tag: s.merged_tag || s.mergedTag,
@@ -87,6 +89,13 @@ export function ModConflictModal({
               : [],
         })),
       }));
+
+  // Sort conflicts by detected_at timestamp descending (newer conflicts first)
+  const items = [...unsortedItems].sort((a, b) => {
+    const da = a.detected_at ? new Date(a.detected_at).getTime() : 0;
+    const db = b.detected_at ? new Date(b.detected_at).getTime() : 0;
+    return db - da;
+  });
 
   // Function to handle mod card click
   const handleModClick = (mod: MockMod) => {
@@ -247,6 +256,24 @@ export function ModConflictModal({
                       {asset.participants
                         .flatMap((p) => p.mods || [])
                         .filter(Boolean)
+                        .sort((a: MockMod, b: MockMod) => {
+                          // Sort by date, newest first
+                          const getDate = (m: MockMod): number => {
+                            if (m.mod_id == null) return 0;
+                            const full = allMods.find(
+                              (fm) => fm.backendModId === m.mod_id,
+                            );
+                            const raw =
+                              full?.lastUpdatedRaw ??
+                              full?.installDate ??
+                              full?.lastUpdated ??
+                              null;
+                            if (!raw) return 0;
+                            const ts = new Date(raw).getTime();
+                            return Number.isNaN(ts) ? 0 : ts;
+                          };
+                          return getDate(b) - getDate(a);
+                        })
                         .map((m: MockMod) => {
                           const displayName =
                             (m.mod_name && m.mod_name.trim()) ||

@@ -22,6 +22,7 @@ import {
   waitForMatchingHandoff,
   createNxmProgressController,
   formatBytes,
+  getModLabel,
 } from "../lib/nxmHelpers";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 
@@ -158,10 +159,7 @@ export function AddModModal({
         toast.error("Backend did not accept the RivalNxt link.");
         return;
       }
-      const modLabel =
-        (handoff.request?.mod_id != null
-          ? `Mod #${handoff.request?.mod_id}`
-          : null) ?? "Nexus download";
+      const modLabel = getModLabel(handoff);
       const controller = createNxmProgressController(handoff.id, {
         label: `Downloading ${modLabel}`,
       });
@@ -250,10 +248,7 @@ export function AddModModal({
           return;
         }
 
-        const modLabel =
-          handoff.request?.mod_id != null
-            ? `Mod #${handoff.request.mod_id}`
-            : "Nexus download";
+        const modLabel = await getModLabel(handoff);
         const controller = createNxmProgressController(handoff.id, {
           label: `Downloading ${modLabel}`,
         });
@@ -334,10 +329,7 @@ export function AddModModal({
         return;
       }
 
-      const modLabel =
-        handoff.request?.mod_id != null
-          ? `Mod #${handoff.request.mod_id}`
-          : "Nexus download";
+      const modLabel = await getModLabel(handoff);
       const controller = createNxmProgressController(handoff.id, {
         label: `Downloading ${modLabel}`,
       });

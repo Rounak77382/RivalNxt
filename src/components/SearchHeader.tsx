@@ -58,6 +58,7 @@ export function SearchHeader({
   const sortOptions = [
     "Name",
     "Recent",
+    "Uploaded",
     "Updated",
     "Popular",
     "Rating",

@@ -192,121 +192,147 @@ def main(argv=None) -> int:
         if rows:
             log.info("Found %d download row(s) to process%s", len(rows),
                      f" (filtered by {len(args.only_names)} name(s))" if args.only_names else "")
+        failed_downloads: List[str] = []
         for download_id, name, mod_id, relpath, contents_json in rows:
-            log.debug("Row id=%s name='%s' relpath='%s' mod_id=%s", download_id, name, relpath, mod_id)
-            contents: List[str] = []
             try:
-                contents = json.loads(contents_json) if contents_json else []
-            except Exception:
-                contents = []
-            contents = collapse_pak_bundle(contents)
-            try:
-                cur.execute(
-                    "UPDATE local_downloads SET contents = ? WHERE id = ?",
-                    (json.dumps(contents, ensure_ascii=False), download_id),
-                )
-                conn.commit()
-            except Exception:
-                log.debug("[%s] Failed to persist collapsed contents", name, exc_info=True)
-            full = _to_full_path(relpath or name, root)
-            low = str(full).lower()
-            if not full.exists():
-                log.debug("Skip: file does not exist: %s", full)
-                continue
-            
-            # Determine if this is an archive or a folder
-            is_archive = low.endswith((".zip", ".rar", ".7z"))
-            is_folder = full.is_dir()
-            
-            if not is_archive and not is_folder:
-                log.debug("Skip: not an archive or folder: %s", full)
-                continue
-
-            tmpdir = None
-            pak_source_dir = None
-            
-            if is_archive:
-                # Extract archive to temp directory
-                tmpdir = tempfile.mkdtemp(prefix="ingest_dl_")
-                log.info("[%s] Extracting archive -> %s", name, full)
+                log.debug("Row id=%s name='%s' relpath='%s' mod_id=%s", download_id, name, relpath, mod_id)
+                contents: List[str] = []
                 try:
-                    extract_with_7z(str(full), tmpdir)
-                    pak_source_dir = tmpdir
-                except Exception as e:
-                    log.error("[%s] Failed to extract archive: %s", name, e)
-                    if tmpdir:
-                        shutil.rmtree(tmpdir, ignore_errors=True)
-                    continue
-            elif is_folder:
-                # Use folder directly (already extracted)
-                log.info("[%s] Processing folder (already extracted) -> %s", name, full)
-                pak_source_dir = str(full)
-            
-            try:
-                pak_map = extract_pak_asset_map_from_folder(pak_source_dir, aes_key=args.aes_key)
-                if not pak_map:
-                    log.warning("[%s] No paks/assets found after extraction", name)
-                    continue
-                processed += 1
-                log.info("[%s] Found %d pak(s) in archive", name, len(pak_map))
-                # Ensure mod_id respects FK; None when no row in mods
-                resolved_mod_id: Optional[int] = None
-                if mod_id is not None:
-                    if conn.execute("SELECT 1 FROM mods WHERE mod_id=?", (mod_id,)).fetchone():
-                        resolved_mod_id = mod_id
-                # Merge paks (e.g. .pak + .utoc) into a single entry keyed by the .pak name
-                merged_pak_map: Dict[str, List[str]] = {}
-                merged_io_store: Dict[str, bool] = {}
-                
-                for raw_pak_name, assets in pak_map.items():
-                    declared = _map_declared_name(raw_pak_name, contents)
-                    
-                    # Normalize extension: .utoc/.ucas -> .pak
-                    lower_declared = declared.lower()
-                    if lower_declared.endswith(".utoc"):
-                        normalized_name = declared[:-5] + ".pak"
-                    elif lower_declared.endswith(".ucas"):
-                        normalized_name = declared[:-5] + ".pak"
-                    else:
-                        normalized_name = declared
-                        
-                    # Track if this bundle involves IoStore (if any part is .utoc)
-                    is_utoc = raw_pak_name.lower().endswith(".utoc")
-                    if normalized_name not in merged_io_store:
-                        merged_io_store[normalized_name] = False
-                    if is_utoc:
-                        merged_io_store[normalized_name] = True
-                        
-                    if normalized_name not in merged_pak_map:
-                        merged_pak_map[normalized_name] = []
-                    merged_pak_map[normalized_name].extend(assets)
-
-                for pak_name, assets in merged_pak_map.items():
-                    # Deduplicate assets
-                    assets = sorted(list(set(assets)))
-                    io_store = merged_io_store.get(pak_name, False)
-                    
-                    log.debug("[%s] Upserting pak %s with %d asset(s) (io_store=%s)",
-                              name, pak_name, len(assets), io_store)
-                    upsert_mod_pak(
-                        conn,
-                        pak_name=pak_name,
-                        mod_id=resolved_mod_id,
-                        source_zip=str(Path(relpath or name).as_posix()),
-                        local_download_id=download_id,
-                        io_store=io_store,
+                    contents = json.loads(contents_json) if contents_json else []
+                except Exception:
+                    contents = []
+                contents = collapse_pak_bundle(contents)
+                try:
+                    cur.execute(
+                        "UPDATE local_downloads SET contents = ? WHERE id = ?",
+                        (json.dumps(contents, ensure_ascii=False), download_id),
                     )
-                    paks_written += 1
-                    assets_written += bulk_upsert_pak_assets(conn, pak_name, assets, replace=True)
-                    upsert_pak_assets_json(conn, pak_name, assets, mod_id=resolved_mod_id)
-            finally:
-                # Only clean up temp directory if we created one (for archives)
-                if tmpdir:
-                    try:
-                        shutil.rmtree(tmpdir, ignore_errors=True)
-                    except Exception:
-                        pass
+                    conn.commit()
+                except Exception:
+                    log.debug("[%s] Failed to persist collapsed contents", name, exc_info=True)
+                full = _to_full_path(relpath or name, root)
+                low = str(full).lower()
+                if not full.exists():
+                    log.debug("Skip: file does not exist: %s", full)
+                    continue
+                
+                # Determine if this is an archive or a folder
+                is_archive = low.endswith((".zip", ".rar", ".7z"))
+                is_folder = full.is_dir()
+                
+                if not is_archive and not is_folder:
+                    log.debug("Skip: not an archive or folder: %s", full)
+                    continue
 
+                tmpdir = None
+                pak_source_dir = None
+                
+                if is_archive:
+                    # Extract archive to temp directory with timeout protection
+                    tmpdir = tempfile.mkdtemp(prefix="ingest_dl_")
+                    log.info("[%s] Extracting archive -> %s", name, full)
+                    try:
+                        import threading
+                        extract_error: List[Optional[Exception]] = [None]
+                        
+                        def _do_extract() -> None:
+                            try:
+                                extract_with_7z(str(full), tmpdir)
+                            except Exception as exc:
+                                extract_error[0] = exc
+                        
+                        t = threading.Thread(target=_do_extract, daemon=True)
+                        t.start()
+                        t.join(timeout=120)  # 2 minute timeout per archive
+                        
+                        if t.is_alive():
+                            log.error("[%s] Archive extraction timed out after 120s — skipping", name)
+                            shutil.rmtree(tmpdir, ignore_errors=True)
+                            continue
+                        if extract_error[0] is not None:
+                            raise extract_error[0]
+                        pak_source_dir = tmpdir
+                    except Exception as e:
+                        log.error("[%s] Failed to extract archive: %s", name, e)
+                        if tmpdir:
+                            shutil.rmtree(tmpdir, ignore_errors=True)
+                        continue
+                elif is_folder:
+                    # Use folder directly (already extracted)
+                    log.info("[%s] Processing folder (already extracted) -> %s", name, full)
+                    pak_source_dir = str(full)
+                
+                try:
+                    pak_map = extract_pak_asset_map_from_folder(pak_source_dir, aes_key=args.aes_key)
+                    if not pak_map:
+                        log.warning("[%s] No paks/assets found after extraction", name)
+                        continue
+                    processed += 1
+                    log.info("[%s] Found %d pak(s) in archive", name, len(pak_map))
+                    # Ensure mod_id respects FK; None when no row in mods
+                    resolved_mod_id: Optional[int] = None
+                    if mod_id is not None:
+                        if conn.execute("SELECT 1 FROM mods WHERE mod_id=?", (mod_id,)).fetchone():
+                            resolved_mod_id = mod_id
+                    # Merge paks (e.g. .pak + .utoc) into a single entry keyed by the .pak name
+                    merged_pak_map: Dict[str, List[str]] = {}
+                    merged_io_store: Dict[str, bool] = {}
+                    
+                    for raw_pak_name, assets in pak_map.items():
+                        declared = _map_declared_name(raw_pak_name, contents)
+                        
+                        # Normalize extension: .utoc/.ucas -> .pak
+                        lower_declared = declared.lower()
+                        if lower_declared.endswith(".utoc"):
+                            normalized_name = declared[:-5] + ".pak"
+                        elif lower_declared.endswith(".ucas"):
+                            normalized_name = declared[:-5] + ".pak"
+                        else:
+                            normalized_name = declared
+                            
+                        # Track if this bundle involves IoStore (if any part is .utoc)
+                        is_utoc = raw_pak_name.lower().endswith(".utoc")
+                        if normalized_name not in merged_io_store:
+                            merged_io_store[normalized_name] = False
+                        if is_utoc:
+                            merged_io_store[normalized_name] = True
+                            
+                        if normalized_name not in merged_pak_map:
+                            merged_pak_map[normalized_name] = []
+                        merged_pak_map[normalized_name].extend(assets)
+
+                    for pak_name, assets in merged_pak_map.items():
+                        # Deduplicate assets
+                        assets = sorted(list(set(assets)))
+                        io_store = merged_io_store.get(pak_name, False)
+                        
+                        log.debug("[%s] Upserting pak %s with %d asset(s) (io_store=%s)",
+                                  name, pak_name, len(assets), io_store)
+                        upsert_mod_pak(
+                            conn,
+                            pak_name=pak_name,
+                            mod_id=resolved_mod_id,
+                            source_zip=str(Path(relpath or name).as_posix()),
+                            local_download_id=download_id,
+                            io_store=io_store,
+                        )
+                        paks_written += 1
+                        assets_written += bulk_upsert_pak_assets(conn, pak_name, assets, replace=True)
+                        upsert_pak_assets_json(conn, pak_name, assets, mod_id=resolved_mod_id)
+                finally:
+                    # Only clean up temp directory if we created one (for archives)
+                    if tmpdir:
+                        try:
+                            shutil.rmtree(tmpdir, ignore_errors=True)
+                        except Exception:
+                            pass
+            except Exception:
+                log.exception("[%s] Failed to process download (id=%s) — skipping", name, download_id)
+                failed_downloads.append(name or f"id:{download_id}")
+                continue
+
+        if failed_downloads:
+            log.warning("Skipped %d problematic download(s): %s", len(failed_downloads), ", ".join(failed_downloads))
         log.info("Processed %d archive(s); wrote %d pak(s) and %d pak_assets.", processed, paks_written, assets_written)
     else:
         log.info("Extraction disabled (--extract not set). Skipping archive processing and going straight to tag rebuild (if requested).")

@@ -34,6 +34,8 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  FolderOpen,
   Pencil,
   Check,
   X as XIcon,
@@ -104,7 +106,184 @@ function groupPakEntries(contents: string[] | null | undefined): PakGroup[] {
     groups.set(key, current);
   }
   return Array.from(groups.values()).filter((entry) =>
-    entry.files.some((file) => /\.pak$/i.test(file))
+    entry.files.some((file) => /\.pak$/i.test(file)),
+  );
+}
+
+/** Tree node for hierarchical file display */
+type FileTreeNode = {
+  name: string;
+  children: FileTreeNode[];
+  group?: PakGroup; // present only on leaf nodes (files)
+};
+
+/** Build a folder tree from pak groups for hierarchical display */
+function buildFileTree(groups: PakGroup[]): FileTreeNode {
+  const root: FileTreeNode = { name: "", children: [] };
+
+  for (const group of groups) {
+    const parts = group.primary.replace(/\\/g, "/").split("/");
+    let current = root;
+
+    // All parts except the last are folder segments
+    for (let i = 0; i < parts.length - 1; i++) {
+      const folderName = parts[i];
+      let child = current.children.find(
+        (c) => c.name === folderName && !c.group,
+      );
+      if (!child) {
+        child = { name: folderName, children: [] };
+        current.children.push(child);
+      }
+      current = child;
+    }
+
+    // Last part is the file (leaf node)
+    current.children.push({
+      name: parts[parts.length - 1],
+      children: [],
+      group,
+    });
+  }
+
+  return collapseFileTree(root);
+}
+
+/** Collapse single-child folder chains to reduce redundant nesting */
+function collapseFileTree(node: FileTreeNode): FileTreeNode {
+  if (node.group) return node; // leaf node
+  node.children = node.children.map(collapseFileTree);
+  // Merge single-child folder chains: A > B > file => "A / B" > file
+  while (
+    node.children.length === 1 &&
+    !node.children[0].group &&
+    node.name !== ""
+  ) {
+    const child = node.children[0];
+    node.name = `${node.name} / ${child.name}`;
+    node.children = child.children;
+  }
+  return node;
+}
+
+/** Recursive tree renderer for hierarchical pak file display */
+function FileTreeRenderer({
+  nodes,
+  depth,
+  entryId,
+  activeList,
+  switchDisabled,
+  handleToggle,
+}: {
+  nodes: FileTreeNode[];
+  depth: number;
+  entryId: number;
+  activeList: string[];
+  switchDisabled: boolean;
+  handleToggle: (
+    downloadId: number,
+    files: string[],
+    willCheck: boolean,
+  ) => void;
+}) {
+  return (
+    <>
+      {nodes.map((node) => {
+        if (node.group) {
+          // Leaf node — render file with toggle
+          const { files } = node.group;
+          const checked = files.some((file) => activeList.includes(file));
+          return (
+            <div
+              key={`${entryId}-${node.group.primary}`}
+              className={`border border-border rounded-lg transition-colors ${
+                checked ? "bg-green-100 dark:bg-green-900/60" : "bg-popover"
+              }`}
+              style={{ marginLeft: depth * 16, padding: "6px" }}
+            >
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  <File className="w-4 h-4 text-muted-foreground shrink-0" />
+                  <div className="font-medium truncate">{node.name}</div>
+                </div>
+                <Switch
+                  disabled={switchDisabled}
+                  checked={checked}
+                  onCheckedChange={(willCheck: boolean) =>
+                    handleToggle(entryId, files, willCheck)
+                  }
+                />
+              </div>
+            </div>
+          );
+        }
+
+        // Folder node — render collapsible section
+        return (
+          <FileTreeFolderNode
+            key={`${entryId}-folder-${node.name}`}
+            node={node}
+            depth={depth}
+            entryId={entryId}
+            activeList={activeList}
+            switchDisabled={switchDisabled}
+            handleToggle={handleToggle}
+          />
+        );
+      })}
+    </>
+  );
+}
+
+/** Collapsible folder node in the file tree */
+function FileTreeFolderNode({
+  node,
+  depth,
+  entryId,
+  activeList,
+  switchDisabled,
+  handleToggle,
+}: {
+  node: FileTreeNode;
+  depth: number;
+  entryId: number;
+  activeList: string[];
+  switchDisabled: boolean;
+  handleToggle: (
+    downloadId: number,
+    files: string[],
+    willCheck: boolean,
+  ) => void;
+}) {
+  const [expanded, setExpanded] = useState(true);
+  const ChevronIcon = expanded ? ChevronDown : ChevronRight;
+
+  return (
+    <div style={{ marginLeft: depth * 16 }}>
+      <button
+        type="button"
+        onClick={() => setExpanded((prev) => !prev)}
+        className="flex items-center gap-2 py-1.5 px-2 rounded-md hover:bg-muted/50 transition-colors w-full text-left group"
+      >
+        <ChevronIcon className="w-3.5 h-3.5 text-muted-foreground shrink-0 transition-transform" />
+        <FolderOpen className="w-4 h-4 text-amber-500 shrink-0" />
+        <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors truncate">
+          {node.name}
+        </span>
+      </button>
+      {expanded && (
+        <div className="space-y-2 mt-1">
+          <FileTreeRenderer
+            nodes={node.children}
+            depth={depth + 1}
+            entryId={entryId}
+            activeList={activeList}
+            switchDisabled={switchDisabled}
+            handleToggle={handleToggle}
+          />
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -214,7 +393,7 @@ export function ModModal({
             .map((id) => Number(id))
             .filter((id) => Number.isFinite(id))
         : [],
-    [mod?.sourceDownloadIds]
+    [mod?.sourceDownloadIds],
   );
   const [downloadEntries, setDownloadEntries] = useState<DownloadEntry[]>([]);
   const [activeByDownload, setActiveByDownload] = useState<
@@ -224,7 +403,7 @@ export function ModModal({
     Record<number, Record<string, ApiPakVersionStatus>>
   >({});
   const [deletingDownloadId, setDeletingDownloadId] = useState<number | null>(
-    null
+    null,
   );
   const [deleteDialogEntry, setDeleteDialogEntry] =
     useState<DownloadEntry | null>(null);
@@ -299,7 +478,7 @@ export function ModModal({
         console.log(
           "[ModModal] Loaded details for mod",
           serverModId,
-          debugInfo
+          debugInfo,
         );
         try {
           await fetch("http://127.0.0.1:8000/api/debug/log", {
@@ -368,11 +547,11 @@ export function ModModal({
             console.warn(
               "[mod-modal] failed to fetch local download",
               rawId,
-              error
+              error,
             );
             return null;
           }
-        })
+        }),
       );
       const valid = downloads.filter((d): d is DownloadEntry => Boolean(d));
       const idOrder = new Map<number, number>();
@@ -397,7 +576,7 @@ export function ModModal({
       });
       return valid;
     },
-    [downloadIds, mod?.installedVersion, mod?.version, mod?.latestVersion]
+    [downloadIds, mod?.installedVersion, mod?.version, mod?.latestVersion],
   );
 
   const fetchPakStatuses = useCallback(async () => {
@@ -504,7 +683,7 @@ export function ModModal({
         entry,
         groups: groupPakEntries(entry.contents),
       })),
-    [downloadEntries]
+    [downloadEntries],
   );
 
   const handleToggle = useCallback(
@@ -519,6 +698,17 @@ export function ModModal({
         setIsApplying(true);
         const current = new Set<string>(activeByDownload[downloadId] || []);
         if (willCheck) {
+          // Remove any same-basename variants already in the set
+          // (only one variant can be active in ~mods since they share the same filename)
+          const incomingBases = new Set(files.map((f) => toBasename(f)));
+          for (const existing of [...current]) {
+            if (
+              incomingBases.has(toBasename(existing)) &&
+              !files.includes(existing)
+            ) {
+              current.delete(existing);
+            }
+          }
           files.forEach((file) => current.add(file));
         } else {
           files.forEach((file) => current.delete(file));
@@ -538,7 +728,7 @@ export function ModModal({
               if (otherId === downloadId) continue;
               if (!Array.isArray(value) || value.length === 0) continue;
               const filtered = value.filter(
-                (name) => !basenameTargets.has(toBasename(name))
+                (name) => !basenameTargets.has(toBasename(name)),
               );
               if (filtered.length !== value.length) {
                 next[otherId] = filtered;
@@ -559,14 +749,14 @@ export function ModModal({
                 : [];
               if (prevActive.length === 0) return entry;
               const filtered = prevActive.filter(
-                (name) => !basenameTargets.has(toBasename(name))
+                (name) => !basenameTargets.has(toBasename(name)),
               );
               if (filtered.length !== prevActive.length) {
                 return { ...entry, active_paks: filtered };
               }
             }
             return entry;
-          })
+          }),
         );
 
         toast.loading("Applying...", { id: toastId });
@@ -613,7 +803,7 @@ export function ModModal({
       fetchPakStatuses,
       hydrateDownloads,
       onConflictStateChanged,
-    ]
+    ],
   );
 
   const handleDeleteDownload = useCallback(
@@ -653,13 +843,13 @@ export function ModModal({
             }));
             setDownloadEntries((prev) =>
               prev.map((e) =>
-                e.id === downloadId ? { ...e, active_paks: [] } : e
-              )
+                e.id === downloadId ? { ...e, active_paks: [] } : e,
+              ),
             );
           } catch (deactivateError) {
             console.warn(
               "[mod-modal] Failed to deactivate paks before deletion",
-              deactivateError
+              deactivateError,
             );
             // Continue with deletion even if deactivation fails
           }
@@ -679,7 +869,7 @@ export function ModModal({
         } catch (refreshError) {
           console.warn(
             "[mod-modal] refreshConflicts after delete failed",
-            refreshError
+            refreshError,
           );
         }
         const refreshed = await hydrateDownloads({ skipScan: true });
@@ -718,7 +908,7 @@ export function ModModal({
       mod?.backendModId,
       onConflictStateChanged,
       onRefresh,
-    ]
+    ],
   );
 
   const handleDeleteDialogChange = useCallback(
@@ -731,7 +921,7 @@ export function ModModal({
       }
       setDeleteDialogEntry(null);
     },
-    [deletingDownloadId]
+    [deletingDownloadId],
   );
 
   const handleConfirmDelete = useCallback(async () => {
@@ -781,7 +971,7 @@ export function ModModal({
         event.target.value = "";
       }
     },
-    [effectiveModId, onRefresh]
+    [effectiveModId, onRefresh],
   );
 
   const openLightbox = useCallback((index: number) => {
@@ -799,7 +989,7 @@ export function ModModal({
 
   const prevImage = useCallback(() => {
     setLightboxIndex(
-      (prev) => (prev - 1 + modImages.length) % modImages.length
+      (prev) => (prev - 1 + modImages.length) % modImages.length,
     );
   }, [modImages.length]);
 
@@ -848,7 +1038,7 @@ export function ModModal({
         });
       }
     },
-    [onRefresh]
+    [onRefresh],
   );
 
   const handleEditDescription = useCallback(() => {
@@ -950,7 +1140,7 @@ export function ModModal({
   // Compute if any pak files are currently activated across all downloads
   const hasAnyActivePaks = useMemo(() => {
     return Object.values(activeByDownload).some(
-      (activePaks) => Array.isArray(activePaks) && activePaks.length > 0
+      (activePaks) => Array.isArray(activePaks) && activePaks.length > 0,
     );
   }, [activeByDownload]);
 
@@ -1056,9 +1246,8 @@ export function ModModal({
                           details?.mod?.author || mod.author || "unknown"
                         }`;
                         try {
-                          const { openInBrowser } = await import(
-                            "../lib/tauri-utils"
-                          );
+                          const { openInBrowser } =
+                            await import("../lib/tauri-utils");
                           await openInBrowser(modUrl);
                         } catch (error) {
                           console.error("Failed to open mod page:", error);
@@ -1071,7 +1260,7 @@ export function ModModal({
                           alt={mod.author || "Unknown author"}
                           referrerPolicy="no-referrer"
                           onError={(
-                            event: SyntheticEvent<HTMLImageElement>
+                            event: SyntheticEvent<HTMLImageElement>,
                           ) => {
                             const img = event.currentTarget;
                             if (img.dataset.fallbackApplied === "1") {
@@ -1110,9 +1299,8 @@ export function ModModal({
                         onClick={async () => {
                           const modUrl = `https://www.nexusmods.com/marvelrivals/mods/${serverModId}`;
                           try {
-                            const { openInBrowser } = await import(
-                              "../lib/tauri-utils"
-                            );
+                            const { openInBrowser } =
+                              await import("../lib/tauri-utils");
                             await openInBrowser(modUrl);
                           } catch (error) {
                             console.error("Failed to open mod page:", error);
@@ -1135,7 +1323,7 @@ export function ModModal({
                         {formatNumber(
                           (details?.mod?.mod_downloads as number | null) ??
                             mod.downloads ??
-                            0
+                            0,
                         )}{" "}
                         downloads
                       </div>
@@ -1151,7 +1339,7 @@ export function ModModal({
                     <Calendar className="w-6 h-4" />
                     Updated{" "}
                     {formatDate(
-                      details?.latest_file?.uploaded_at || mod.lastUpdated
+                      details?.latest_file?.uploaded_at || mod.lastUpdated,
                     )}
                   </div>
                 </div>
@@ -1287,12 +1475,12 @@ export function ModModal({
                             <div className="prose prose-sm max-w-none text-muted-foreground">
                               {details?.mod?.description &&
                               !details.mod.description.includes(
-                                "Local mod (auto-generated)"
+                                "Local mod (auto-generated)",
                               ) ? (
                                 <div
                                   dangerouslySetInnerHTML={{
                                     __html: sanitizeHtml(
-                                      details?.mod?.description || ""
+                                      details?.mod?.description || "",
                                     ),
                                   }}
                                 />
@@ -1513,8 +1701,8 @@ export function ModModal({
                               statusValues.find(
                                 (status) =>
                                   status.display_version &&
-                                  status.display_version.trim() !== ""
-                              )?.display_version || entry.version
+                                  status.display_version.trim() !== "",
+                              )?.display_version || entry.version,
                             );
                             const entryLabel = entry.name?.trim()
                               ? entry.name
@@ -1575,51 +1763,77 @@ export function ModModal({
                                   </div>
                                 </div>
 
-                                <div className="space-y-3">
+                                <div className="space-y-2">
                                   {groups.length === 0 && (
                                     <div className="text-sm text-muted-foreground">
                                       No .pak files recorded for this download.
                                     </div>
                                   )}
-                                  {groups.map(({ primary, files }) => {
-                                    const checked = files.some((file) =>
-                                      activeList.includes(file)
+                                  {(() => {
+                                    const tree = buildFileTree(groups);
+                                    // Check if any group has subfolder structure
+                                    const hasSubfolders = groups.some((g) =>
+                                      g.primary
+                                        .replace(/\\/g, "/")
+                                        .includes("/"),
                                     );
-                                    return (
-                                      <div
-                                        key={`${entry.id}-${primary}`}
-                                        className={`border border-border rounded-lg p-4 transition-colors ${
-                                          checked
-                                            ? "bg-green-100 dark:bg-green-900/60"
-                                            : "bg-popover"
-                                        }`}
-                                      >
-                                        <div className="flex items-center justify-between gap-4">
-                                          <div className="flex items-center gap-3 min-w-0">
-                                            <File className="w-4 h-4 text-muted-foreground" />
-                                            <div className="min-w-0">
-                                              <div className="font-medium truncate">
-                                                {primary}
+
+                                    if (!hasSubfolders) {
+                                      // Simple flat list for mods without subfolders
+                                      return groups.map(
+                                        ({ primary, files }) => {
+                                          const checked = files.some((file) =>
+                                            activeList.includes(file),
+                                          );
+                                          return (
+                                            <div
+                                              key={`${entry.id}-${primary}`}
+                                              className={`border border-border rounded-lg transition-colors ${
+                                                checked
+                                                  ? "bg-green-100 dark:bg-green-900/60"
+                                                  : "bg-popover"
+                                              }`}
+                                              style={{ padding: "6px" }}
+                                            >
+                                              <div className="flex items-center justify-between gap-4">
+                                                <div className="flex items-center gap-3 min-w-0">
+                                                  <File className="w-4 h-4 text-muted-foreground shrink-0" />
+                                                  <div className="font-medium truncate">
+                                                    {primary}
+                                                  </div>
+                                                </div>
+                                                <Switch
+                                                  disabled={switchDisabled}
+                                                  checked={checked}
+                                                  onCheckedChange={(
+                                                    willCheck: boolean,
+                                                  ) =>
+                                                    handleToggle(
+                                                      entry.id,
+                                                      files,
+                                                      willCheck,
+                                                    )
+                                                  }
+                                                />
                                               </div>
                                             </div>
-                                          </div>
-                                          <Switch
-                                            disabled={switchDisabled}
-                                            checked={checked}
-                                            onCheckedChange={(
-                                              willCheck: boolean
-                                            ) =>
-                                              handleToggle(
-                                                entry.id,
-                                                files,
-                                                willCheck
-                                              )
-                                            }
-                                          />
-                                        </div>
-                                      </div>
+                                          );
+                                        },
+                                      );
+                                    }
+
+                                    // Hierarchical tree rendering for mods with subfolders
+                                    return (
+                                      <FileTreeRenderer
+                                        nodes={tree.children}
+                                        depth={0}
+                                        entryId={entry.id}
+                                        activeList={activeList}
+                                        switchDisabled={switchDisabled}
+                                        handleToggle={handleToggle}
+                                      />
                                     );
-                                  })}
+                                  })()}
                                 </div>
                               </div>
                             );
@@ -1697,7 +1911,7 @@ export function ModModal({
                       <div className="space-y-4">
                         {resolvedChangelogs.map((version) => {
                           const changelogHtml = toChangelogHtml(
-                            version.changelog
+                            version.changelog,
                           );
                           return (
                             <div

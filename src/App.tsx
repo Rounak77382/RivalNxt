@@ -11,6 +11,7 @@ import { DownloadsPage } from "./components/DownloadsPage";
 import { ActiveModsView } from "./components/ActiveModsView";
 import { ServerStartupOverlay } from "./components/ServerStartupOverlay";
 import { NxmBackgroundListener } from "./components/NxmBackgroundListener";
+import { GameUpdateModal, type GameUpdateStep, type GameUpdatePhase } from "./components/GameUpdateModal";
 import { toast } from "sonner";
 import { Toaster } from "./components/ui/sonner";
 import { ThemeProvider } from "./components/ThemeProvider";
@@ -45,6 +46,7 @@ import {
   getModCustomImagePreviews,
   toggleFavourite,
   fetchFavourites,
+  getGameVersionCheck,
   type ApiSettings,
   type ApiSettingsTaskResponse,
   type SettingsTask,
@@ -59,6 +61,7 @@ import {
 
 const CATEGORY_KEYWORD_SET = getCategoryTokenSet();
 const GET_STARTED_STORAGE_KEY = "modmanager:get-started-complete";
+const GAME_VERSION_STORAGE_KEY = "modmanager:game-paks-last-modified";
 
 const SETTINGS_TASK_LABELS: Record<SettingsTask, string> = {
   ingest_download_assets: "Rebuild Local Downloads",
@@ -158,6 +161,11 @@ export default function App() {
     state: "starting",
     lastError: null,
   });
+  // Game update detection state
+  const [gameUpdateModalOpen, setGameUpdateModalOpen] = useState(false);
+  const [gameUpdatePhase, setGameUpdatePhase] = useState<GameUpdatePhase>("checking");
+  const [gameUpdateSteps, setGameUpdateSteps] = useState<GameUpdateStep[]>([]);
+  const [gameUpdateLatestFile, setGameUpdateLatestFile] = useState<string | null>(null);
 
   const backendReady = backendStatus.state === "ready";
 
@@ -463,6 +471,171 @@ export default function App() {
     settingsData,
     settingsLoading,
   ]);
+
+  // ── Game version update detection ──────────────────────────────────
+  const runGameUpdateRebuild = useCallback(
+    async (latestModified: string) => {
+      const sleep = (ms: number) =>
+        new Promise<void>((resolve) => {
+          setTimeout(resolve, ms);
+        });
+
+      const STEPS: { key: SettingsTask; label: string }[] = [
+        {
+          key: "rebuild_character_data",
+          label: "Rebuild Character & Skin Data",
+        },
+        { key: "rebuild_tags", label: "Rebuild Tags" },
+      ];
+
+      const initialSteps: GameUpdateStep[] = STEPS.map((s) => ({
+        key: s.key,
+        label: s.label,
+        status: "pending" as const,
+      }));
+      setGameUpdateSteps(initialSteps);
+      setGameUpdatePhase("updating");
+
+      let allSucceeded = true;
+
+      for (let i = 0; i < STEPS.length; i++) {
+        const { key } = STEPS[i];
+
+        // Mark current step as running
+        setGameUpdateSteps((prev) =>
+          prev.map((s, idx) =>
+            idx === i ? { ...s, status: "running" } : s,
+          ),
+        );
+
+        try {
+          const job = await runSettingsTask(key);
+
+          const terminalStatuses: Array<ApiSettingsTaskResponse["status"]> = [
+            "succeeded",
+            "failed",
+          ];
+          let currentJob = job;
+          let delay = 400;
+          while (!terminalStatuses.includes(currentJob.status)) {
+            await sleep(delay);
+            delay = Math.min(delay + 250, 2000);
+            currentJob = await getSettingsTaskJob(currentJob.id);
+          }
+
+          const succeeded =
+            currentJob.status === "succeeded" && Boolean(currentJob.ok);
+
+          setGameUpdateSteps((prev) =>
+            prev.map((s, idx) =>
+              idx === i
+                ? {
+                    ...s,
+                    status: succeeded ? "succeeded" : "failed",
+                    error: succeeded ? null : (currentJob.error || "Task failed"),
+                  }
+                : s,
+            ),
+          );
+
+          if (!succeeded) {
+            allSucceeded = false;
+            break;
+          }
+        } catch (err) {
+          const message =
+            err instanceof Error ? err.message : String(err ?? "Task failed");
+          setGameUpdateSteps((prev) =>
+            prev.map((s, idx) =>
+              idx === i
+                ? { ...s, status: "failed", error: message }
+                : s,
+            ),
+          );
+          allSucceeded = false;
+          break;
+        }
+      }
+
+      setGameUpdatePhase("done");
+
+      if (allSucceeded) {
+        // Save the new timestamp so we don't trigger again
+        window.localStorage.setItem(
+          GAME_VERSION_STORAGE_KEY,
+          latestModified,
+        );
+        // Refresh mod data
+        void refreshMods({ quiet: true, includeConflicts: true });
+      }
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (!backendReady) return;
+    let cancelled = false;
+
+    (async () => {
+      // Show modal immediately in "checking" state
+      setGameUpdatePhase("checking");
+      setGameUpdateSteps([]);
+      setGameUpdateModalOpen(true);
+
+      try {
+        const result = await getGameVersionCheck();
+        if (cancelled) return;
+
+        if (!result.ok || !result.latest_modified) {
+          // Can't check – just close the modal
+          console.warn("[GameUpdate] Version check returned not ok:", result.error);
+          setGameUpdateModalOpen(false);
+          return;
+        }
+
+        const stored = window.localStorage.getItem(GAME_VERSION_STORAGE_KEY);
+        console.log(
+          "[GameUpdate] Latest PAK modified:",
+          result.latest_modified,
+          "| Stored:",
+          stored,
+          "| File:",
+          result.latest_file,
+        );
+
+        if (!stored) {
+          // First run – store timestamp and show up to date
+          window.localStorage.setItem(
+            GAME_VERSION_STORAGE_KEY,
+            result.latest_modified,
+          );
+          console.log("[GameUpdate] First run – stored initial timestamp");
+          setGameUpdatePhase("uptodate");
+          return;
+        }
+
+        // Compare timestamps
+        const storedDate = new Date(stored).getTime();
+        const latestDate = new Date(result.latest_modified).getTime();
+
+        if (latestDate > storedDate) {
+          console.log("[GameUpdate] Game files are newer – triggering rebuild");
+          setGameUpdateLatestFile(result.latest_file);
+          await runGameUpdateRebuild(result.latest_modified);
+        } else {
+          console.log("[GameUpdate] Game files unchanged – no update needed");
+          setGameUpdatePhase("uptodate");
+        }
+      } catch (err) {
+        console.warn("[GameUpdate] Version check failed:", err);
+        setGameUpdateModalOpen(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [backendReady, runGameUpdateRebuild]);
 
   // Get counts for header
   const installedMods = mods.filter((mod) => mod.isInstalled);
@@ -1446,11 +1619,19 @@ export default function App() {
     const latestVersionKey = d.latest_version_key ?? null;
     const latestVersion =
       d.latest_version || installedVersion || d.version || "";
-    const hasUpdateFromBackend = Boolean(d.needs_update);
-    const hasUpdateFromKeys =
+    let hasUpdateFromBackend = Boolean(d.needs_update);
+    let hasUpdateFromKeys =
       latestVersionKey != null && localVersionKey != null
         ? latestVersionKey > localVersionKey
         : latestVersion !== installedVersion && latestVersion !== "";
+
+    // The update button will only appear when a new version of the exact same mod variant appears
+    const isSameName = !d.latest_file_name || d.name === d.latest_file_name;
+    if (!isSameName) {
+      hasUpdateFromBackend = false;
+      hasUpdateFromKeys = false;
+    }
+
     const hasUpdate = hasUpdateFromBackend || hasUpdateFromKeys;
     const isActive = d.active_paks && d.active_paks.length > 0;
     const releaseDate = d.mod_created_time || null;
@@ -1622,16 +1803,24 @@ export default function App() {
         }
       }
 
-      target.needs_update = Boolean(
-        target.needs_update || incoming.needs_update,
-      );
+      let incomingNeedsUpdate = Boolean(incoming.needs_update);
+      if (incoming.latest_file_name && target.name && incoming.latest_file_name !== target.name) {
+        incomingNeedsUpdate = false;
+      }
+      target.needs_update = Boolean(target.needs_update || incomingNeedsUpdate);
+
       const latestKey = target.latest_version_key;
       const localKey = target.local_version_key;
+      let calculatedUpdate = false;
       if (latestKey && localKey) {
-        target.needs_update = latestKey > localKey;
+        calculatedUpdate = latestKey > localKey;
       } else if (target.latest_version && target.version) {
-        target.needs_update = target.latest_version !== target.version;
+        calculatedUpdate = target.latest_version !== target.version;
       }
+      if (target.latest_file_name && target.name && target.latest_file_name !== target.name) {
+        calculatedUpdate = false;
+      }
+      target.needs_update = target.needs_update || calculatedUpdate;
     };
 
     for (const d of deduplicated) {
@@ -1955,6 +2144,13 @@ export default function App() {
             onRefresh={handleSettingsRefresh}
             onSubmit={handleSettingsSubmit}
             onRunTask={handleRunSettingsTask}
+          />
+          <GameUpdateModal
+            open={gameUpdateModalOpen}
+            phase={gameUpdatePhase}
+            steps={gameUpdateSteps}
+            latestFile={gameUpdateLatestFile}
+            onDismiss={() => setGameUpdateModalOpen(false)}
           />
           <ServerStartupOverlay
             visible={!backendReady}

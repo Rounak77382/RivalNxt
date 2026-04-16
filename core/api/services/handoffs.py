@@ -163,10 +163,15 @@ def serialize_handoff(record: Dict[str, Any], *, include_metadata: bool = False)
             maybe = filtered.get("mod_info")
             if isinstance(maybe, dict):
                 mod_info = maybe
+        # Fallback: use the eagerly-resolved mod_name set at registration
+        if mod_info is None and isinstance(metadata, dict):
+            eager_name = metadata.get("mod_name")
+            if isinstance(eager_name, str) and eager_name.strip():
+                mod_info = {"name": eager_name.strip()}
         if mod_info is not None:
             payload["metadata"] = {
                 "mod_info": mod_info,
-                "fetched_at": metadata.get("collect_all_timestamp"),
+                "fetched_at": metadata.get("collect_all_timestamp") if isinstance(metadata, dict) else None,
             }
     return payload
 

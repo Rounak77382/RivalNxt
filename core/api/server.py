@@ -91,7 +91,7 @@ from field_prefs import filter_aggregate_payload, load_prefs
 # Global cache for Nexus preferences
 _NEXUS_PREFS_CACHE = None
 
-app = FastAPI(title="Mod Manager Backend", version="0.5.0")
+app = FastAPI(title="Mod Manager Backend", version="0.5.6")
 
 # Register character API routes
 from core.api.characters import router as characters_router
@@ -160,9 +160,9 @@ def _monitor_parent_process(pid: int) -> None:
 				logger.warning(f"[PID Monitor] Parent process {pid} is gone after {check_counter} checks. Shutting down backend.")
 				os._exit(0)
 			
-			# Log every 12 checks (every minute if checking every 5 seconds)
-			if check_counter % 12 == 0:
-				logger.info(f"[PID Monitor] Parent process {pid} still alive (check #{check_counter})")
+			# Heartbeat log removed to reduce spam
+			# if check_counter % 12 == 0:
+			# 	logger.debug(f"[PID Monitor] Parent process {pid} still alive (check #{check_counter})")
 			
 			time.sleep(5)
 		except Exception as e:
@@ -1224,20 +1224,36 @@ def _ingest_resolved_download(
 		candidate_version: str,
 		candidate_contents: Iterable[str],
 	) -> Optional[Tuple[int, Optional[str], Optional[str], Optional[str]]]:
-		"""Check if a download with the same name + version already exists.
+		"""Check if a download with the same name + version + mod_id already exists.
 		
 		Returns (download_id, name, version, path) if duplicate found, None otherwise.
-		Uses exact string matching for both name and version (case-insensitive).
+		Uses exact string matching for name and version (case-insensitive).
+		When the candidate has a mod_id, only matches against downloads with the
+		same mod_id — different mods that happen to share a display name are NOT
+		considered duplicates.
 		"""
-		# Query for downloads with matching name (case-insensitive)
-		rows = cur.execute(
-			"""
-			SELECT id, name, version, path
-			FROM local_downloads
-			WHERE LOWER(name) = LOWER(?)
-			""",
-			(candidate_name,),
-		).fetchall()
+		# When mod_id is available, use it to scope the duplicate check.
+		# Two different Nexus mods (different mod_id) are never duplicates
+		# even if they share the same display name and version.
+		if mod_id is not None:
+			rows = cur.execute(
+				"""
+				SELECT id, name, version, path
+				FROM local_downloads
+				WHERE LOWER(name) = LOWER(?) AND mod_id = ?
+				""",
+				(candidate_name, mod_id),
+			).fetchall()
+		else:
+			# No mod_id — fall back to name-only matching
+			rows = cur.execute(
+				"""
+				SELECT id, name, version, path
+				FROM local_downloads
+				WHERE LOWER(name) = LOWER(?)
+				""",
+				(candidate_name,),
+			).fetchall()
 		
 		# Check for exact version match (case-insensitive)
 		candidate_version_normalized = (candidate_version or "").strip().lower()
@@ -1671,6 +1687,81 @@ def list_favourites() -> Dict[str, Any]:
 			pass
 
 
+@app.get("/api/game-version/check")
+def check_game_version() -> Dict[str, Any]:
+	"""Check the latest modification timestamp of game PAK files.
+
+	Scans the Paks directory inside the configured marvel_rivals_root,
+	excluding the ~mods folder.  Returns the ISO-8601 timestamp of the
+	most recently modified file so the frontend can compare it to a
+	previously stored value and detect game updates.
+	"""
+	from core.config.settings import load_settings
+
+	current_settings = load_settings()
+	if not current_settings.marvel_rivals_root:
+		return {
+			"ok": False,
+			"error": "marvel_rivals_root is not configured",
+			"latest_modified": None,
+			"file_count": 0,
+			"latest_file": None,
+		}
+
+	paks_dir = Path(current_settings.marvel_rivals_root) / "MarvelGame" / "Marvel" / "Content" / "Paks"
+	if not paks_dir.exists() or not paks_dir.is_dir():
+		return {
+			"ok": False,
+			"error": f"Paks directory not found: {paks_dir}",
+			"latest_modified": None,
+			"file_count": 0,
+			"latest_file": None,
+		}
+
+	latest_mtime: float = 0.0
+	latest_file: Optional[str] = None
+	file_count = 0
+
+	for entry in paks_dir.rglob("*"):
+		# Skip the ~mods folder and everything inside it
+		try:
+			rel = entry.relative_to(paks_dir)
+			parts = rel.parts
+			if parts and parts[0].lower() == "~mods":
+				continue
+		except ValueError:
+			continue
+
+		if not entry.is_file():
+			continue
+
+		file_count += 1
+		try:
+			mtime = entry.stat().st_mtime
+			if mtime > latest_mtime:
+				latest_mtime = mtime
+				latest_file = str(rel)
+		except OSError:
+			continue
+
+	if file_count == 0:
+		return {
+			"ok": False,
+			"error": "No files found in Paks directory",
+			"latest_modified": None,
+			"file_count": 0,
+			"latest_file": None,
+		}
+
+	latest_dt = datetime.fromtimestamp(latest_mtime, tz=timezone.utc)
+	return {
+		"ok": True,
+		"latest_modified": latest_dt.isoformat(),
+		"file_count": file_count,
+		"latest_file": latest_file,
+	}
+
+
 @app.get("/api/bootstrap/status")
 def get_bootstrap_status() -> Dict[str, Any]:
 	"""Check if database and settings exist and need bootstrapping.
@@ -1899,7 +1990,7 @@ def _shape_conflicts_from_view(
 	rows = cur.execute(view_sql, (limit,)).fetchall()
 	results: List[Dict[str, Any]] = []
 	pak_meta_cache: Dict[str, Tuple[Optional[str], Optional[int]]] = {}
-	for asset_path, pak_count, mod_count, conflict_paks_json in rows:
+	for asset_path, pak_count, mod_count, conflict_paks_json, detected_at in rows:
 		cat_row = cur.execute("SELECT category FROM asset_tags WHERE asset_path=?", (asset_path,)).fetchone()
 		category = cat_row[0] if cat_row else None
 		try:
@@ -1998,6 +2089,7 @@ def _shape_conflicts_from_view(
 				"total_paks": pak_count,
 				"winner_mod_id": winner_mod_id,
 				"participants": participants,
+				"detected_at": detected_at,
 			}
 		)
 	return results
@@ -2010,8 +2102,9 @@ def get_conflicts(limit: int = 10) -> List[Dict[str, Any]]:
 		return _shape_conflicts_from_view(
 			conn,
 		"""
-		SELECT asset_path, pak_count, mod_count, conflict_paks_json
+		SELECT asset_path, pak_count, mod_count, conflict_paks_json, detected_at
 		FROM v_asset_conflicts_all
+		ORDER BY detected_at DESC
 		LIMIT ?
 		""",
 		limit,
@@ -2031,8 +2124,9 @@ def get_conflicts_active(limit: int = 10) -> List[Dict[str, Any]]:
 		return _shape_conflicts_from_view(
 			conn,
 		"""
-		SELECT asset_path, pak_count, mod_count, conflict_paks_json
+		SELECT asset_path, pak_count, mod_count, conflict_paks_json, detected_at
 		FROM v_asset_conflicts_active
+		ORDER BY detected_at DESC
 		LIMIT ?
 		""",
 		limit,
@@ -2106,6 +2200,47 @@ def add_mod(payload: Dict[str, Any] = Body(...)) -> Dict[str, Any]:
 		except DuplicateDownloadError as exc:
 			raise HTTPException(status_code=409, detail=_duplicate_detail_from_error(exc))
 
+def _eager_resolve_mod_name(record: Dict[str, Any], nxm_request) -> None:
+	"""Best-effort resolve the mod name and store it in the handoff metadata.
+
+	Checks the local ``mods`` table first (instant, no network).  If
+	the mod isn't known locally, makes a single lightweight Nexus API
+	call (``get_mod_info``).  Failures are silently ignored — the
+	frontend will fall back to ``Mod #<id>`` if the name isn't set.
+	"""
+	mod_id = nxm_request.mod_id
+	if mod_id is None:
+		return
+	metadata = record.setdefault("metadata", {})
+	# 1) Try local DB (no API call)
+	try:
+		conn = get_db()
+		try:
+			row = conn.execute("SELECT name FROM mods WHERE mod_id = ?", (mod_id,)).fetchone()
+			if row and isinstance(row[0], str) and row[0].strip():
+				metadata["mod_name"] = row[0].strip()
+				return
+		finally:
+			try:
+				conn.close()
+			except Exception:
+				pass
+	except Exception:
+		pass
+	# 2) Fallback — quick Nexus API call
+	try:
+		from core.nexus import get_mod_info, get_api_key
+		key = get_api_key()
+		if key:
+			game = nxm_request.game_domain or DEFAULT_GAME
+			status, data = get_mod_info(key, game, mod_id)
+			if status == 200 and isinstance(data, dict):
+				name = data.get("name")
+				if isinstance(name, str) and name.strip():
+					metadata["mod_name"] = name.strip()
+	except Exception:
+		pass
+
 @app.post("/api/nxm/handoff")
 def submit_nxm_handoff(payload: Optional[Dict[str, Any]] = Body(default=None)) -> Dict[str, Any]:
 	global _LAST_NXM_URL
@@ -2168,6 +2303,11 @@ def submit_nxm_handoff(payload: Optional[Dict[str, Any]] = Body(default=None)) -
 	
 	metadata = snapshot_metadata(nxm_request)
 	record = register_handoff(nxm_request, metadata=metadata)
+
+	# Eagerly resolve the mod name so the frontend can display it in the
+	# download progress toaster instead of just "Mod #XXXX".
+	_eager_resolve_mod_name(record, nxm_request)
+
 	logger.info(
 		"[nxm_handoff] received id=%s game=%s mod_id=%s file_id=%s query_params=%s",
 		record["id"],
@@ -2588,15 +2728,18 @@ def ingest_nxm_handoff(handoff_id: str, payload: Optional[Dict[str, Any]] = Body
 		conn = get_db()
 		try:
 			cur = conn.cursor()
-			# Check for existing download with same name + version
+			# Check for existing download with same name + version + mod_id
+			# Include mod_id so that different mods with the same display
+			# name and version are NOT considered duplicates.
 			existing = cur.execute(
 				"""
 				SELECT id, name, version, path
 				FROM local_downloads
 				WHERE LOWER(name) = LOWER(?) AND LOWER(version) = LOWER(?)
+				  AND mod_id = ?
 				LIMIT 1
 				""",
-				(remote_name, version),
+				(remote_name, version, mod_id),
 			).fetchone()
 			
 			if existing:
@@ -2633,6 +2776,9 @@ def ingest_nxm_handoff(handoff_id: str, payload: Optional[Dict[str, Any]] = Body
 	)
 	version = selected_entry.get("version") or selected_entry.get("mod_version") or ""
 	remote_name = selected_entry.get("file_name") or selected_entry.get("name") or download_path.name
+	# Parse the filename to extract a clean display name (strip mod_id/version suffix)
+	parsed_name, _, _ = parse_mod_filename(remote_name)
+	remote_name = parsed_name or remote_name
 	file_created_at_hint = _extract_created_at_hint(selected_entry)
 	if handoff_identifier:
 		update_handoff_progress(
@@ -3208,10 +3354,12 @@ def update_mod(mod_id: int, payload: Optional[Dict[str, Any]] = Body(default=Non
 			target_path = download_path
 			download_path = target_path
 
+	# Parse the filename to get a clean display name (strip mod_id/version suffix)
+	parsed_update_name, _, _ = parse_mod_filename(safe_remote_name)
 	try:
 		ingest_result = _ingest_resolved_download(
 			download_path,
-			name=safe_remote_name,
+			name=parsed_update_name or safe_remote_name,
 			mod_id=mod_id,
 			version=latest_version,
 			source_url=download_url,
@@ -4499,7 +4647,7 @@ def _search_mod_id_remote(name: str, api_key: str, game: str = DEFAULT_GAME) -> 
 	url = f"https://api.nexusmods.com/v1/games/{game}/mods.json?{params}"
 	headers = {
 		"apikey": api_key,
-		"User-Agent": "Project_ModManager_Rivals/0.5.0",
+		"User-Agent": "Project_ModManager_Rivals/0.5.6",
 		"Application-Name": "Project_ModManager_Rivals",
 	}
 	req = urllib.request.Request(url, headers=headers, method="GET")
@@ -4779,7 +4927,7 @@ def _resolve_nexus_download_candidates(
 	if api_key:
 		headers["apikey"] = api_key
 		headers["Application-Name"] = "MarvelRivalsModManager"
-		headers["Application-Version"] = "0.5.0"
+		headers["Application-Version"] = "0.5.6"
 	req = urllib.request.Request(api_url, headers=headers, method="GET")
 	try:
 		with urllib.request.urlopen(req, timeout=30) as resp:
@@ -5232,10 +5380,15 @@ def set_active_paks(download_id: int, payload: Dict[str, Any] = Body(...)) -> Di
 	req_active = payload.get("active_paks")
 	if not isinstance(req_active, list):
 		raise HTTPException(status_code=400, detail="active_paks must be an array of strings")
-	desired: List[str] = []
+	desired_raw: List[str] = []
+	desired_source_map: Dict[str, str] = {}  # basename.lower() → original relative path
 	for x in req_active:
 		if isinstance(x, str) and x.strip():
-			desired.append(os.path.basename(x.strip()))
+			cleaned = x.strip()
+			base = os.path.basename(cleaned)
+			desired_raw.append(cleaned)  # keep full relative path from frontend
+			# Remember the original relative path for source file lookup
+			desired_source_map[base.lower()] = cleaned
 	# Load current row
 	conn = get_db()
 	cur = conn.cursor()
@@ -5324,8 +5477,9 @@ def set_active_paks(download_id: int, payload: Dict[str, Any] = Body(...)) -> Di
 	except Exception:
 		pass
 	# Validate desired names against contents, case-insensitive, with .pak/.utoc stem fallback
-	valid_names = [os.path.basename(c) for c in contents if isinstance(c, str) and c]
-	valid_lower = {v.lower() for v in valid_names}
+	# Build lookup: basename.lower() → full relative path from contents
+	valid_basenames = {os.path.basename(c).lower(): c for c in contents if isinstance(c, str) and c}
+	valid_lower = set(valid_basenames.keys())
 	def _alt_ext(name: str) -> List[str]:
 		try:
 			stem, ext = os.path.splitext(name)
@@ -5336,31 +5490,44 @@ def set_active_paks(download_id: int, payload: Dict[str, Any] = Body(...)) -> Di
 			return [name]
 		except Exception:
 			return [name]
-	desired_effective: List[str] = []
-	for d in desired:
-		dl = d.lower()
-		if dl in valid_lower:
-			# use the original casing from contents if present
-			match = next((v for v in valid_names if v.lower() == dl), d)
-			desired_effective.append(match)
+	# Resolve each incoming path to the matching contents relative path
+	desired: List[str] = []  # will hold relative paths matching contents
+	rel_to_basename: Dict[str, str] = {}  # relative path → basename (for file ops)
+	for d in desired_raw:
+		base_d = os.path.basename(d)
+		dl = base_d.lower()
+		# Try exact relative path match first (frontend may send full relative path)
+		exact = next((c for c in contents if isinstance(c, str) and c.lower() == d.lower()), None)
+		if exact:
+			desired.append(exact)
+			rel_to_basename[exact] = os.path.basename(exact)
 			continue
-		# try alt extension
-		alts = _alt_ext(d)
-		found = None
+		# Try basename match against contents
+		if dl in valid_lower:
+			rel_path = valid_basenames[dl]
+			desired.append(rel_path)
+			rel_to_basename[rel_path] = os.path.basename(rel_path)
+			continue
+		# Try alt extension
+		alts = _alt_ext(base_d)
+		found_rel = None
 		for a in alts:
-			if a.lower() in valid_lower:
-				found = next((v for v in valid_names if v.lower() == a.lower()), a)
+			al = a.lower()
+			if al in valid_lower:
+				found_rel = valid_basenames[al]
 				break
-		if found:
-			desired_effective.append(found)
+		if found_rel:
+			desired.append(found_rel)
+			rel_to_basename[found_rel] = os.path.basename(found_rel)
 			continue
 		try:
 			conn.close()
 		except Exception:
 			pass
 		raise HTTPException(status_code=400, detail=f"Requested pak '{d}' is not part of this download's contents")
-	# Use normalized desired list going forward
-	desired = desired_effective
+	# desired now contains relative paths from contents
+	# Build basename list for file operations
+	desired_basenames: List[str] = [os.path.basename(d) for d in desired]
 
 	candidate_paks: Set[str] = set()
 	for name in contents + prev_active + desired:
@@ -5404,7 +5571,6 @@ def set_active_paks(download_id: int, payload: Dict[str, Any] = Body(...)) -> Di
 		tag = _infer_character_tag(cur, name=download_name, pak_candidates=candidate_paks)
 		if tag:
 			char_folder = mods_dir / _to_folder_name(tag)
-			_ensure_dir(char_folder)
 	except Exception:
 		char_folder = None
 	# Fallback: reuse previous active tag mapping if current files are new
@@ -5414,7 +5580,6 @@ def set_active_paks(download_id: int, payload: Dict[str, Any] = Body(...)) -> Di
 			alt_tag = _infer_character_tag(cur, name=download_name, pak_candidates=prev_candidates)
 			if alt_tag:
 				char_folder = mods_dir / _to_folder_name(alt_tag)
-				_ensure_dir(char_folder)
 		except Exception:
 			pass
 	# Fallback: consider other downloads for this mod to infer a shared folder
@@ -5423,7 +5588,6 @@ def set_active_paks(download_id: int, payload: Dict[str, Any] = Body(...)) -> Di
 			alt_tag = _infer_character_tag(cur, name=download_name, pak_candidates=related_active)
 			if alt_tag:
 				char_folder = mods_dir / _to_folder_name(alt_tag)
-				_ensure_dir(char_folder)
 		except Exception:
 			pass
 	if char_folder is None and not related_active and related_contents:
@@ -5431,7 +5595,6 @@ def set_active_paks(download_id: int, payload: Dict[str, Any] = Body(...)) -> Di
 			alt_tag = _infer_character_tag(cur, name=download_name, pak_candidates=related_contents)
 			if alt_tag:
 				char_folder = mods_dir / _to_folder_name(alt_tag)
-				_ensure_dir(char_folder)
 		except Exception:
 			pass
 	# Last resort: locate existing destination of prior files within ~mods and reuse its parent folder
@@ -5464,7 +5627,8 @@ def set_active_paks(download_id: int, payload: Dict[str, Any] = Body(...)) -> Di
 			if candidate_path is not None:
 				char_folder = candidate_path
 				break
-	if char_folder is not None:
+	# Only create the char subfolder when we actually have files to copy
+	if char_folder is not None and desired_basenames:
 		try:
 			_ensure_dir(char_folder)
 		except HTTPException:
@@ -5496,7 +5660,7 @@ def set_active_paks(download_id: int, payload: Dict[str, Any] = Body(...)) -> Di
 		try:
 			entries = list_entries(src_path)
 			lookup = build_entry_lookup(entries)
-			for item in desired:
+			for item in desired_basenames:
 				stem, _ext = os.path.splitext(item)
 				# For each stem, try to extract .pak, .utoc, .ucas if present
 				for ext in (".pak", ".utoc", ".ucas"):
@@ -5524,7 +5688,7 @@ def set_active_paks(download_id: int, payload: Dict[str, Any] = Body(...)) -> Di
 	elif is_pak:
 		# Single pak source; also copy sibling .utoc/.ucas if present alongside
 		base = os.path.basename(src_path)
-		if base in desired:
+		if base in desired_basenames:
 			dest_base = char_folder if char_folder else mods_dir
 			dest = dest_base / base
 			try:
@@ -5551,30 +5715,50 @@ def set_active_paks(download_id: int, payload: Dict[str, Any] = Body(...)) -> Di
 					companions.append(cand.name)
 					applied_set.add(cand.name)
 	elif is_folder:
-		# Folder source: copy files directly from folder
+		# Folder source: copy files directly from folder (using variant-aware lookup)
 		src_folder = Path(src_path)
 		try:
-			for item in desired:
+			for item in desired_basenames:
 				stem, _ext = os.path.splitext(item)
+				# Check if we have a relative path from the user's variant selection
+				rel_path = desired_source_map.get(item.lower(), "")
+				rel_stem = os.path.splitext(rel_path)[0] if rel_path else ""
 				# For each stem, try to copy .pak, .utoc, .ucas if present
 				for ext in (".pak", ".utoc", ".ucas"):
 					fname = f"{stem}{ext}"
-					src_file = src_folder / fname
-					if not src_file.exists():
+					src_file = None
+					# 1. Try exact relative path from the selected variant
+					if rel_stem:
+						variant_file = src_folder / f"{rel_stem}{ext}".replace("/", os.sep)
+						if variant_file.exists() and variant_file.is_file():
+							src_file = variant_file
+					# 2. Try direct path at folder root
+					if src_file is None:
+						direct = src_folder / fname
+						if direct.exists() and direct.is_file():
+							src_file = direct
+					# 3. Fallback: search recursively by basename
+					if src_file is None:
+						basename = os.path.basename(fname)
+						for candidate in src_folder.rglob(basename):
+							if candidate.is_file():
+								src_file = candidate
+								break
+					if src_file is None:
 						continue
 					dest_base = char_folder if char_folder else mods_dir
-					dest = dest_base / fname
+					dest = dest_base / os.path.basename(fname)
 					try:
 						if dest.exists():
 							dest.unlink()
 						shutil.copy2(str(src_file), str(dest))
 					except Exception as e:
 						raise HTTPException(status_code=500, detail=f"Copy failed: {e}")
-					applied_set.add(fname)
-					if fname.lower() == item.lower():
-						copied.append(fname)
+					applied_set.add(os.path.basename(fname))
+					if os.path.basename(fname).lower() == item.lower():
+						copied.append(os.path.basename(fname))
 					else:
-						companions.append(fname)
+						companions.append(os.path.basename(fname))
 		except HTTPException:
 			raise
 		except Exception as e:
@@ -5586,35 +5770,52 @@ def set_active_paks(download_id: int, payload: Dict[str, Any] = Body(...)) -> Di
 	# If nothing was newly extracted but files already existed, ensure they are considered applied
 	if not applied_set and (is_zip or is_rar or is_7z):
 		# Consider already-present main requested items as applied
-		for item in desired:
+		for item in desired_basenames:
 			stem, _ = os.path.splitext(item)
 			for ext in (".pak", ".utoc", ".ucas"):
 				fname = f"{stem}{ext}"
 				if (mods_dir / fname).exists():
 					applied_set.add(fname)
 
-	# Build the final applied list (desired + companions we handled)
+	# Build the final applied list: desired relative paths + basename companions
+	# Companions (IoStore files) don't have relative paths in contents, use basenames
 	applied: List[str] = sorted({*desired, *applied_set})
 
 	# Deactivate: remove files no longer desired (best-effort)
-	to_remove = [p for p in prev_active if p not in applied]
+	# Compare by basename since prev_active may have basenames (legacy) or relative paths
+	applied_basenames_set = {os.path.basename(p).lower() for p in applied}
+	to_remove = [p for p in prev_active if os.path.basename(p).lower() not in applied_basenames_set]
 	removed: List[str] = []
-	# Try direct files and recursive by basenames
+	# Try direct path first, then recursive search by basename (handles char subfolders)
 	for pak in to_remove:
+		base = os.path.basename(pak)
+		deleted = False
+		# 1. Try direct path
 		fp = mods_dir / pak
 		try:
 			if fp.exists():
 				fp.unlink()
 				removed.append(pak)
+				deleted = True
 		except Exception:
 			pass
-	# Also try recursive removal by names (handles pre-existing files in subfolders)
-	removed += _remove_in_mods_by_names(mods_dir, to_remove)
+		# 2. Recursive search by basename in all subfolders
+		if not deleted:
+			try:
+				for found in mods_dir.rglob(base):
+					if found.is_file():
+						try:
+							found.unlink()
+							removed.append(pak)
+						except Exception:
+							pass
+			except Exception:
+				pass
 
 	# Additionally, ensure IoStore companions are removed by stem when a pak gets deactivated
 	def _stem_of(fname: str) -> Optional[str]:
 		try:
-			st, ext = os.path.splitext(fname)
+			st, ext = os.path.splitext(os.path.basename(fname))
 			if ext.lower() in (".pak", ".utoc", ".ucas"):
 				return st
 			return None
@@ -5624,7 +5825,34 @@ def set_active_paks(download_id: int, payload: Dict[str, Any] = Body(...)) -> Di
 	applied_stems = {s for s in (_stem_of(x) for x in applied) if s}
 	stems_to_remove = prev_stems - applied_stems
 	# Remove companions by stems in any subfolder
-	removed += _remove_in_mods_by_stems(mods_dir, list(stems_to_remove))
+	for stem in stems_to_remove:
+		for ext in (".pak", ".utoc", ".ucas"):
+			target_name = f"{stem}{ext}"
+			try:
+				for found in mods_dir.rglob(target_name):
+					if found.is_file():
+						try:
+							found.unlink()
+							removed.append(target_name)
+						except Exception:
+							pass
+			except Exception:
+				pass
+
+	# Clean up empty subdirectories left behind after file removal
+	if removed:
+		try:
+			for dirpath, dirnames, filenames in os.walk(str(mods_dir), topdown=False):
+				dp = Path(dirpath)
+				if dp == mods_dir:
+					continue
+				if not filenames and not dirnames:
+					try:
+						dp.rmdir()
+					except Exception:
+						pass
+		except Exception:
+			pass
 
 	# Persist new active list
 	try:

@@ -80,6 +80,7 @@ export type ApiConflict = {
   total_paks: number;
   winner_mod_id: number | null;
   participants: ApiConflictParticipant[];
+  detected_at?: string | null;
 };
 
 export type ApiNxmDownloadProgress = {
@@ -1125,4 +1126,17 @@ export async function fetchFavourites(): Promise<number[]> {
     "/api/favourites",
   );
   return response.mod_ids;
+}
+
+// Game Version Check
+export type GameVersionCheckResponse = {
+  ok: boolean;
+  latest_modified: string | null;
+  file_count: number;
+  latest_file: string | null;
+  error?: string;
+};
+
+export async function getGameVersionCheck(): Promise<GameVersionCheckResponse> {
+  return getJson<GameVersionCheckResponse>("/api/game-version/check");
 }

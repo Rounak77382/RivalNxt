@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Mod } from "./ModCard";
 import { InstalledModCard } from "./InstalledModCard";
 import { SearchHeader } from "./SearchHeader";
@@ -7,6 +7,7 @@ import {
   categoriesMatchTag,
   extractNonCategoryTags,
 } from "../lib/categoryUtils";
+import { lookupTags, type TagLookupResponse } from "../lib/api";
 
 interface DownloadsPageProps {
   mods: Mod[];
@@ -42,6 +43,26 @@ export function DownloadsPage({
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [selectedMod, setSelectedMod] = useState<Mod | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [tagLookupMap, setTagLookupMap] = useState<TagLookupResponse>({});
+
+  // Build a stable signature of all tags so we re-fetch only when tags actually change
+  const tagsSignature = useMemo(() => {
+    const all = new Set<string>();
+    for (const mod of mods) {
+      extractNonCategoryTags(mod.tags).forEach((t) => all.add(t));
+    }
+    return Array.from(all).sort().join("|");
+  }, [mods]);
+
+  // Fetch DB-backed character/skin classification for all tags
+  useEffect(() => {
+    let cancelled = false;
+    if (!tagsSignature) { setTagLookupMap({}); return; }
+    lookupTags(tagsSignature.split("|"))
+      .then((map) => { if (!cancelled) setTagLookupMap(map); })
+      .catch(() => { if (!cancelled) setTagLookupMap({}); });
+    return () => { cancelled = true; };
+  }, [tagsSignature]);
 
   useEffect(() => {
     if (!selectedMod) return;
@@ -78,40 +99,49 @@ export function DownloadsPage({
     );
   }
 
-  // Smart hierarchical filtering: separate character tags from skin tags
-  // Tags structure: [character, skin1, skin2, ...]
+  // Hierarchical filter using DB-backed tag classification.
   if (selectedCharacters && selectedCharacters.length > 0) {
+    // Classify selected entries using the DB lookup map
+    const selectedCharacterNames = new Set<string>(
+      selectedCharacters.filter((t) => tagLookupMap[t]?.type === "character"),
+    );
+    const selectedSkinNames = selectedCharacters.filter(
+      (t) => tagLookupMap[t]?.type === "skin",
+    );
+
     filteredMods = filteredMods.filter((mod) => {
-      const characterTags = extractNonCategoryTags(mod.tags);
-      if (characterTags.length === 0) return false;
+      const tags = extractNonCategoryTags(mod.tags);
+      if (tags.length === 0) return false;
 
-      // Extract character (first tag) and skins (remaining tags)
-      const modCharacter = characterTags[0];
-      const modSkins = characterTags.slice(1);
-
-      // Check which selected tags match this mod's character vs skins
-      const matchesCharacter = selectedCharacters.includes(modCharacter);
-      const matchingSkins = selectedCharacters.filter((tag) =>
-        modSkins.includes(tag),
+      // Find this mod's character tags and skin tags via DB classification
+      const modCharacters = tags.filter(
+        (t) => tagLookupMap[t]?.type === "character",
       );
+      const modSkins = tags.filter((t) => tagLookupMap[t]?.type === "skin");
 
-      // Logic: If character is selected, show all its mods (or filter by skins)
-      // If only skins selected (no character), don't show anything
-      if (matchesCharacter) {
-        // Character selected - show if no specific skins selected, OR any skin matches
-        if (matchingSkins.length > 0) {
-          return true; // Character matches and at least one skin matches
-        }
-        // Check if we have ANY skin tags selected at all
-        const hasAnySkinSelection = selectedCharacters.some(
-          (tag) =>
-            !characterTags.includes(tag) || characterTags.indexOf(tag) > 0,
-        );
-        // If no skin-specific filtering, show all character mods
-        return !hasAnySkinSelection || matchingSkins.length > 0;
-      }
+      // Step 1: at least one of the mod's characters must be selected (OR logic)
+      const matchedChar = modCharacters.find((c) =>
+        selectedCharacterNames.has(c),
+      );
+      if (!matchedChar) return false;
 
-      return false;
+      // Step 2: find selected skins whose DB parent(s) include the matched character
+      const selectedSkinsForChar = selectedSkinNames.filter((skin) => {
+        const info = tagLookupMap[skin];
+        const parents =
+          info?.parents && info.parents.length > 0
+            ? info.parents
+            : info?.parent
+              ? [info.parent]
+              : [];
+        return parents.includes(matchedChar);
+      });
+
+      // If no skins selected for this character, show all its mods
+      if (selectedSkinsForChar.length === 0) return true;
+
+      // Otherwise only show mods that carry at least one of the selected skins
+      return modSkins.some((s) => selectedSkinsForChar.includes(s));
     });
   }
 
@@ -128,58 +158,11 @@ export function DownloadsPage({
   }
 
   // Sorting
-  const MISSING_TIME = Number.MIN_SAFE_INTEGER;
-  const toTimestamp = (value?: string | null) => {
-    if (!value) return MISSING_TIME;
-    const time = Date.parse(value);
-    return Number.isNaN(time) ? MISSING_TIME : time;
-  };
+  const applyOrder = (val: number) => (sortOrder === "asc" ? -val : val);
   const toNullableTimestamp = (value?: string | null): number | null => {
     if (!value) return null;
     const time = Date.parse(value);
     return Number.isNaN(time) ? null : time;
-  };
-  const hasApiSource = (mod: Mod) => mod.backendModId != null;
-  const releaseSortKey = (mod: Mod) => {
-    const release = toTimestamp(mod.releaseDate);
-    const install = toTimestamp(mod.installDate);
-    const hasInstall = mod.hasInstallDate ?? install !== MISSING_TIME;
-    const hasUpdate = mod.hasUpdateTimestamp ?? Boolean(mod.lastUpdatedRaw);
-    const timestamp =
-      release !== MISSING_TIME ? release : hasInstall ? install : MISSING_TIME;
-    const hasData = hasApiSource(mod) && hasInstall && hasUpdate;
-    return { priority: hasData ? 1 : 0, timestamp };
-  };
-  const updatedSortKey = (mod: Mod) => {
-    const updated = toTimestamp(mod.lastUpdatedRaw);
-    const install = toTimestamp(mod.installDate);
-    const hasInstall = mod.hasInstallDate ?? install !== MISSING_TIME;
-    const hasUpdate = mod.hasUpdateTimestamp ?? updated !== MISSING_TIME;
-    const timestamp = hasUpdate ? updated : hasInstall ? install : MISSING_TIME;
-    const hasData = hasApiSource(mod) && hasUpdate && hasInstall;
-    return { priority: hasData ? 1 : 0, timestamp };
-  };
-  const compareSortKey = (
-    a: { priority: number; timestamp: number },
-    b: { priority: number; timestamp: number },
-  ) => {
-    if (b.priority !== a.priority) return b.priority - a.priority;
-    if (b.timestamp !== a.timestamp) return b.timestamp - a.timestamp;
-    return 0;
-  };
-  const applyOrder = (val: number) => (sortOrder === "asc" ? -val : val);
-
-  // Comparator factory for nullable timestamps that must place NULLs last
-  const makeTimestampComparator = (getter: (m: Mod) => number | null) => {
-    return (a: Mod, b: Mod) => {
-      const ta = getter(a);
-      const tb = getter(b);
-      if (ta == null && tb == null) return 0;
-      if (ta == null) return 1; // a after b
-      if (tb == null) return -1; // a before b
-      if (ta === tb) return 0;
-      return sortOrder === "asc" ? ta - tb : tb - ta;
-    };
   };
 
   switch (sortBy) {
@@ -188,8 +171,8 @@ export function DownloadsPage({
         applyOrder((b.downloads || 0) - (a.downloads || 0)),
       );
       break;
-    case "Recent":
-      // Recent: sort by backendModId (numeric), then by installDate for missing ids
+    case "Uploaded":
+      // Uploaded: sort by backendModId (numeric), then by installDate for missing ids
       filteredMods.sort((a, b) => {
         const aId = a.backendModId;
         const bId = b.backendModId;
@@ -220,13 +203,38 @@ export function DownloadsPage({
         return sortOrder === "asc" ? aDate - bDate : bDate - aDate;
       });
       break;
+    case "Recent":
+      // Recent: sort by install date
+      filteredMods.sort((a, b) => {
+        const aDate = toNullableTimestamp(a.installDate);
+        const bDate = toNullableTimestamp(b.installDate);
+        if (aDate == null && bDate == null) return 0;
+        if (aDate == null) return 1;
+        if (bDate == null) return -1;
+        return sortOrder === "asc" ? aDate - bDate : bDate - aDate;
+      });
+      break;
     case "Updated":
-      // Sort by mods.updated_at (mapped to lastUpdatedRaw / lastUpdated); NULLs always last
-      filteredMods.sort(
-        makeTimestampComparator((m) =>
-          toNullableTimestamp(m.lastUpdatedRaw ?? m.lastUpdated ?? null),
-        ),
-      );
+      // Sort by mods.updated_at (mapped to lastUpdatedRaw / lastUpdated); prioritize updates available
+      filteredMods.sort((a, b) => {
+        const aUpdate = a.hasUpdate || a.isUpdating ? 1 : 0;
+        const bUpdate = b.hasUpdate || b.isUpdating ? 1 : 0;
+        if (aUpdate !== bUpdate) {
+          return bUpdate - aUpdate;
+        }
+
+        const ta = toNullableTimestamp(
+          a.lastUpdatedRaw ?? a.lastUpdated ?? null,
+        );
+        const tb = toNullableTimestamp(
+          b.lastUpdatedRaw ?? b.lastUpdated ?? null,
+        );
+        if (ta == null && tb == null) return 0;
+        if (ta == null) return 1;
+        if (tb == null) return -1;
+        if (ta === tb) return 0;
+        return sortOrder === "asc" ? ta - tb : tb - ta;
+      });
       break;
     case "Rating":
       filteredMods.sort((a, b) =>

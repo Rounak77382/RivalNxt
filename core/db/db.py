@@ -289,8 +289,8 @@ def init_schema(conn: sqlite3.Connection) -> None:
         """
     )
     conn.commit()
-    _init_views(conn)
     run_migrations(conn)
+    _init_views(conn)
 
 # --- Simple BBCode to HTML converter (minimal, supports common tags) ---
 _SIZE_MAP = {1: 12, 2: 14, 3: 16, 4: 18, 5: 22, 6: 26, 7: 32}
@@ -700,22 +700,32 @@ def _init_views(conn: sqlite3.Connection) -> None:
                 END AS provider_key
             FROM pak_assets pa
             JOIN mod_paks mp ON mp.pak_name = pa.pak_name
+        ),
+        agg AS (
+            SELECT
+                asset_path,
+                COUNT(DISTINCT provider_key) AS mod_count,
+                COUNT(DISTINCT pak_name) AS pak_count,
+                json_group_array(
+                    DISTINCT json_object(
+                        'pak_name', pak_name,
+                        'source_zip', source_zip,
+                        'mod_id', mod_id,
+                        'local_download_id', local_download_id
+                    )
+                ) AS conflict_paks_json
+            FROM base
+            GROUP BY asset_path
+            HAVING mod_count > 1
         )
         SELECT
-            asset_path,
-            COUNT(DISTINCT provider_key) AS mod_count,
-            COUNT(DISTINCT pak_name) AS pak_count,
-            json_group_array(
-                DISTINCT json_object(
-                    'pak_name', pak_name,
-                    'source_zip', source_zip,
-                    'mod_id', mod_id,
-                    'local_download_id', local_download_id
-                )
-            ) AS conflict_paks_json
-        FROM base
-        GROUP BY asset_path
-        HAVING mod_count > 1;
+            agg.asset_path,
+            agg.mod_count,
+            agg.pak_count,
+            agg.conflict_paks_json,
+            ac.detected_at
+        FROM agg
+        LEFT JOIN asset_conflicts ac ON ac.asset_path = agg.asset_path;
         """
     )
     # Active conflicts view (join active paks) with JSON listing
@@ -766,22 +776,32 @@ def _init_views(conn: sqlite3.Connection) -> None:
             FROM pak_assets pa
             JOIN mod_paks mp ON mp.pak_name = pa.pak_name
             JOIN active_paks ap ON ap.pak_name = lower(pa.pak_name)
+        ),
+        agg AS (
+            SELECT
+                asset_path,
+                COUNT(DISTINCT provider_key) AS mod_count,
+                COUNT(DISTINCT pak_name) AS pak_count,
+                json_group_array(
+                    DISTINCT json_object(
+                        'pak_name', pak_name,
+                        'source_zip', source_zip,
+                        'mod_id', mod_id,
+                        'local_download_id', local_download_id
+                    )
+                ) AS conflict_paks_json
+            FROM base
+            GROUP BY asset_path
+            HAVING mod_count > 1
         )
         SELECT
-            asset_path,
-            COUNT(DISTINCT provider_key) AS mod_count,
-            COUNT(DISTINCT pak_name) AS pak_count,
-            json_group_array(
-                DISTINCT json_object(
-                    'pak_name', pak_name,
-                    'source_zip', source_zip,
-                    'mod_id', mod_id,
-                    'local_download_id', local_download_id
-                )
-            ) AS conflict_paks_json
-        FROM base
-        GROUP BY asset_path
-        HAVING mod_count > 1;
+            agg.asset_path,
+            agg.mod_count,
+            agg.pak_count,
+            agg.conflict_paks_json,
+            aca.detected_at
+        FROM agg
+        LEFT JOIN asset_conflicts_active aca ON aca.asset_path = agg.asset_path;
         """
     )
     # Local downloads with consolidated tags from pak_tags_json (NULL when none)
@@ -1160,10 +1180,21 @@ def fetch_pak_version_status(
         reference_version = entry.get("reference_version")
         entry["display_version"] = local_version
         entry["needs_update"] = bool(entry.get("needs_update"))
+        # If either version is unknown, we cannot reliably compare — don't flag an update.
+        if not local_version or not reference_version:
+            entry["needs_update"] = False
         if versions_equivalent(local_version, reference_version):
             entry["version_status"] = "match"
             entry["needs_update"] = False
             entry["display_version"] = reference_version or local_version
+        elif entry["needs_update"]:
+            # Only flag an update when the remote version is strictly greater.
+            # A version downgrade on Nexus should not trigger an update prompt.
+            local_key = make_version_key(local_version)[0]
+            remote_key = make_version_key(reference_version)[0]
+            if local_key and remote_key and local_key >= remote_key:
+                entry["needs_update"] = False
+                entry["version_status"] = "local_newer_or_equal"
         results.append(entry)
     return results
 
@@ -1796,6 +1827,16 @@ def rebuild_conflicts(conn: sqlite3.Connection, *, active_only: bool | None = No
             """
             active_join = "JOIN active_paks ap ON ap.pak_name = lower(pa.pak_name)"
 
+        # Snapshot existing detected_at timestamps so returning conflicts keep
+        # their original first-detected time after the rebuild.
+        prev_detected: dict[str, str] = {}
+        try:
+            for row in cur.execute(f"SELECT asset_path, detected_at FROM {conflicts_tbl} WHERE detected_at IS NOT NULL").fetchall():
+                prev_detected[row[0]] = row[1]
+        except Exception:
+            # Column may not exist yet (pre-migration); ignore.
+            pass
+
         cur.execute(f"DELETE FROM {conflicts_tbl};")
         cur.execute(f"DELETE FROM {participants_tbl};")
 
@@ -1826,10 +1867,19 @@ def rebuild_conflicts(conn: sqlite3.Connection, *, active_only: bool | None = No
                 GROUP BY asset_path
                 HAVING mod_count > 1
             )
-            INSERT INTO {conflicts_tbl}(asset_path, distinct_mods, distinct_paks, generated_at)
-            SELECT asset_path, mod_count, pak_count, datetime('now') FROM grouped;
+            INSERT INTO {conflicts_tbl}(asset_path, distinct_mods, distinct_paks, generated_at, detected_at)
+            SELECT asset_path, mod_count, pak_count, datetime('now'), datetime('now') FROM grouped;
         """
         cur.executescript(agg_sql)
+
+        # Restore previously-known detected_at for returning conflicts so they
+        # retain their original detection time instead of being reset to now.
+        if prev_detected:
+            for asset_path, detected_at in prev_detected.items():
+                cur.execute(
+                    f"UPDATE {conflicts_tbl} SET detected_at = ? WHERE asset_path = ?",
+                    (detected_at, asset_path),
+                )
 
         part_sql = f"""
             WITH {active_cte}

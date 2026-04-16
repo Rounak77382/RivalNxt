@@ -3,10 +3,66 @@ import { toast } from "sonner";
 import {
   listNxmHandoffs,
   getNxmHandoff,
+  getModDetails,
   type ApiNxmHandoffSummary,
   type ApiNxmDownloadProgress,
   ApiError,
 } from "./api";
+
+/**
+ * Extract a human-readable mod label from a handoff object.
+ *
+ * Resolution order:
+ * 1. `metadata.mod_info.name` (set by backend at registration or after ingest)
+ * 2. `getModDetails(mod_id)` API call (fetches from local DB / Nexus)
+ * 3. Fallback to `Mod #<id>` / "Nexus download"
+ */
+export async function getModLabel(
+  handoff: ApiNxmHandoffSummary,
+): Promise<string> {
+  // 1) Try metadata already attached to the handoff
+  const modInfo = handoff.metadata?.mod_info;
+  if (modInfo && typeof modInfo === "object") {
+    const name = (modInfo as Record<string, unknown>)["name"];
+    if (typeof name === "string" && name.trim()) {
+      return name.trim();
+    }
+  }
+
+  // 2) Try fetching from the backend mod details API
+  const modId = handoff.request?.mod_id;
+  if (modId != null) {
+    try {
+      const details = await getModDetails(modId);
+      const name = details?.mod?.name;
+      if (typeof name === "string" && name.trim()) {
+        return name.trim();
+      }
+    } catch {
+      // ignore – fall through to numeric fallback
+    }
+    return `Mod #${modId}`;
+  }
+  return "Nexus download";
+}
+
+/**
+ * Synchronous variant – uses only data already present in the handoff
+ * object (no network calls).  Useful when an async call is impractical.
+ */
+export function getModLabelSync(handoff: ApiNxmHandoffSummary): string {
+  const modInfo = handoff.metadata?.mod_info;
+  if (modInfo && typeof modInfo === "object") {
+    const name = (modInfo as Record<string, unknown>)["name"];
+    if (typeof name === "string" && name.trim()) {
+      return name.trim();
+    }
+  }
+  if (handoff.request?.mod_id != null) {
+    return `Mod #${handoff.request.mod_id}`;
+  }
+  return "Nexus download";
+}
 
 export type WaitForHandoffOptions = {
   timeoutMs?: number;

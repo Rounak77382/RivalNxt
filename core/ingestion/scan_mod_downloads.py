@@ -53,29 +53,31 @@ def list_files_level_one_including_root(root_dir: str) -> List[tuple[str, str]]:
         return results
     
     # Find all directories that directly contain .pak files (recursively)
-    pak_dirs: set[Path] = set()
+    # When pak files are nested (e.g. DownloadFolder/SubFolder/File.pak),
+    # use the TOP-LEVEL folder (first subdirectory under root) as the entry,
+    # not the inner subfolder. This ensures correct download naming.
+    seen_top_dirs: set[str] = set()
     try:
         # Find all .pak files recursively
         for pak_file in root_path.rglob("*.pak"):
             if pak_file.is_file():
-                # Add the directory that contains this .pak file
-                pak_dirs.add(pak_file.parent)
+                try:
+                    rel = pak_file.relative_to(root_path)
+                except ValueError:
+                    continue
+                if not rel.parts:
+                    continue
+                if len(rel.parts) == 1:
+                    # .pak files directly in root — handled by the file scan above
+                    pass
+                else:
+                    # Use the first-level subdirectory as the download folder
+                    top_dir = rel.parts[0]
+                    if top_dir not in seen_top_dirs:
+                        seen_top_dirs.add(top_dir)
+                        results.append((top_dir, ""))
     except Exception:
         pass
-    
-    # For each directory containing .pak files, add it to results
-    for pak_dir in pak_dirs:
-        try:
-            rel_path = pak_dir.relative_to(root_path)
-            if rel_path.parts:  # Not root itself
-                # Store as (folder_name, parent_path)
-                results.append((pak_dir.name, str(rel_path.parent) if rel_path.parent != Path('.') else ""))
-            else:
-                # .pak files directly in root
-                pass
-        except ValueError:
-            # Not relative to root, skip
-            pass
     
     # Also scan for archive files in subdirectories (original behavior for compatibility)
     try:
@@ -103,9 +105,13 @@ def _enumerate_archive_contents(full_path: Path) -> List[str]:
     Enumerate .pak files from archives (.zip, .rar, .7z) or folders.
     
     Supports:
-    - Archives: Lists .pak files inside the archive
-    - Folders: Lists .pak files directly in the folder
+    - Archives: Lists .pak files inside the archive (preserving relative paths)
+    - Folders: Lists .pak files in the folder (preserving relative paths from folder root)
     - Single .pak files: Returns the filename itself
+    
+    When files live in subfolders, the relative path is preserved using forward slashes
+    (e.g. "Physics Options/Lots of Jiggle/LobbyPhysics_P.pak") so that same-named
+    files in different subfolders remain distinct.
     """
     contents: List[str] = []
     lower_name = full_path.name.lower()
@@ -115,10 +121,11 @@ def _enumerate_archive_contents(full_path: Path) -> List[str]:
         try:
             seen: set[str] = set()
             for entry in list_entries(str(full_path)):
-                base = os.path.basename(entry)
-                if base.lower().endswith(".pak") and base not in seen:
-                    seen.add(base)
-                    contents.append(base)
+                # Normalize to forward slashes and preserve relative path
+                normalized = entry.replace("\\", "/")
+                if normalized.lower().endswith(".pak") and normalized not in seen:
+                    seen.add(normalized)
+                    contents.append(normalized)
         except Exception:
             contents = []
     
@@ -128,9 +135,14 @@ def _enumerate_archive_contents(full_path: Path) -> List[str]:
             seen: set[str] = set()
             # Recursively find all .pak files in the folder
             for pak_file in full_path.rglob("*.pak"):
-                if pak_file.is_file() and pak_file.name not in seen:
-                    seen.add(pak_file.name)
-                    contents.append(pak_file.name)
+                if pak_file.is_file():
+                    try:
+                        rel = str(pak_file.relative_to(full_path)).replace("\\", "/")
+                    except ValueError:
+                        rel = pak_file.name
+                    if rel not in seen:
+                        seen.add(rel)
+                        contents.append(rel)
         except Exception:
             contents = []
     
