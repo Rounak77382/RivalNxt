@@ -1,19 +1,23 @@
-## 🎉 Version 0.5.0 – What's New
+## 🎉 Version 0.5.6 – What's New
 
 ### ✨ New Features
 
-- Mark mods as favourites and sort by them
-- NSFW blur filter — toggle in the header to blur adult content images
-- Check for updates on individual mod cards
-- Drag & drop files to add mods
-- Click on mods in the conflict view to see full details
-- Clear button on the search bar
-- Sort options now in a dropdown menu with Name & Favourites added
+- 🪪 **Sign in with Nexus** — You can now sign in to your Nexus Mods account directly from Settings — no need to manually copy and paste an API key.
+- 🌟 **Favourites** — Star your favourite mods so you can find them instantly. Sort your list by favourites with one click.
+- 🔞 **NSFW Blur Filter** — A toggle in the header lets you blur adult-content mod images across the whole app.
+- 🔄 **Update Checker** — Each mod card now has a "Check for Update" button. It'll let you know if a newer version is available on Nexus Mods.
+- 📂 **Drag & Drop Install** — Just drag a mod archive (zip, rar, 7z) straight into the app to install it. No file browsing needed.
+- 🔍 **Conflict Details** — Click any mod in the conflict list to instantly see its full details without leaving the screen.
+- 🔎 **Smarter Search Bar** — Added a quick-clear button on the search bar. Sorting options are now in a tidy dropdown, with new options for Name and Favourites.
+
 
 ### 🐛 Bug Fixes
 
-- Mods that are already downloaded are now skipped instead of re-downloaded
-- Duplicate downloads now show an info message instead of an error
+- **No more duplicate downloads** — If a mod is already downloaded, it'll be skipped with a friendly notice instead of downloading again.
+- **Mod list now refreshes properly** — The installed mods list now updates correctly after you add or remove a custom image.
+- **Skin filter fix** — Skins with the same name across different characters (like "The Life Fantastic") now filter correctly.
+- **Cleaner filter sidebar** — Fixed a visual glitch with misaligned checkboxes in the sidebar filters.
+- **Nexus link fix** — Clicking "Mod Manager Download" on Nexus Mods now correctly opens RivalNxt on Windows.
 
 ### 📥 Installation
 
@@ -23,7 +27,7 @@
 2. Run the installer
 3. Launch RivalNxt from your Start Menu
 4. Configure in Settings:
-   - **Local downloads directory** → Select the folder where your Marvel Rivals mods are downloaded/saved (create anywhere or use existing folder)
+   - **Local downloads directory** → Select the folder `where your Marvel Rivals mods are downloaded/saved (create anywhere or use existing folder)
    - **Sign in with Nexus** → Click the sign-in button to connect your Nexus Mods account automatically
    - _Or_ **Nexus Personal API Key** → Paste your [API key](https://next.nexusmods.com/settings/api-keys) manually if you prefer
 

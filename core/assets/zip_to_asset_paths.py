@@ -92,22 +92,82 @@ __all__ = [
 
 EXTENSIONS_TO_PRINT = {".uasset", ".umap", ".bnk", ".json", ".wem", ".fbx", ".obj", ".glb", ".gltf", ".ini", ".wav", ".mp3", ".ogg", ".uplugin", ".usf"}
 
+
+def _pak_map_worker(folder: str, key: Optional[str], result_file: str) -> None:
+    """Run in a child process so Rust panics don't kill the parent.
+
+    Must be at module level so Windows multiprocessing (spawn) can pickle it.
+    """
+    import json as _json
+    try:
+        data = extract_pak_asset_map_from_folder_py(folder, key)
+        Path(result_file).write_text(
+            _json.dumps(data, ensure_ascii=False), encoding="utf-8"
+        )
+    except Exception as exc:
+        Path(result_file).write_text(
+            _json.dumps({"__error__": str(exc)}, ensure_ascii=False),
+            encoding="utf-8",
+        )
+
+
 def extract_pak_asset_map_from_folder(folder_path: str, repak_bin: Optional[str] = None, aes_key: Optional[str] = None) -> dict[str, List[str]]:
     """Return mapping of pak_name -> asset paths for content already extracted to a folder.
 
     This scans for classic .pak files and IoStore (.utoc + .ucas/.utac) files within the folder tree
     and enumerates contained assets, supporting both formats in a single pass.
-    
+
+    The Rust PyO3 library call is run in a subprocess so that if the Rust code
+    panics on a corrupt file, it only kills the child process and not the entire
+    backend.
+
     Args:
         folder_path: Path to the folder containing pak/utoc files
         repak_bin: Deprecated parameter, no longer used (PyO3 only)
         aes_key: Optional AES key for encrypted files
-    
+
     Returns:
         Dict mapping pak names to lists of asset paths
     """
-    # repak_bin parameter is ignored - PyO3 is mandatory
-    return extract_pak_asset_map_from_folder_py(folder_path, aes_key)
+    import multiprocessing
+    import json as _json
+
+    result_path = Path(tempfile.mktemp(prefix="pak_map_", suffix=".json"))
+    try:
+        proc = multiprocessing.Process(
+            target=_pak_map_worker, args=(folder_path, aes_key, str(result_path))
+        )
+        proc.start()
+        proc.join(timeout=180)  # 3 minute timeout
+
+        if proc.is_alive():
+            print(f"[extract_pak_asset_map] Worker timed out after 180s — killing")
+            proc.kill()
+            proc.join(5)
+            return {}
+
+        if proc.exitcode != 0:
+            print(f"[extract_pak_asset_map] Worker crashed with exit code {proc.exitcode} (likely Rust panic) — skipping")
+            return {}
+
+        if not result_path.exists():
+            print("[extract_pak_asset_map] Worker produced no output — skipping")
+            return {}
+
+        raw = _json.loads(result_path.read_text(encoding="utf-8"))
+        if isinstance(raw, dict) and "__error__" in raw:
+            print(f"[extract_pak_asset_map] Worker error: {raw['__error__']}")
+            return {}
+        return raw
+    except Exception as exc:
+        print(f"[extract_pak_asset_map] Failed to run worker: {exc}")
+        return {}
+    finally:
+        try:
+            if result_path.exists():
+                result_path.unlink()
+        except Exception:
+            pass
 
 def extract_uasset_paths_from_zip(zip_path: str, repak_bin: Optional[str] = None, aes_key: Optional[str] = None, keep_temp: bool = False) -> List[str]:
     """Extract asset paths from a ZIP file using PyO3 Rust library.

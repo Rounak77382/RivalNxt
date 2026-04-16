@@ -1,5 +1,5 @@
 from __future__ import annotations
-import argparse, json, sys
+import argparse, json, os, sys
 from pathlib import Path
 from datetime import datetime, timezone
 from typing import List, Optional
@@ -122,11 +122,29 @@ def main(argv: List[str] | None = None) -> int:
 
     for info in downloads:
         contents_list = info["contents"]
-        subset = [p for p in contents_list if p in remaining]
-        if subset:
-            for name in subset:
-                if name in remaining:
-                    remaining.remove(name)
+        # Build preference map: basename → previously active relative path
+        # This preserves which variant the user selected across rescans
+        prev_by_base: dict[str, str] = {}
+        for p in info["prev_active"]:
+            prev_by_base.setdefault(os.path.basename(p).lower(), p)
+
+        # Pick ONE variant per basename (deduplicate same-named files in different subfolders)
+        # Prefer the previously active variant path so the user's selection is preserved
+        seen_bases: set[str] = set()
+        subset: list[str] = []
+        for p in contents_list:
+            base = os.path.basename(p)
+            base_lower = base.lower()
+            if base_lower in seen_bases or base not in remaining:
+                continue
+            seen_bases.add(base_lower)
+            # Use previously active variant path if it exists in contents_list
+            preferred = prev_by_base.get(base_lower)
+            if preferred and preferred in contents_list:
+                subset.append(preferred)
+            else:
+                subset.append(p)
+            remaining.discard(base)
         prev_list = info["prev_active"]
         if prev_list != subset:
             update_local_download_active_paks(conn, info["id"], subset, now_iso=now_iso)

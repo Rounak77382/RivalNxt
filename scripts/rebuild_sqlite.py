@@ -296,10 +296,14 @@ def _run_ingest(
 		ingest_args.extend(["--downloads-root", str(downloads_root)])
 	if not args.no_extract:
 		ingest_args.append("--extract")
-	rc = ingest_download_assets.main(ingest_args)
-	if rc != 0:
-		raise RuntimeError(f"ingest_download_assets failed with exit code {rc}")
-	log.info("Ingested pak metadata successfully.")
+	try:
+		rc = ingest_download_assets.main(ingest_args)
+		if rc != 0:
+			log.warning("ingest_download_assets returned exit code %d — some downloads may not have been processed", rc)
+		else:
+			log.info("Ingested pak metadata successfully.")
+	except Exception as exc:
+		log.exception("ingest_download_assets crashed — continuing with remaining rebuild steps: %s", exc)
 
 
 def _run_tag_rebuild(db_path: Path, map_path: Optional[str], log_level: str, log: logging.Logger) -> None:

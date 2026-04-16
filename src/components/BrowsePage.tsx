@@ -37,58 +37,12 @@ export function BrowsePage({ mods, onInstall, onFavorite }: BrowsePageProps) {
   }
 
   // Sorting
-  const MISSING_TIME = Number.MIN_SAFE_INTEGER;
-  const toTimestamp = (value?: string | null) => {
-    if (!value) return MISSING_TIME;
-    const time = Date.parse(value);
-    return Number.isNaN(time) ? MISSING_TIME : time;
-  };
   const toNullableTimestamp = (value?: string | null): number | null => {
     if (!value) return null;
     const time = Date.parse(value);
     return Number.isNaN(time) ? null : time;
   };
-  const hasApiSource = (mod: Mod) => mod.backendModId != null;
-  const releaseSortKey = (mod: Mod) => {
-    const release = toTimestamp(mod.releaseDate);
-    const install = toTimestamp(mod.installDate);
-    const hasInstall = mod.hasInstallDate ?? install !== MISSING_TIME;
-    const hasUpdate = mod.hasUpdateTimestamp ?? Boolean(mod.lastUpdatedRaw);
-    const timestamp =
-      release !== MISSING_TIME ? release : hasInstall ? install : MISSING_TIME;
-    const hasData = hasApiSource(mod) && hasInstall && hasUpdate;
-    return { priority: hasData ? 1 : 0, timestamp };
-  };
-  const updatedSortKey = (mod: Mod) => {
-    const updated = toTimestamp(mod.lastUpdatedRaw);
-    const install = toTimestamp(mod.installDate);
-    const hasInstall = mod.hasInstallDate ?? install !== MISSING_TIME;
-    const hasUpdate = mod.hasUpdateTimestamp ?? updated !== MISSING_TIME;
-    const timestamp = hasUpdate ? updated : hasInstall ? install : MISSING_TIME;
-    const hasData = hasApiSource(mod) && hasUpdate && hasInstall;
-    return { priority: hasData ? 1 : 0, timestamp };
-  };
-  const compareSortKey = (
-    a: { priority: number; timestamp: number },
-    b: { priority: number; timestamp: number },
-  ) => {
-    if (b.priority !== a.priority) return b.priority - a.priority;
-    if (b.timestamp !== a.timestamp) return b.timestamp - a.timestamp;
-    return 0;
-  };
   const applyOrder = (val: number) => (sortOrder === "asc" ? -val : val);
-
-  const makeTimestampComparator = (getter: (m: Mod) => number | null) => {
-    return (a: Mod, b: Mod) => {
-      const ta = getter(a);
-      const tb = getter(b);
-      if (ta == null && tb == null) return 0;
-      if (ta == null) return 1;
-      if (tb == null) return -1;
-      if (ta === tb) return 0;
-      return sortOrder === "asc" ? ta - tb : tb - ta;
-    };
-  };
 
   switch (sortBy) {
     case "Popular":
@@ -97,8 +51,8 @@ export function BrowsePage({ mods, onInstall, onFavorite }: BrowsePageProps) {
         applyOrder((b.downloads || 0) - (a.downloads || 0)),
       );
       break;
-    case "Recent":
-      // Recent: sort by backendModId (numeric), then by installDate for missing ids
+    case "Uploaded":
+      // Uploaded: sort by backendModId (numeric), then by installDate for missing ids
       filteredMods.sort((a, b) => {
         const aId = a.backendModId;
         const bId = b.backendModId;
@@ -129,13 +83,38 @@ export function BrowsePage({ mods, onInstall, onFavorite }: BrowsePageProps) {
         return sortOrder === "asc" ? aDate - bDate : bDate - aDate;
       });
       break;
+    case "Recent":
+      // Recent: sort by install date
+      filteredMods.sort((a, b) => {
+        const aDate = toNullableTimestamp(a.installDate);
+        const bDate = toNullableTimestamp(b.installDate);
+        if (aDate == null && bDate == null) return 0;
+        if (aDate == null) return 1;
+        if (bDate == null) return -1;
+        return sortOrder === "asc" ? aDate - bDate : bDate - aDate;
+      });
+      break;
     case "Updated":
-      // Updated: sort by mods.updated_at (lastUpdatedRaw/lastUpdated), NULLs last
-      filteredMods.sort(
-        makeTimestampComparator((m) =>
-          toNullableTimestamp(m.lastUpdatedRaw ?? m.lastUpdated ?? null),
-        ),
-      );
+      // Updated: prioritize mods that have an update available, then sort by updated_at
+      filteredMods.sort((a, b) => {
+        const aUpdate = a.hasUpdate || a.isUpdating ? 1 : 0;
+        const bUpdate = b.hasUpdate || b.isUpdating ? 1 : 0;
+        if (aUpdate !== bUpdate) {
+          return bUpdate - aUpdate;
+        }
+
+        const ta = toNullableTimestamp(
+          a.lastUpdatedRaw ?? a.lastUpdated ?? null,
+        );
+        const tb = toNullableTimestamp(
+          b.lastUpdatedRaw ?? b.lastUpdated ?? null,
+        );
+        if (ta == null && tb == null) return 0;
+        if (ta == null) return 1;
+        if (tb == null) return -1;
+        if (ta === tb) return 0;
+        return sortOrder === "asc" ? ta - tb : tb - ta;
+      });
       break;
     case "Rating":
       filteredMods.sort((a, b) =>

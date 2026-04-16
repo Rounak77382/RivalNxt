@@ -240,6 +240,20 @@ def resolve_entry(lookup: Dict[str, str], desired: str) -> Optional[str]:
     return None
 
 
+def _cleanup_empty_parents(child: Path, stop: Path) -> None:
+    """Remove empty directories from child up to (but not including) stop."""
+    current = child
+    while current != stop and current.parent != current:
+        try:
+            if current.is_dir() and not any(current.iterdir()):
+                current.rmdir()
+            else:
+                break
+        except Exception:
+            break
+        current = current.parent
+
+
 def extract_member(archive_path: str, member_path: str, dest_path: str) -> None:
     """Extract a single member to dest_path. Works for zip, 7z, and rar using pure Python libs."""
     dstdir = Path(dest_path).parent
@@ -276,6 +290,8 @@ def extract_member(archive_path: str, member_path: str, dest_path: str) -> None:
             if not src_path.exists():
                 raise RuntimeError("extracted member not found in 7z")
             shutil.move(str(src_path), dest_path)
+            # Clean up empty intermediate directories created by archive extraction
+            _cleanup_empty_parents(src_path.parent, dstdir)
             return
     elif typ == "rar":
         with rarfile.RarFile(archive_path, "r") as rf:
@@ -292,6 +308,8 @@ def extract_member(archive_path: str, member_path: str, dest_path: str) -> None:
                 if not src_path.exists():
                     raise RuntimeError("extracted member not found in rar")
                 shutil.move(str(src_path), dest_path)
+                # Clean up empty intermediate directories created by archive extraction
+                _cleanup_empty_parents(src_path.parent, dstdir)
                 return
             except Exception as e:
                 # Reconfigure rarfile and retry
@@ -309,6 +327,8 @@ def extract_member(archive_path: str, member_path: str, dest_path: str) -> None:
                         if not src_path.exists():
                             raise RuntimeError("extracted member not found in rar after reconfiguration")
                         shutil.move(str(src_path), dest_path)
+                        # Clean up empty intermediate directories created by archive extraction
+                        _cleanup_empty_parents(src_path.parent, dstdir)
                         return
                 except Exception as e2:
                     raise RuntimeError(f"rar member extraction failed after reconfiguration: {e2}")

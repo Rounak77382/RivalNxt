@@ -9,7 +9,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "./ui/collapsible";
-import { Checkbox } from "./ui/checkbox";
+
 import {
   Users,
   Palette,
@@ -511,6 +511,7 @@ export function DownloadsSidebar({
     conflicting_mod_count: mc.conflicting_mod_count,
     total_paks: mc.total_paks,
     participants: mc.participants,
+    detected_at: mc.detected_at,
   }));
 
   const handleDonateClick = (platform: "kofi" | "upi") => {
@@ -614,7 +615,7 @@ export function DownloadsSidebar({
                           )}
                         </Button>
                       </CollapsibleTrigger>
-                      <CollapsibleContent className="space-y-2 mt-2">
+                      <CollapsibleContent className="space-y-1 mt-2">
                         {charactersForCategory.map((character) => {
                           const skins = Array.from(
                             characterHierarchy[character] || new Set(),
@@ -626,131 +627,93 @@ export function DownloadsSidebar({
                             const hasCharacter = tags.includes(character);
                             if (!hasCharacter) return false;
 
-                            // If we are in "all" category (though this block is skipped for 'all' above),
-                            // we would count everything. But for specific categories:
                             const modCategories = deriveCategoryTags(mod.tags);
                             return modCategories.includes(category.id);
                           }).length;
 
                           return (
-                            <div key={character} className="space-y-1">
-                              {/* Character checkbox with optional expand arrow */}
-                              <div className="flex items-center space-x-2">
-                                {/* Collapse/Expand arrow (only show if character has skins) */}
-                                {skins.length > 0 && (
-                                  <ChevronDown
-                                    className={`h-3 w-3 transition-transform cursor-pointer shrink-0 ${
-                                      expandedCharacters.has(character)
-                                        ? ""
-                                        : "-rotate-90"
-                                    }`}
-                                    onClick={() =>
-                                      toggleCharacterExpand(character)
-                                    }
-                                  />
-                                )}
-                                {/* Spacer if no skins to maintain alignment */}
-                                {skins.length === 0 && (
-                                  <div className="w-3 shrink-0" />
-                                )}
+                            <div key={character} className="flex flex-col mb-0.5 w-full">
+                              <Button
+                                variant={selectedCharacters.includes(character) ? "secondary" : "ghost"}
+                                className={`w-full justify-start h-8 px-2 transition-colors ${
+                                  selectedCharacters.includes(character) ? "font-medium text-foreground" : "font-normal text-muted-foreground hover:text-foreground"
+                                }`}
+                                onClick={() => {
+                                  const isCharacterSelected = selectedCharacters.includes(character);
 
-                                <Checkbox
-                                  id={`installed-character-${character}`}
-                                  checked={selectedCharacters.includes(
-                                    character,
-                                  )}
-                                  onCheckedChange={() => {
-                                    // Toggle character AND all its skins
-                                    const isCharacterSelected =
-                                      selectedCharacters.includes(character);
-
-                                    if (isCharacterSelected) {
-                                      // Deselect character and all skins
-                                      onCharacterToggle(character);
-                                      skins.forEach((skin) => {
-                                        if (selectedCharacters.includes(skin)) {
-                                          onCharacterToggle(skin);
-                                        }
-                                      });
-                                    } else {
-                                      // Select character and all skins
-                                      onCharacterToggle(character);
-                                      skins.forEach((skin) => {
-                                        if (
-                                          !selectedCharacters.includes(skin)
-                                        ) {
-                                          onCharacterToggle(skin);
-                                        }
-                                      });
-                                      // Auto-expand to show selected skins
-                                      if (!expandedCharacters.has(character)) {
-                                        toggleCharacterExpand(character);
+                                  if (isCharacterSelected) {
+                                    // Deselect character and all skins
+                                    onCharacterToggle(character);
+                                    skins.forEach((skin) => {
+                                      if (selectedCharacters.includes(skin)) {
+                                        onCharacterToggle(skin);
                                       }
-                                    }
-                                  }}
-                                />
-                                <label
-                                  htmlFor={`installed-character-${character}`}
-                                  className="text-sm cursor-pointer flex-1 leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                >
-                                  {character}
-                                  {modCount > 0 && (
-                                    <span className="ml-1 text-muted-foreground text-sm">
-                                      ({modCount})
-                                    </span>
-                                  )}
-                                </label>
-                              </div>
+                                    });
+                                  } else {
+                                    // Select character ONLY - do NOT auto-select all skins
+                                    onCharacterToggle(character);
+                                  }
+                                }}
+                              >
+                                <span className="truncate flex-1 text-left text-sm">{character}</span>
+                                {modCount > 0 && (
+                                  <Badge variant="secondary" className="shrink-0 text-xs">
+                                    {modCount}
+                                  </Badge>
+                                )}
+                              </Button>
 
-                              {/* Skin sub-items - only show if expanded */}
-                              {skins.length > 0 &&
-                                expandedCharacters.has(character) && (
-                                  <div className="ml-6 space-y-1">
+                              {/* Skin sub-items as a Collapsible */}
+                              {skins.length > 0 && selectedCharacters.includes(character) && (
+                                <Collapsible 
+                                  open={expandedCharacters.has(character)}
+                                  onOpenChange={() => toggleCharacterExpand(character)}
+                                  className="mt-1 ml-6 mb-1"
+                                >
+                                  <CollapsibleTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      className="w-full justify-start gap-2 h-7 text-xs text-muted-foreground"
+                                    >
+                                      <ChevronDown 
+                                        className={`w-3 h-3 transition-transform ${
+                                          expandedCharacters.has(character) ? "" : "-rotate-90"
+                                        }`} 
+                                      />
+                                      Filter by Skins
+                                    </Button>
+                                  </CollapsibleTrigger>
+                                  
+                                  <CollapsibleContent className="space-y-1 mt-1 border-l border-border/30 pl-1.5 ml-1 flex flex-col">
                                     {skins.map((skin) => {
-                                      // Check if THIS specific character-skin pair is selected
-                                      const isSkinSelected =
-                                        selectedCharacters.includes(
-                                          character,
-                                        ) && selectedCharacters.includes(skin);
+                                      const isSkinSelected = selectedCharacters.includes(character) && selectedCharacters.includes(skin);
 
                                       return (
-                                        <div
+                                        <Button
                                           key={`${character}-${skin}`}
-                                          className="flex items-center space-x-2"
-                                        >
-                                          <Checkbox
-                                            id={`installed-skin-${character}-${skin}`}
-                                            checked={isSkinSelected}
-                                            onCheckedChange={() => {
-                                              // Only toggle the skin itself
-                                              if (isSkinSelected) {
-                                                // Just remove this skin
-                                                onCharacterToggle(skin);
-                                              } else {
-                                                // Add character if not already selected
-                                                if (
-                                                  !selectedCharacters.includes(
-                                                    character,
-                                                  )
-                                                ) {
-                                                  onCharacterToggle(character);
-                                                }
-                                                // Add the skin
-                                                onCharacterToggle(skin);
+                                          variant={isSkinSelected ? "secondary" : "ghost"}
+                                          style={{ marginLeft: '4px' }}
+                                          className={`w-full justify-start h-7 px-2 text-xs transition-colors ${
+                                            isSkinSelected ? "font-medium text-foreground" : "font-normal text-muted-foreground hover:text-foreground"
+                                          }`}
+                                          onClick={() => {
+                                            if (isSkinSelected) {
+                                              onCharacterToggle(skin);
+                                            } else {
+                                              if (!selectedCharacters.includes(character)) {
+                                                onCharacterToggle(character);
                                               }
-                                            }}
-                                          />
-                                          <label
-                                            htmlFor={`installed-skin-${character}-${skin}`}
-                                            className="text-sm cursor-pointer flex-1 leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-muted-foreground"
-                                          >
-                                            {skin}
-                                          </label>
-                                        </div>
+                                              onCharacterToggle(skin);
+                                            }
+                                          }}
+                                        >
+                                          <span className="truncate">{skin}</span>
+                                        </Button>
                                       );
                                     })}
-                                  </div>
-                                )}
+                                  </CollapsibleContent>
+                                </Collapsible>
+                              )}
                             </div>
                           );
                         })}
@@ -758,7 +721,7 @@ export function DownloadsSidebar({
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="w-full text-xs"
+                            className="w-full text-xs mt-2"
                             onClick={() => {
                               selectedCharacters.forEach((char) =>
                                 onCharacterToggle(char),

@@ -5,7 +5,7 @@ import {
   ingestNxmHandoff,
   type ApiNxmHandoffSummary,
 } from "../lib/api";
-import { createNxmProgressController } from "../lib/nxmHelpers";
+import { createNxmProgressController, getModLabel } from "../lib/nxmHelpers";
 import { createToastDeduplicator, calculateBackoff } from "../lib/toastHelpers";
 
 interface NxmBackgroundListenerProps {
@@ -136,10 +136,7 @@ export function NxmBackgroundListener({
     };
 
     const processHandoff = async (handoff: ApiNxmHandoffSummary) => {
-      const modLabel =
-        handoff.request?.mod_id != null
-          ? `Mod #${handoff.request.mod_id}`
-          : "Nexus download";
+      const modLabel = await getModLabel(handoff);
 
       const controller = createNxmProgressController(handoff.id, {
         label: `Auto-downloading ${modLabel}`,
