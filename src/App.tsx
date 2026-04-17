@@ -1619,20 +1619,9 @@ export default function App() {
     const latestVersionKey = d.latest_version_key ?? null;
     const latestVersion =
       d.latest_version || installedVersion || d.version || "";
-    let hasUpdateFromBackend = Boolean(d.needs_update);
-    let hasUpdateFromKeys =
-      latestVersionKey != null && localVersionKey != null
-        ? latestVersionKey > localVersionKey
-        : latestVersion !== installedVersion && latestVersion !== "";
-
-    // The update button will only appear when a new version of the exact same mod variant appears
-    const isSameName = !d.latest_file_name || d.name === d.latest_file_name;
-    if (!isSameName) {
-      hasUpdateFromBackend = false;
-      hasUpdateFromKeys = false;
-    }
-
-    const hasUpdate = hasUpdateFromBackend || hasUpdateFromKeys;
+    // Exclusively rely on needs_update aggregated carefully from groupDownloadsByMod.
+    // Since that function accurately calculates the update per-variant, we avoid Mod-wide keys circumvention here.
+    const hasUpdate = Boolean(d.needs_update);
     const isActive = d.active_paks && d.active_paks.length > 0;
     const releaseDate = d.mod_created_time || null;
     const rawUpdatedAt = d.latest_uploaded_at || d.mod_updated_at || null;
@@ -1766,6 +1755,11 @@ export default function App() {
     const byMod = new Map<number, ApiDownload>();
     const byName = new Map<string, ApiDownload>();
 
+    const isFuzzyMatch = (a: string | null | undefined, b: string | null | undefined) => {
+      if (!a || !b) return false;
+      return a.replace(/[^a-zA-Z0-9]/g, "").toLowerCase() === b.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+    };
+
     const mergeMetadata = (target: ApiDownload, incoming: ApiDownload) => {
       if (!target.latest_version && incoming.latest_version)
         target.latest_version = incoming.latest_version;
@@ -1804,23 +1798,15 @@ export default function App() {
       }
 
       let incomingNeedsUpdate = Boolean(incoming.needs_update);
-      if (incoming.latest_file_name && target.name && incoming.latest_file_name !== target.name) {
+      if (incoming.latest_file_name && incoming.name && !isFuzzyMatch(incoming.latest_file_name, incoming.name)) {
         incomingNeedsUpdate = false;
       }
       target.needs_update = Boolean(target.needs_update || incomingNeedsUpdate);
 
-      const latestKey = target.latest_version_key;
-      const localKey = target.local_version_key;
-      let calculatedUpdate = false;
-      if (latestKey && localKey) {
-        calculatedUpdate = latestKey > localKey;
-      } else if (target.latest_version && target.version) {
-        calculatedUpdate = target.latest_version !== target.version;
+      // Simple override if grouped version has reached API version locally
+      if (target.local_version_key && target.latest_version_key && target.local_version_key >= target.latest_version_key) {
+        target.needs_update = false;
       }
-      if (target.latest_file_name && target.name && target.latest_file_name !== target.name) {
-        calculatedUpdate = false;
-      }
-      target.needs_update = target.needs_update || calculatedUpdate;
     };
 
     for (const d of deduplicated) {
@@ -1845,6 +1831,10 @@ export default function App() {
         }
         const prev = byName.get(key);
         if (!prev) {
+          let initialNeedsUpdate = Boolean(d.needs_update);
+          if (d.latest_file_name && d.name && !isFuzzyMatch(d.latest_file_name, d.name)) {
+            initialNeedsUpdate = false;
+          }
           byName.set(key, {
             ...d,
             contents: [...(d.contents || [])],
@@ -1857,7 +1847,7 @@ export default function App() {
             latest_uploaded_at: d.latest_uploaded_at ?? null,
             latest_file_id: d.latest_file_id ?? null,
             latest_file_name: d.latest_file_name ?? null,
-            needs_update: Boolean(d.needs_update),
+            needs_update: initialNeedsUpdate,
           });
           continue;
         }
@@ -1905,6 +1895,10 @@ export default function App() {
       }
       const prev = byMod.get(d.mod_id);
       if (!prev) {
+        let initialNeedsUpdate = Boolean(d.needs_update);
+        if (d.latest_file_name && d.name && !isFuzzyMatch(d.latest_file_name, d.name)) {
+          initialNeedsUpdate = false;
+        }
         byMod.set(d.mod_id, {
           ...d,
           contents: [...(d.contents || [])],
@@ -1917,7 +1911,7 @@ export default function App() {
           latest_uploaded_at: d.latest_uploaded_at ?? null,
           latest_file_id: d.latest_file_id ?? null,
           latest_file_name: d.latest_file_name ?? null,
-          needs_update: Boolean(d.needs_update),
+          needs_update: initialNeedsUpdate,
         });
         continue;
       }
@@ -1959,6 +1953,7 @@ export default function App() {
         merged.endorsement_count = d.endorsement_count;
       mergeMetadata(merged, d);
     }
+
     byMod.forEach((v) => out.push(v));
     byName.forEach((v) => out.push(v));
     return out;
