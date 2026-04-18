@@ -655,7 +655,7 @@ export function DownloadsSidebar({
                                   }
                                 }}
                               >
-                                <span className="truncate flex-1 text-left text-sm">{character}</span>
+                                <span className="truncate flex-1 text-left text-sm font-semibold">{character}</span>
                                 {modCount > 0 && (
                                   <Badge variant="secondary" className="shrink-0 text-xs">
                                     {modCount}

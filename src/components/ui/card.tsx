@@ -15,7 +15,6 @@ function Card({
     <div
       data-slot="card"
       className={cn(
-        // Make this a container for container queries
         "bg-card text-card-foreground flex flex-col gap-4 rounded-xl border overflow-hidden",
         "card-container",
         className

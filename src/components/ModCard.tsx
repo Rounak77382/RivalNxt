@@ -136,7 +136,7 @@ function ModCardInner({
 
   if (viewMode === "list") {
     return (
-      <div className="hover:bg-muted/50 transition-colors border-b border-border/20 last:border-b-0 py-1">
+      <div className="card-list-item border-b border-border/20 last:border-b-0 py-1">
         <div className="p-2">
           <div className="flex gap-3">
             <div className="p-1">
@@ -203,7 +203,7 @@ function ModCardInner({
   }
 
   return (
-    <Card className="hover:shadow-lg transition-all duration-200 group">
+    <Card className="group">
       <CardContent className="p-0">
         <div className="aspect-video bg-muted relative overflow-hidden rounded-t-lg">
           <img

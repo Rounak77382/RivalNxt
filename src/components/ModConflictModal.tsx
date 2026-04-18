@@ -204,7 +204,7 @@ export function ModConflictModal({
                   {/* Stylish header for asset path (icon removed for less redundancy) */}
                   <div className="flex items-center gap-1 px-5 pt-5 pb-3 pr-2 rounded-t-xl bg-gradient-to-r from-primary/10 to-accent/10 border-b border-border/60">
                     <span
-                      className="font-mono text-xl font-bold text-primary break-all truncate px-3 py-1"
+                      className="font-mono text-md font-semibold text-primary break-all truncate px-3 py-1"
                       style={{ lineHeight: "1.5" }}
                       title={asset.asset_path}
                     >
@@ -285,7 +285,7 @@ export function ModConflictModal({
                             <div
                               key={`${m.mod_id}-${m.pak_file}`}
                               onClick={() => handleModClick(m)}
-                              className={`bg-card border border-border/70 rounded-lg p-6 grid place-items-center gap-2 text-center shadow-sm transition-all duration-200 ${
+                              className={`bg-card border border-border/70 rounded-lg p-4 flex flex-col items-center gap-3 text-center shadow-sm transition-all duration-200 ${
                                 m.is_current ? "ring-2 ring-primary/30" : ""
                               } ${
                                 m.mod_id != null
@@ -293,10 +293,10 @@ export function ModConflictModal({
                                   : "cursor-default"
                               }`}
                               style={{
-                                width: "230px",
+                                height: "auto", // Card height can vary slightly with text, but images are locked,
+                                width: "fit-content",
+                                maxWidth: "400px",
                                 flex: "0 0 auto",
-                                minWidth: "230px",
-                                maxWidth: "230px",
                               }}
                               title={
                                 m.mod_id != null
@@ -304,40 +304,40 @@ export function ModConflictModal({
                                   : undefined
                               }
                             >
-                              <div className="h-32 max-w-full min-w-0 rounded-xl overflow-hidden bg-muted-foreground/10 grid place-items-center border border-muted-foreground/10">
-                                <div
+                              <div
+                                className="rounded-xl overflow-hidden bg-muted-foreground/10 flex items-center justify-center border border-muted-foreground/10"
+                                style={{
+                                  height: "100px",
+                                  width: "fit-content", // Allow container to shrink to image width
+                                  minHeight: "100px",
+                                  maxHeight: "100px",
+                                }}
+                              >
+                                <img
+                                  src={resolvedIcon}
+                                  alt={displayName}
+                                  className="object-contain"
                                   style={{
-                                    height: "8rem",
-                                    minHeight: "8rem",
-                                    maxHeight: "8rem",
+                                    height: "100%",
+                                    width: "auto", // Drive the container width
+                                    maxWidth: "100%",
                                   }}
-                                  className="flex items-center justify-center w-full h-32"
-                                >
-                                  <img
-                                    src={resolvedIcon}
-                                    alt={displayName}
-                                    className="h-32 min-h-32 max-h-32 w-auto object-contain"
-                                    style={{
-                                      height: "8rem",
-                                      minHeight: "8rem",
-                                      maxHeight: "8rem",
-                                    }}
-                                    onError={(e) => {
-                                      if (
-                                        e.currentTarget.src !==
-                                        FALLBACK_ICON_URL
-                                      ) {
-                                        e.currentTarget.src = FALLBACK_ICON_URL;
-                                      }
-                                    }}
-                                  />
-                                </div>
+                                  onError={(e) => {
+                                    if (
+                                      e.currentTarget.src !== FALLBACK_ICON_URL
+                                    ) {
+                                      e.currentTarget.src = FALLBACK_ICON_URL;
+                                    }
+                                  }}
+                                />
                               </div>
                               <div
-                                className="mt-2 text-base truncate w-full text-foreground"
+                                className="mt-1 text-sm truncate w-full text-foreground"
                                 title={displayName}
                               >
-                                {displayName}
+                                {displayName.length > 25
+                                  ? `${displayName.slice(0, 25)}...`
+                                  : displayName}
                               </div>
                             </div>
                           );

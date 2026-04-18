@@ -140,7 +140,7 @@ export function InstalledModCard({
   if (viewMode === "list") {
     return (
       <>
-        <div className="hover:bg-muted/50 transition-colors border-b border-border/20 last:border-b-0 py-1">
+        <div className="card-list-item border-b border-border/20 last:border-b-0 py-1">
           <div className="p-2">
             <div className="flex gap-3 flex-wrap sm:flex-nowrap">
               <div className="p-1">
@@ -273,7 +273,7 @@ export function InstalledModCard({
 
   return (
     <>
-      <Card className="hover:shadow-lg dark:hover:shadow-white transition-all duration-200 group relative">
+      <Card className="group relative">
         <CardContent className="p-0 min-h-[370px] flex flex-col flex-1">
           <div
             className="aspect-video bg-muted relative overflow-hidden rounded-t-lg cursor-pointer"
@@ -331,7 +331,7 @@ export function InstalledModCard({
           </div>
 
           <div
-            className="flex flex-col flex-1 h-full"
+            className="flex flex-col flex-1 h-full "
             style={{ padding: "10px 6px 16px 6px" }}
           >
             <div className="flex-1 flex flex-col justify-between h-full">

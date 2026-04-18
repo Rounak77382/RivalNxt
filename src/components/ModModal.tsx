@@ -196,7 +196,7 @@ function FileTreeRenderer({
           return (
             <div
               key={`${entryId}-${node.group.primary}`}
-              className={`border border-border rounded-lg transition-colors ${
+              className={`mod-file-item rounded-lg ${
                 checked ? "bg-green-100 dark:bg-green-900/60" : "bg-popover"
               }`}
               style={{ marginLeft: depth * 16, padding: "6px" }}
@@ -1788,7 +1788,7 @@ export function ModModal({
                                           return (
                                             <div
                                               key={`${entry.id}-${primary}`}
-                                              className={`border border-border rounded-lg transition-colors ${
+                                              className={`mod-file-item border border-border rounded-lg ${
                                                 checked
                                                   ? "bg-green-100 dark:bg-green-900/60"
                                                   : "bg-popover"
@@ -1871,7 +1871,7 @@ export function ModModal({
                         {pakAssets.map((pakAsset) => (
                           <div
                             key={pakAsset.pak_name}
-                            className="border border-border rounded-xl p-4 space-y-3 bg-background"
+                            className="mod-file-item border border-border rounded-xl p-4 space-y-3 bg-background"
                           >
                             <h4 className="font-semibold text-base">
                               {pakAsset.pak_name}
