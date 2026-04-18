@@ -1,8 +1,10 @@
-import { useState, type SyntheticEvent } from "react";
+import React, { useState, type SyntheticEvent } from "react";
 import { Card, CardContent } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Skeleton } from "./ui/skeleton";
+import { LazyLoad } from "./LazyLoad";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,7 +38,7 @@ interface InstalledModCardProps {
   onFavorite: (modId: string) => void;
 }
 
-export function InstalledModCard({
+function InstalledModCardInner({
   mod,
   viewMode,
   onUninstall,
@@ -140,7 +142,26 @@ export function InstalledModCard({
   if (viewMode === "list") {
     return (
       <>
-        <div className="card-list-item border-b border-border/20 last:border-b-0 py-1">
+        <LazyLoad
+          placeholder={
+            <div className="card-list-item border-b border-border/20 last:border-b-0 py-1">
+              <div className="p-2">
+                <div className="flex gap-3 items-center">
+                  <Skeleton className="w-8 h-8 rounded-lg shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-1/3" />
+                  </div>
+                  <div className="flex gap-2">
+                    <Skeleton className="h-8 w-12 rounded-md" />
+                    <Skeleton className="h-8 w-12 rounded-md" />
+                    <Skeleton className="h-8 w-20 rounded-md" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+          className="card-list-item border-b border-border/20 last:border-b-0 py-1"
+        >
           <div className="p-2">
             <div className="flex gap-3 flex-wrap sm:flex-nowrap">
               <div className="p-1">
@@ -162,6 +183,7 @@ export function InstalledModCard({
                     alt={mod.name}
                     className="w-full h-full object-cover"
                     style={shouldBlur ? { filter: "blur(4px)" } : undefined}
+                    loading="lazy"
                   />
                   {(mod.hasUpdate || mod.isUpdating) && (
                     <div className="absolute -top-1 -right-1 w-4 h-4 bg-destructive rounded-full flex items-center justify-center">
@@ -265,7 +287,7 @@ export function InstalledModCard({
               </div>
             </div>
           </div>
-        </div>
+        </LazyLoad>
         {confirmDialog}
       </>
     );
@@ -273,27 +295,50 @@ export function InstalledModCard({
 
   return (
     <>
-      <Card className="group relative">
-        <CardContent className="p-0 min-h-[370px] flex flex-col flex-1">
-          <div
-            className="aspect-video bg-muted relative overflow-hidden rounded-t-lg cursor-pointer"
-            role="button"
-            tabIndex={0}
-            aria-label={`Open ${mod.name} details`}
-            onClick={() => onView(mod)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                onView(mod);
-              }
-            }}
-          >
-            <img
-              src={mod.images[0]}
-              alt={mod.name}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-              style={shouldBlur ? { filter: "blur(20px)" } : undefined}
-            />
+      <Card className="group relative overflow-hidden">
+        <LazyLoad
+          placeholder={
+            <div className="flex flex-col min-h-[370px]">
+              <Skeleton className="aspect-video w-full rounded-b-none" />
+              <div className="p-4 space-y-4">
+                <div className="space-y-2">
+                  <Skeleton className="h-5 w-3/4" />
+                  <Skeleton className="h-3 w-1/3" />
+                </div>
+                <div className="flex gap-2">
+                  <Skeleton className="h-6 w-6 rounded-full" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+                <div className="flex gap-2 mt-auto">
+                  <Skeleton className="h-9 w-10" />
+                  <Skeleton className="h-9 flex-1" />
+                  <Skeleton className="h-9 w-10" />
+                </div>
+              </div>
+            </div>
+          }
+        >
+          <CardContent className="p-0 min-h-[370px] flex flex-col flex-1">
+            <div
+              className="aspect-video bg-muted relative overflow-hidden rounded-t-lg cursor-pointer"
+              role="button"
+              tabIndex={0}
+              aria-label={`Open ${mod.name} details`}
+              onClick={() => onView(mod)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  onView(mod);
+                }
+              }}
+            >
+              <img
+                src={mod.images[0]}
+                alt={mod.name}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                style={shouldBlur ? { filter: "blur(20px)" } : undefined}
+                loading="lazy"
+              />
             {shouldBlur && (
               <div className="absolute top-2 right-2 flex items-center justify-center pointer-events-none z-10">
                 <img src="/icons/18-plus.svg" alt="18+" className="w-8 h-8" />
@@ -547,8 +592,40 @@ export function InstalledModCard({
             </div>
           </div>
         </CardContent>
+        </LazyLoad>
       </Card>
       {confirmDialog}
     </>
   );
 }
+
+// Custom memo comparison for performance
+function installedModPropsAreEqual(
+  prev: InstalledModCardProps,
+  next: InstalledModCardProps,
+) {
+  const a = prev.mod;
+  const b = next.mod;
+  if (a.id !== b.id) return false;
+  const keys: (keyof Mod)[] = [
+    "isInstalled",
+    "isFavorited",
+    "hasUpdate",
+    "isUpdating",
+    "isActive",
+    "name",
+    "latestVersion",
+    "updateError",
+  ];
+  for (const k of keys) {
+    // @ts-ignore
+    if (a[k] !== b[k]) return false;
+  }
+  if (prev.viewMode !== next.viewMode) return false;
+  return true;
+}
+
+export const InstalledModCard = React.memo(
+  InstalledModCardInner,
+  installedModPropsAreEqual,
+);

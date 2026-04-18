@@ -7,6 +7,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Download, Star, Eye, Heart } from "lucide-react";
 import TagList from "./TagList";
 import { useNsfwFilter } from "./NSFWFilterProvider";
+import { LazyLoad } from "./LazyLoad";
+import { Skeleton } from "./ui/skeleton";
 
 export interface Mod {
   id: string;
@@ -136,7 +138,26 @@ function ModCardInner({
 
   if (viewMode === "list") {
     return (
-      <div className="card-list-item border-b border-border/20 last:border-b-0 py-1">
+      <LazyLoad
+        placeholder={
+          <div className="card-list-item border-b border-border/20 last:border-b-0 py-1">
+            <div className="p-2">
+              <div className="flex gap-3 items-center">
+                <Skeleton className="w-8 h-8 rounded-lg shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-1/3" />
+                  <Skeleton className="h-3 w-1/4" />
+                </div>
+                <div className="flex gap-2">
+                  <Skeleton className="h-8 w-16 rounded-md" />
+                  <Skeleton className="h-8 w-20 rounded-md" />
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+        className="card-list-item border-b border-border/20 last:border-b-0 py-1"
+      >
         <div className="p-2">
           <div className="flex gap-3">
             <div className="p-1">
@@ -146,6 +167,7 @@ function ModCardInner({
                   alt={mod.name}
                   className="w-full h-full object-cover"
                   style={shouldBlur ? { filter: "blur(4px)" } : undefined}
+                  loading="lazy"
                 />
                 {shouldBlur && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black/30">
@@ -198,20 +220,40 @@ function ModCardInner({
             </div>
           </div>
         </div>
-      </div>
+      </LazyLoad>
     );
   }
 
   return (
-    <Card className="group">
-      <CardContent className="p-0">
-        <div className="aspect-video bg-muted relative overflow-hidden rounded-t-lg">
-          <img
-            src={mod.images[0]}
-            alt={mod.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-            style={shouldBlur ? { filter: "blur(20px)" } : undefined}
-          />
+    <Card className="group overflow-hidden">
+      <LazyLoad
+        placeholder={
+          <div className="flex flex-col h-full min-h-[400px]">
+            <Skeleton className="aspect-video w-full rounded-b-none" />
+            <div className="p-4 space-y-3">
+              <Skeleton className="h-6 w-3/4" />
+              <div className="space-y-1">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-5/6" />
+              </div>
+              <div className="flex gap-2">
+                <Skeleton className="h-4 w-12" />
+                <Skeleton className="h-4 w-12" />
+              </div>
+              <Skeleton className="h-9 w-full mt-auto" />
+            </div>
+          </div>
+        }
+      >
+        <CardContent className="p-0">
+          <div className="aspect-video bg-muted relative overflow-hidden rounded-t-lg">
+            <img
+              src={mod.images[0]}
+              alt={mod.name}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+              style={shouldBlur ? { filter: "blur(20px)" } : undefined}
+              loading="lazy"
+            />
           {shouldBlur && (
             <div className="absolute top-2 right-2 pointer-events-none z-10">
               <span
@@ -338,6 +380,7 @@ function ModCardInner({
           </Button>
         </div>
       </CardContent>
+      </LazyLoad>
     </Card>
   );
 }
