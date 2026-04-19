@@ -2,29 +2,36 @@
 
 ### ✨ New Features
 
-- 🪪 **Sign in with Nexus** — You can now sign in to your Nexus Mods account directly from Settings — no need to manually copy and paste an API key.
-- 🌟 **Favourites** — Star your favourite mods so you can find them instantly. Sort your list by favourites with one click.
-- 🔞 **NSFW Blur Filter** — A toggle in the header lets you blur adult-content mod images across the whole app.
-- 🔄 **Update Checker** — Each mod card now has a "Check for Update" button. It'll let you know if a newer version is available on Nexus Mods.
-- 📂 **Drag & Drop Install** — Just drag a mod archive (zip, rar, 7z) straight into the app to install it. No file browsing needed.
-- 🔍 **Conflict Details** — Click any mod in the conflict list to instantly see its full details without leaving the screen.
-- 🔎 **Smarter Search & Sorting** — Added a quick-clear button on the search bar. Sorting options are now in a tidy dropdown, with options for Name, Favourites, and a newly added **Uploaded** sort option.
-- 🚀 **Game Update Auto-detection** — Automatically detects Marvel Rivals updates on startup, rebuilding character/skin data if game files have changed.
-- 📁 **Mod Variants & File Tree** — Added a hierarchical file tree UI to easily select and toggle specific `.pak` files for mods with complex nested subfolder variants.
-- ⏱️ **Better Conflict Sorting** — Mod conflicts are now properly sorted by when they were first detected (newest first). Additionally, mod cards inside each conflict are sorted by install/update date.
-- 🏷️ **NXM Download Details** — Nexus Mod download notifications now cleanly show the actual mod name instead of a numeric ID.
-- 🗂️ **UI Components Revamp** — Skin filters in the sidebar have been refactored into clean, collapsible button groups.
+- 🎮 **Quick Launch Button** — Start Marvel Rivals directly from the app's top menu with a single click.
+- 🔌 **Dynamic Backend Ports** — The local Python backend now automatically binds to dynamic, available ports instead of being hardcoded to port 8000. This completely eliminates "address already in use" errors and connectivity issues.
+- ⚡ **Lazy Loaded Interface** — Drastically improved application performance. Mod cards now utilize an Intersection Observer to seamlessly lazy-load content, guaranteeing buttery-smooth scrolling even when you have hundreds of mods installed.
+- ✨ **Better UI Visuals** — Mod cards now have slick interactive hover effects when you move your mouse over them.
+- 🪪 **Sign in with Nexus** — Connect your Nexus Mods account directly from Settings — no need to copy and paste confusing API keys anymore.
+- 🌟 **Favourites** — Star your favourite mods so you can find them instantly.
+- 🔞 **NSFW Blur Filter** — A toggle in the top menu lets you blur adult-content mod images across the entire app.
+- 🔄 **Update Checker** — Each mod now features a "Check for Update" button that tells you if a newer version is available.
+- 📂 **Drag & Drop Install** — Just drag a downloaded mod (zip, rar, 7z) directly into the app to install it!
+- 🔍 **Conflict Details** — Click any mod in the warnings list to immediately see its full details.
+- 🔎 **Smarter Search & Sorting** — Clear your searches quickly, and sort your list by Name, Favourites, or the newly added **Uploaded Date**.
+- 🚀 **Game Update Detection** — Automatically detects when Marvel Rivals updates and ensures your mods are still ready to go.
+- 📁 **Advanced Mod Options** — Easily pick and choose specific parts of a mod (like colored variants) using a clean, new folder view.
+- ⏱️ **Better Conflict Sorting** — Mod conflicts are now displayed with the newest issues first, making them easier to manage.
+- 🏷️ **Clear Alerts** — Download notifications now show the actual, readable name of the mod instead of a confusing string of numbers.
+- 🗂️ **Cleaner Menus** — The character skin filters in the sidebar have been redesigned into neat, space-saving buttons.
 
 ### 🐛 Bug Fixes & Under the Hood
 
-- **Nested Pak Activation Fix** — Fixed a bug where mods inside nested subfolders wouldn't activate correctly gracefully utilizing smarter fallback path strategies.
-- **Empty Folder Cleanup** — Automatically cleans up leftover empty subdirectories after deactivating mods.
-- **False-Positive Updates** — Fixed false-positive update badges; the "Update" badge now only appears when the latest release matches the downloaded mod variant.
-- **No more duplicate downloads** — If a mod is already downloaded, it'll be skipped with a friendly notice instead of downloading again.
-- **Mod list now refreshes properly** — The installed mods list now updates correctly after you add or remove a custom image.
-- **Skin filter fix** — Skins with the same name across different characters (like "The Life Fantastic") now filter correctly.
-- **Cleaner filter sidebar** — Fixed a visual glitch with misaligned checkboxes in the sidebar filters.
-- **Nexus link fix** — Clicking "Mod Manager Download" on Nexus Mods now correctly opens RivalNxt on Windows.
+- **Mod Toggle Fix** — Fixed bugs where complex mods wouldn't turn on properly, or where turning on one mod might accidentally affect another.
+- **Accurate Update Badges** — The app no longer mistakenly tells you a mod has an update when you already have the right file.
+- **Antivirus False Alarms** — Prevented security software from falsely flagging the app as unsafe on some computers.
+- **Instant Image Updates** — When you add a new custom thumbnail to a mod, it instantly updates on your screen.
+- **Invisible Scrollbars** — Fixed an issue where the scrollbar in the mod details menu was completely hidden.
+- **Squashed Images** — Fixed some mod icons appearing stretched and distorted in warnings.
+- **No More Duplicate Downloads** — If a mod is already downloaded, it'll gracefully skip it instead of downloading it twice.
+- **Mod List Refreshes** — The installed mods list now reliably updates when background changes are made.
+- **Cleaner Folders** — The app automatically cleans up leftover empty folders behind the scenes to keep your computer tidy.
+- **Skin Filter Fix** — Skins with the same name across different characters now filter correctly.
+- **Nexus Link Fix** — Clicking "Mod Manager Download" on Nexus Mods now correctly opens RivalNxt instead of failing.
 
 ### 📥 Installation
 
