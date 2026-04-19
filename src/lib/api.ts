@@ -1,3 +1,5 @@
+import { invoke } from "@tauri-apps/api/core";
+
 export class ApiError extends Error {
   status: number;
   detail?: unknown;
@@ -284,8 +286,29 @@ export type TagLookupRequest = {
 
 export type TagLookupResponse = Record<string, TagInfo>;
 
-const BASE_URL =
-  (import.meta as any).env?.VITE_API_BASE_URL || "http://127.0.0.1:8000";
+let cachedBaseUrl: string | null = null;
+
+export async function getBaseUrl(): Promise<string> {
+  if (cachedBaseUrl) return cachedBaseUrl;
+
+  cachedBaseUrl = (import.meta as any).env?.VITE_API_BASE_URL || null;
+  if (cachedBaseUrl) return cachedBaseUrl;
+
+  try {
+    if ((window as any).__TAURI_INTERNALS__) {
+      const port = await invoke<number>("get_backend_port");
+      if (port) {
+        cachedBaseUrl = `http://127.0.0.1:${port}`;
+        return cachedBaseUrl;
+      }
+    }
+  } catch (e) {
+    console.error("Failed to get dynamic backend port, falling back to 8000", e);
+  }
+
+  cachedBaseUrl = "http://127.0.0.1:8000";
+  return cachedBaseUrl;
+}
 
 async function handleError(
   res: Response,
@@ -344,7 +367,8 @@ async function handleError(
 // Debug logging helper - logs to backend
 async function debugLog(message: string, data?: any, level: string = "INFO") {
   try {
-    await fetch(`${BASE_URL}/api/debug/log`, {
+    const baseUrl = await getBaseUrl();
+    await fetch(`${baseUrl}/api/debug/log`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message, data, level }),
@@ -355,7 +379,8 @@ async function debugLog(message: string, data?: any, level: string = "INFO") {
 }
 
 async function getJson<T>(path: string): Promise<T> {
-  const res = await fetch(`${BASE_URL}${path}`, {
+  const baseUrl = await getBaseUrl();
+  const res = await fetch(`${baseUrl}${path}`, {
     headers: {
       "Cache-Control": "no-cache",
       Pragma: "no-cache",
@@ -393,7 +418,8 @@ async function getJson<T>(path: string): Promise<T> {
 }
 
 async function postJson<TReq, TRes>(path: string, body: TReq): Promise<TRes> {
-  const res = await fetch(`${BASE_URL}${path}`, {
+  const baseUrl = await getBaseUrl();
+  const res = await fetch(`${baseUrl}${path}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -405,7 +431,8 @@ async function postJson<TReq, TRes>(path: string, body: TReq): Promise<TRes> {
 }
 
 async function patchJson<TReq, TRes>(path: string, body: TReq): Promise<TRes> {
-  const res = await fetch(`${BASE_URL}${path}`, {
+  const baseUrl = await getBaseUrl();
+  const res = await fetch(`${baseUrl}${path}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -417,7 +444,8 @@ async function patchJson<TReq, TRes>(path: string, body: TReq): Promise<TRes> {
 }
 
 async function putJson<TReq, TRes>(path: string, body: TReq): Promise<TRes> {
-  const res = await fetch(`${BASE_URL}${path}`, {
+  const baseUrl = await getBaseUrl();
+  const res = await fetch(`${baseUrl}${path}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -429,7 +457,8 @@ async function putJson<TReq, TRes>(path: string, body: TReq): Promise<TRes> {
 }
 
 async function deleteJson<TRes>(path: string): Promise<TRes> {
-  const res = await fetch(`${BASE_URL}${path}`, {
+  const baseUrl = await getBaseUrl();
+  const res = await fetch(`${baseUrl}${path}`, {
     method: "DELETE",
   });
   if (!res.ok) {
@@ -463,7 +492,8 @@ export async function addMod(
 export async function uploadModFile(file: File): Promise<ApiUploadModResponse> {
   const form = new FormData();
   form.append("file", file);
-  const res = await fetch(`${BASE_URL}/api/mods/upload`, {
+  const baseUrl = await getBaseUrl();
+  const res = await fetch(`${baseUrl}/api/mods/upload`, {
     method: "POST",
     body: form,
   });

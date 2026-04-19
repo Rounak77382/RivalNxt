@@ -621,6 +621,7 @@ function installedModPropsAreEqual(
     // @ts-ignore
     if (a[k] !== b[k]) return false;
   }
+  if (a.images?.[0] !== b.images?.[0]) return false;
   if (prev.viewMode !== next.viewMode) return false;
   return true;
 }

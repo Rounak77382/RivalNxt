@@ -15,7 +15,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-DEFAULT_ENDPOINT = "http://127.0.0.1:8000/api/nxm/handoff"
+DEFAULT_ENDPOINT = f"http://127.0.0.1:{os.environ.get('MM_BACKEND_PORT', '8000')}/api/nxm/handoff"
 
 
 def post_nxm(nxm_uri: str, endpoint: str) -> None:

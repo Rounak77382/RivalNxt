@@ -167,7 +167,7 @@ def main() -> None:
     )
 
     # Configure settings
-    configure(
+    SETTINGS = configure(
         data_dir=data_dir_override or SETTINGS.data_dir,
         backend_host=host_override or SETTINGS.backend_host,
         backend_port=port_override if port_override is not None else SETTINGS.backend_port,

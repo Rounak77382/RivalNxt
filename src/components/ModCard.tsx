@@ -409,6 +409,7 @@ function modPropsAreEqual(prev: ModCardProps, next: ModCardProps) {
     // @ts-ignore - index by dynamic key
     if (a[k] !== b[k]) return false;
   }
+  if (a.images?.[0] !== b.images?.[0]) return false;
   // viewMode affects layout
   if (prev.viewMode !== next.viewMode) return false;
   return true;

@@ -19,6 +19,18 @@ use winreg::RegKey;
 #[derive(Clone, Default)]
 struct BackendChild(Arc<Mutex<Option<tauri_plugin_shell::process::CommandChild>>>);
 
+#[derive(Clone)]
+struct BackendConfig {
+    port: u16,
+}
+
+fn get_available_port() -> Option<u16> {
+    std::net::TcpListener::bind("127.0.0.1:0")
+        .and_then(|listener| listener.local_addr())
+        .map(|addr| addr.port())
+        .ok()
+}
+
 impl BackendChild {
     fn new() -> Self {
         Self::default()
@@ -1063,14 +1075,21 @@ fn ensure_nxm_protocol_registration() -> Result<(), String> {
     Ok(())
 }
 
+// Tauri command to get the backend port
+#[tauri::command]
+fn get_backend_port(config: tauri::State<BackendConfig>) -> u16 {
+    config.port
+}
+
 // Tauri command to handle NXM protocol URLs
 #[tauri::command]
-async fn handle_nxm_url(url: String, _app_handle: AppHandle) -> Result<String, String> {
+async fn handle_nxm_url(url: String, app_handle: AppHandle) -> Result<String, String> {
     println!("Received NXM URL: {}", url);
     
     // Forward the NXM URL to the backend API
     let client = reqwest::Client::new();
-    let backend_url = "http://127.0.0.1:8000/api/nxm/handoff";
+    let port = app_handle.state::<BackendConfig>().port;
+    let backend_url = format!("http://127.0.0.1:{}/api/nxm/handoff", port);
     
     let payload = serde_json::json!({
         "nxm": url
@@ -1166,7 +1185,7 @@ async fn launch_backend(app_handle: AppHandle, backend_state: BackendChild) -> R
                 match app_handle.shell().command(python_cmd)
                     .args(["-X", "utf8", python_script.to_str().unwrap()])
                     .env("MM_BACKEND_HOST", "127.0.0.1")
-                    .env("MM_BACKEND_PORT", "8000")
+                    .env("MM_BACKEND_PORT", app_handle.state::<BackendConfig>().port.to_string())
                     .env("PYTHONPATH", workspace_root.to_str().unwrap())
                     .env("RIVALNXT_PID", current_pid.to_string())
                     .envs(if let Ok(data_dir) = app_handle.path().app_data_dir() {
@@ -1231,7 +1250,7 @@ async fn launch_backend(app_handle: AppHandle, backend_state: BackendChild) -> R
             Ok(command) => {
                 let mut command = command
                     .env("MM_BACKEND_HOST", "127.0.0.1")
-                    .env("MM_BACKEND_PORT", "8000")
+                    .env("MM_BACKEND_PORT", app_handle.state::<BackendConfig>().port.to_string())
                     .env("RIVALNXT_PID", current_pid.to_string());
 
                 if let Ok(data_dir) = app_handle.path().app_data_dir() {
@@ -1294,6 +1313,9 @@ async fn launch_backend(app_handle: AppHandle, backend_state: BackendChild) -> R
 }
 
 fn main() {
+    let port = get_available_port().unwrap_or(8000);
+    println!("[Backend Config] dynamically assigned port: {}", port);
+
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_deep_link::init())
@@ -1324,9 +1346,11 @@ fn main() {
             }
         }))
         .manage(BackendChild::new())
+        .manage(BackendConfig { port })
         .invoke_handler(tauri::generate_handler![
             get_executable_path,
             handle_nxm_url,
+            get_backend_port,
             select_folder_dialog,
             select_file_dialog,
             detect_archive_tool,

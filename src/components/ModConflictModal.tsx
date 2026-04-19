@@ -97,16 +97,16 @@ export function ModConflictModal({
     return db - da;
   });
 
-  // Function to handle mod card click
   const handleModClick = (mod: MockMod) => {
-    // Only open if we have a valid mod_id
-    if (mod.mod_id == null) {
-      return;
-    }
-
     // Try to find the full mod data from the real mods array
     // This gives us all sourceDownloadIds so ModModal shows all file versions
-    const existingMod = allMods.find((m) => m.backendModId === mod.mod_id);
+    let existingMod = undefined;
+    if (mod.mod_id != null) {
+      existingMod = allMods.find((m) => m.backendModId === mod.mod_id);
+    }
+    if (!existingMod && mod.local_download_id != null) {
+      existingMod = allMods.find((m) => m.sourceDownloadIds?.includes(mod.local_download_id!));
+    }
 
     if (existingMod) {
       setSelectedMod(existingMod);
@@ -116,7 +116,7 @@ export function ModConflictModal({
 
     // Fallback: create a Mod object from the MockMod data
     const modData: Mod = {
-      id: String(mod.mod_id),
+      id: String(mod.mod_id ?? mod.local_download_id ?? Math.random()),
       backendModId: mod.mod_id,
       name: mod.mod_name || "Unknown Mod",
       description: "",
@@ -285,12 +285,8 @@ export function ModConflictModal({
                             <div
                               key={`${m.mod_id}-${m.pak_file}`}
                               onClick={() => handleModClick(m)}
-                              className={`bg-card border border-border/70 rounded-lg p-4 flex flex-col items-center gap-3 text-center shadow-sm transition-all duration-200 ${
+                              className={`bg-card border border-border/70 rounded-lg p-4 flex flex-col items-center gap-3 text-center shadow-sm transition-all duration-200 cursor-pointer hover:shadow-lg hover:border-primary/50 hover:scale-105 ${
                                 m.is_current ? "ring-2 ring-primary/30" : ""
-                              } ${
-                                m.mod_id != null
-                                  ? "cursor-pointer hover:shadow-lg hover:border-primary/50 hover:scale-105"
-                                  : "cursor-default"
                               }`}
                               style={{
                                 height: "auto", // Card height can vary slightly with text, but images are locked,
@@ -298,11 +294,7 @@ export function ModConflictModal({
                                 maxWidth: "400px",
                                 flex: "0 0 auto",
                               }}
-                              title={
-                                m.mod_id != null
-                                  ? `Click to view ${displayName}`
-                                  : undefined
-                              }
+                              title={`Click to view ${displayName}`}
                             >
                               <div
                                 className="rounded-xl overflow-hidden bg-muted-foreground/10 flex items-center justify-center border border-muted-foreground/10"

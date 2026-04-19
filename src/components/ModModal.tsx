@@ -481,7 +481,9 @@ export function ModModal({
           debugInfo,
         );
         try {
-          await fetch("http://127.0.0.1:8000/api/debug/log", {
+          const { getBaseUrl } = await import("../lib/api");
+          const baseUrl = await getBaseUrl();
+          await fetch(`${baseUrl}/api/debug/log`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
