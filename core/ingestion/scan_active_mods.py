@@ -125,7 +125,9 @@ def main(argv: List[str] | None = None) -> int:
         # Build preference map: basename → previously active relative path
         # This preserves which variant the user selected across rescans
         prev_by_base: dict[str, str] = {}
-        for p in info["prev_active"]:
+        # Sort by length descending so full variant paths override simple basenames
+        sorted_prev = sorted(info["prev_active"], key=lambda k: len(k), reverse=True)
+        for p in sorted_prev:
             prev_by_base.setdefault(os.path.basename(p).lower(), p)
 
         # Pick ONE variant per basename (deduplicate same-named files in different subfolders)

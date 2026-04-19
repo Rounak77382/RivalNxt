@@ -221,6 +221,11 @@ def _candidate_lookup_keys(value: str) -> Set[str]:
 def build_entry_lookup(entries: Iterable[str]) -> Dict[str, str]:
     lookup: Dict[str, str] = {}
     for entry in entries:
+        # 1. Always map exact relative path
+        exact = entry.replace("\\", "/").lower()
+        lookup[exact] = entry
+        
+        # 2. Fallbacks based on basename
         base = os.path.basename(entry)
         if not base:
             continue
@@ -230,6 +235,12 @@ def build_entry_lookup(entries: Iterable[str]) -> Dict[str, str]:
 
 
 def resolve_entry(lookup: Dict[str, str], desired: str) -> Optional[str]:
+    # 1. Try exact match first
+    exact = desired.replace("\\", "/").lower()
+    if exact in lookup:
+        return lookup[exact]
+
+    # 2. Fallback to basename lookup (for companions or when full path is not available)
     base = os.path.basename(desired)
     if not base:
         return None

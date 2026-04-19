@@ -15,7 +15,6 @@
 - 🏷️ **NXM Download Details** — Nexus Mod download notifications now cleanly show the actual mod name instead of a numeric ID.
 - 🗂️ **UI Components Revamp** — Skin filters in the sidebar have been refactored into clean, collapsible button groups.
 
-
 ### 🐛 Bug Fixes & Under the Hood
 
 - **Nested Pak Activation Fix** — Fixed a bug where mods inside nested subfolders wouldn't activate correctly gracefully utilizing smarter fallback path strategies.
@@ -43,9 +42,9 @@
 
 ### 📥 Downloads
 
-| File                                  | Platform    | Checksum                 |
-| ------------------------------------- | ----------- | ------------------------ |
-| [<INSTALLER_FILENAME>](<INSTALLER_URL>) | x64 Windows | [checksum](<CHECKSUM_URL>) |
+| File                             | Platform    | Checksum              |
+| -------------------------------- | ----------- | --------------------- |
+| [installer_filename](INSTALLER_URL) | x64 Windows | [checksum](CHECKSUM_URL) |
 
 > To verify the download on Windows, run `certutil -hashfile <filename> SHA256` and compare it with the `.sha256` file.
 

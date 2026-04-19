@@ -48,7 +48,7 @@
   },
   "plugins": {
     "shell": {
-      "open": "^(https?|nxm)://.*"
+      "open": "(https?|nxm|steam)://.*"
     },
     "deepLink": {
       "schemes": ["nxm"]

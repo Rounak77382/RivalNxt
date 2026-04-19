@@ -5660,7 +5660,7 @@ def set_active_paks(download_id: int, payload: Dict[str, Any] = Body(...)) -> Di
 		try:
 			entries = list_entries(src_path)
 			lookup = build_entry_lookup(entries)
-			for item in desired_basenames:
+			for item in desired:
 				stem, _ext = os.path.splitext(item)
 				# For each stem, try to extract .pak, .utoc, .ucas if present
 				for ext in (".pak", ".utoc", ".ucas"):
@@ -5669,18 +5669,19 @@ def set_active_paks(download_id: int, payload: Dict[str, Any] = Body(...)) -> Di
 					if not entry:
 						continue
 					dest_base = char_folder if char_folder else mods_dir
-					dest = dest_base / fname
+					dest_fname = os.path.basename(fname)
+					dest = dest_base / dest_fname
 					if dest.exists():
 						try:
 							dest.unlink()
 						except Exception:
 							pass
 					extract_member(src_path, entry, str(dest))
-					applied_set.add(fname)
-					if fname.lower() == item.lower():
-						copied.append(fname)
+					applied_set.add(dest_fname)
+					if dest_fname.lower() == os.path.basename(item).lower():
+						copied.append(dest_fname)
 					else:
-						companions.append(fname)
+						companions.append(dest_fname)
 		except HTTPException:
 			raise
 		except Exception as e:

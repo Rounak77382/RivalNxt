@@ -1148,6 +1148,86 @@ export function ModModal({
 
   // Comments tab removed per request
 
+  const handleDeactivateAll = useCallback(async () => {
+    if (isApplying) return;
+    const activeEntries = Object.entries(activeByDownload).filter(
+      ([_, active]) => Array.isArray(active) && active.length > 0
+    );
+    if (activeEntries.length === 0) return;
+
+    setIsApplying(true);
+    const toastId = toast.loading("Deactivating all...");
+    let appliedSuccessfully = false;
+
+    try {
+      // Optimistic update
+      setActiveByDownload((prev) => {
+        const next = { ...prev };
+        activeEntries.forEach(([id]) => {
+          next[Number(id)] = [];
+        });
+        return next;
+      });
+      setDownloadEntries((prev) =>
+        prev.map((entry) => {
+          if (activeEntries.some(([id]) => Number(id) === entry.id)) {
+            return { ...entry, active_paks: [] };
+          }
+          return entry;
+        })
+      );
+
+      // Backend calls
+      await Promise.all(
+        activeEntries.map(([id]) => setActivePaks(Number(id), []))
+      );
+      appliedSuccessfully = true;
+      await scanActive();
+      try {
+        await refreshConflicts();
+      } catch (err) {
+        console.warn("[mod-modal] refreshConflicts failed", err);
+      }
+
+      const refreshed = await hydrateDownloads({ skipScan: true });
+      setDownloadEntries(refreshed);
+      setActiveByDownload(toActiveMap(refreshed));
+      const statusLookup = await fetchPakStatuses();
+      setPakStatusByDownload(statusLookup);
+
+      toast.success("Deactivated all mod files", {
+        id: toastId,
+        duration: 2000,
+      });
+    } catch (error) {
+      toast.error((error as any)?.message || "Failed to deactivate", {
+        id: toastId,
+      });
+      try {
+        const fallback = await hydrateDownloads();
+        setDownloadEntries(fallback);
+        setActiveByDownload(toActiveMap(fallback));
+        const statusLookup = await fetchPakStatuses();
+        setPakStatusByDownload(statusLookup);
+      } catch (err) {
+        console.error("[mod-modal] failed to rehydrate downloads", err);
+      }
+    } finally {
+      setIsApplying(false);
+      if (appliedSuccessfully) {
+        onConflictStateChanged?.();
+        onRefresh?.();
+      }
+    }
+  }, [
+    activeByDownload,
+    isApplying,
+    hydrateDownloads,
+    fetchPakStatuses,
+    onConflictStateChanged,
+    onRefresh,
+  ]);
+
   // Note: we rely on local download contents for toggling, not Nexus file list.
 
   return (
@@ -1349,8 +1429,14 @@ export function ModModal({
 
               <div className="flex flex-col gap-2">
                 <Button
-                  variant={hasAnyActivePaks ? "secondary" : "default"}
-                  onClick={() => onInstall(mod.id)}
+                  variant={hasAnyActivePaks ? "default" : "secondary"}
+                  onClick={() => {
+                    if (hasAnyActivePaks) {
+                      handleDeactivateAll();
+                    } else {
+                      onInstall(mod.id);
+                    }
+                  }}
                   className="gap-2"
                 >
                   <Download className="w-4 h-4" />
@@ -1376,13 +1462,12 @@ export function ModModal({
 
           {/* Content */}
           <div
-            className="flex-1 min-h-0 overflow-hidden"
+            className="flex-1 min-h-0 overflow-y-auto custom-scrollbar"
             style={{ height: "calc(100% - 200px)" }}
           >
             <Tabs
               defaultValue="overview"
-              className="h-full flex flex-col overflow-hidden"
-              style={{ height: "100%" }}
+              className="flex flex-col"
             >
               <TabsList className="mx-6 mt-4 mb-0 flex-shrink-0">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -1392,19 +1477,8 @@ export function ModModal({
                 <TabsTrigger value="changelog">Changelog</TabsTrigger>
               </TabsList>
 
-              <div
-                className="flex-1 min-h-0 overflow-hidden"
-                style={{ height: "calc(100% - 52px)" }}
-              >
-                <TabsContent
-                  value="overview"
-                  className="!h-full m-0 data-[state=active]:!flex data-[state=active]:!flex-col data-[state=active]:!h-full overflow-hidden"
-                  style={{ height: "100%" }}
-                >
-                  <ScrollArea
-                    className="flex-1 min-h-0 overflow-auto"
-                    style={{ height: "100%" }}
-                  >
+              <div className="pb-6">
+                <TabsContent value="overview" className="m-0 data-[state=active]:block">
                     <div className="px-6 py-4">
                       <div className="space-y-6">
                         <div>
@@ -1466,7 +1540,7 @@ export function ModModal({
                               }
                               // Use style to force height as requested ("traditional css")
                               style={{ height: "280px", minHeight: "280px" }}
-                              className="font-sans resize-y"
+                              className="font-sans resize-y custom-scrollbar"
                               placeholder={
                                 isBBCodeMode
                                   ? "Enter description in BBCode format..."
@@ -1498,19 +1572,10 @@ export function ModModal({
                         </div>
                       </div>
                     </div>
-                  </ScrollArea>
-                </TabsContent>
+                  </TabsContent>
 
                 {/* Images Tab */}
-                <TabsContent
-                  value="images"
-                  className="!h-full m-0 data-[state=active]:!flex data-[state=active]:!flex-col data-[state=active]:!h-full overflow-hidden"
-                  style={{ height: "100%" }}
-                >
-                  <ScrollArea
-                    className="flex-1 min-h-0 overflow-auto"
-                    style={{ height: "100%" }}
-                  >
+                <TabsContent value="images" className="m-0 data-[state=active]:block">
                     <div className="px-6 py-4">
                       <div className="flex flex-wrap gap-4">
                         {/* Image thumbnails with 300px fixed height */}
@@ -1577,8 +1642,7 @@ export function ModModal({
                         )}
                       </div>
                     </div>
-                  </ScrollArea>
-                </TabsContent>
+                  </TabsContent>
 
                 {/* Lightbox Gallery */}
                 {lightboxOpen && modImages.length > 0 && (
@@ -1651,15 +1715,7 @@ export function ModModal({
                   </div>
                 )}
 
-                <TabsContent
-                  value="files"
-                  className="!h-full m-0 data-[state=active]:!flex data-[state=active]:!flex-col data-[state=active]:!h-full overflow-hidden"
-                  style={{ height: "100%" }}
-                >
-                  <ScrollArea
-                    className="flex-1 min-h-0 overflow-auto"
-                    style={{ height: "100%" }}
-                  >
+                <TabsContent value="files" className="m-0 data-[state=active]:block">
                     <div className="px-6 py-4">
                       <div className="space-y-4">
                         <div className="flex items-center gap-2 mb-4">
@@ -1843,18 +1899,9 @@ export function ModModal({
                         </div>
                       </div>
                     </div>
-                  </ScrollArea>
-                </TabsContent>
+                  </TabsContent>
 
-                <TabsContent
-                  value="assets"
-                  className="!h-full m-0 data-[state=active]:!flex data-[state=active]:!flex-col data-[state=active]:!h-full overflow-hidden"
-                  style={{ height: "100%" }}
-                >
-                  <ScrollArea
-                    className="flex-1 min-h-0 overflow-auto"
-                    style={{ height: "100%" }}
-                  >
+                <TabsContent value="assets" className="m-0 data-[state=active]:block">
                     <div className="px-6 py-4">
                       <div className="space-y-4">
                         <div className="flex items-center gap-2 mb-4">
@@ -1897,18 +1944,9 @@ export function ModModal({
                         ))}
                       </div>
                     </div>
-                  </ScrollArea>
-                </TabsContent>
+                  </TabsContent>
 
-                <TabsContent
-                  value="changelog"
-                  className="!h-full m-0 data-[state=active]:!flex data-[state=active]:!flex-col data-[state=active]:!h-full overflow-hidden"
-                  style={{ height: "100%" }}
-                >
-                  <ScrollArea
-                    className="flex-1 min-h-0 overflow-auto"
-                    style={{ height: "100%" }}
-                  >
+                <TabsContent value="changelog" className="m-0 data-[state=active]:block">
                     <div className="px-6 py-4">
                       <div className="space-y-4">
                         {resolvedChangelogs.map((version) => {
@@ -1947,8 +1985,7 @@ export function ModModal({
                         })}
                       </div>
                     </div>
-                  </ScrollArea>
-                </TabsContent>
+                  </TabsContent>
 
                 {/* Comments tab removed per request */}
               </div>

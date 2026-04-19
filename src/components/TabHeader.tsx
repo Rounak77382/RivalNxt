@@ -1,6 +1,7 @@
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { Bell, Settings, RefreshCw, Rocket } from "lucide-react";
+import { Bell, Settings, RefreshCw, Rocket, Play } from "lucide-react";
+import { open } from "@tauri-apps/plugin-shell";
 
 interface TabHeaderProps {
   activeTab: "downloads" | "active";
@@ -66,6 +67,15 @@ export function TabHeader({
                 Setup
               </Button>
             )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => open('steam://rungameid/2767030')}
+              className="gap-2"
+            >
+              <Play className="w-4 h-4" />
+              Start Game
+            </Button>
             <Button
               variant="outline"
               size="sm"
