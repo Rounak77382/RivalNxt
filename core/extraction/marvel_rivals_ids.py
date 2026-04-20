@@ -26,6 +26,21 @@ from rust_ue_tools import PyUnpacker
 from pylocres import LocresFile
 
 
+def is_internal_name(name: str) -> bool:
+    """Check if a skin/character name is an internal or placeholder name."""
+    n = name.strip().lower()
+    # Check for "[sg]", "[tbd]" or other bracketed tags at the start of names
+    if n.startswith('['):
+        return True
+    # "esu-recolor" and similar variations
+    if 'recolor' in n:
+        return True
+    # Placeholders
+    if n.startswith('placeholder') or n.endswith('**'):
+        return True
+    return False
+
+
 def extract_character_names_from_locres(paks_dir):
     """Extract character names from pakchunkLocres using discovered patterns."""
     output_dir_locres = Path("temp_locres_chars")
@@ -83,7 +98,9 @@ def extract_character_names_from_locres(paks_dir):
                         if len(clean_name) < 30:
                             character_names[char_id] = clean_name
         
-        return character_names
+        # Filter out garbage/internal names
+        filtered_character_names = {k: v for k, v in character_names.items() if not is_internal_name(v)}
+        return filtered_character_names
         
     finally:
         import shutil
@@ -296,7 +313,9 @@ def extract_skin_names_from_locres(paks_dir):
                     if skin_id not in skin_names:
                         skin_names[skin_id] = value.strip().lower()
                         
-        return skin_names
+        # Filter out garbage/internal names
+        filtered_skin_names = {k: v for k, v in skin_names.items() if not is_internal_name(v)}
+        return filtered_skin_names
         
     finally:
         import shutil

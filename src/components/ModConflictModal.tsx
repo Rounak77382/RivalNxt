@@ -275,12 +275,23 @@ export function ModConflictModal({
                           return getDate(b) - getDate(a);
                         })
                         .map((m: MockMod) => {
+                          const fullMod = allMods.find(
+                            (fm) =>
+                              (m.mod_id != null && fm.backendModId === m.mod_id) ||
+                              (m.local_download_id != null &&
+                                fm.sourceDownloadIds?.includes(m.local_download_id)),
+                          );
                           const displayName =
+                            fullMod?.name ||
                             (m.mod_name && m.mod_name.trim()) ||
                             (m.pak_file && m.pak_file.trim()) ||
                             "Unknown Mod";
                           const resolvedIcon =
-                            (m.icon && m.icon.trim()) || FALLBACK_ICON_URL;
+                            (fullMod?.images &&
+                              fullMod.images.length > 0 &&
+                              fullMod.images[0]) ||
+                            (m.icon && m.icon.trim()) ||
+                            FALLBACK_ICON_URL;
                           return (
                             <div
                               key={`${m.mod_id}-${m.pak_file}`}

@@ -31,6 +31,11 @@ def load_entity_map_from_db() -> Dict[str, str]:
                 for skin in char['skins']:
                     variant = skin['variant']
                     skin_name = skin['name']
+                    
+                    # Skip fallback variant names generated during extraction
+                    if skin_name.startswith('variant '):
+                        continue
+                        
                     skin_id = f"{char_id}{variant}"
                     # Include ALL skins, even "default" (variant 001)
                     # Store just the skin name (we'll add character separately in tags)
