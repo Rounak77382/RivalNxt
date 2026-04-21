@@ -444,14 +444,27 @@ export function AddModModal({
                 } else {
                   toast.error("Failed to add mod");
                 }
-              } catch (err) {
+              } catch (err: any) {
                 toast.dismiss("drag-drop-copy");
-                console.error("Failed to process dropped file:", err);
-                toast.error(
-                  err instanceof Error
-                    ? err.message
-                    : "Failed to add dropped file",
-                );
+                if (err?.status === 409) {
+                  toast.info(err.message || "Mod already exists", {
+                    description: "This version is already in your library.",
+                  });
+                  setModLink("");
+                  setLocalPath("");
+                  setUploadInfo(null);
+                  onOpenChange(false);
+                  if (onSuccess) {
+                    await onSuccess();
+                  }
+                } else {
+                  console.error("Failed to process dropped file:", err);
+                  toast.error(
+                    err instanceof Error
+                      ? err.message
+                      : "Failed to add dropped file",
+                  );
+                }
               } finally {
                 setUploading(false);
               }
@@ -544,8 +557,16 @@ export function AddModModal({
         toast.error("Add mod failed");
       }
     } catch (e: any) {
-      toast.error(e?.message || "Failed to add mod");
+      if (e?.status === 409) {
+        toast.info(e.message || "Mod already exists", {
+          description: "This version is already in your library.",
+        });
+        await finalizeSuccess();
+      } else {
+        toast.error(e?.message || "Failed to add mod");
+      }
     } finally {
+
       setBusy(false);
     }
   };

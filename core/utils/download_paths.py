@@ -80,3 +80,25 @@ def normalize_download_path(path: str | Path) -> str:
                 return remainder.replace("\\", "/")
             continue
     return resolved.name
+
+
+def resolve_absolute_download_path(path_str: str) -> Path:
+    """Resolve a potentially relative download path back to an absolute filesystem Path."""
+    if not path_str:
+        return Path()
+    p = Path(path_str)
+    if p.is_absolute():
+        return p
+    
+    # Try against known roots
+    for root in known_download_roots():
+        candidate = root / p
+        if candidate.exists():
+            return candidate
+            
+    # Fallback: if not found, return against the primary root
+    roots = known_download_roots()
+    if roots:
+        return roots[0] / p
+    return p
+

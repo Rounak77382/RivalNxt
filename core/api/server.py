@@ -79,8 +79,9 @@ from core.ingestion.scan_active_mods import main as scan_active_main
 from core.nexus import DEFAULT_GAME, collect_all_for_mod, get_api_key, get_mod_file_download_link
 from core.nexus.nxm import NXMParseError, NXMRequest, parse_nxm_uri
 from core.utils.archive import build_entry_lookup, extract_archive, extract_member, list_entries, resolve_entry
-from core.utils.download_paths import normalize_download_path
+from core.utils.download_paths import normalize_download_path, resolve_absolute_download_path
 from core.utils.pak_files import collapse_pak_bundle
+
 from core.utils.mod_filename import parse_mod_filename
 from core.utils.nexus_metadata import derive_changelogs_from_files, extract_description_text
 from core.config.settings import SETTINGS, configure, save_settings, load_settings
@@ -1205,6 +1206,102 @@ def _duplicate_detail_from_error(error: DuplicateDownloadError) -> Dict[str, Any
 	return detail
 
 
+def _resolve_mod_metadata(
+	path: Path,
+	provided_name: Optional[str] = None,
+	provided_mod_id: Optional[int] = None,
+	provided_version: Optional[str] = None,
+) -> Tuple[str, Optional[int], str]:
+	"""Unified metadata resolver for mod installation.
+	
+	Extracts name, mod_id, and version from filename if not provided,
+	or cleans up provided names that look like raw filenames.
+	"""
+	# 1. If provided_name looks like a filename, parse it to extract the clean name
+	if provided_name:
+		lower_name = provided_name.lower()
+		if lower_name.endswith(('.zip', '.7z', '.rar', '.pak')) or '-' in provided_name:
+			p_name, p_mod_id, p_version = parse_mod_filename(provided_name)
+			if p_name:
+				provided_name = p_name
+				provided_mod_id = provided_mod_id or p_mod_id
+				provided_version = provided_version or p_version
+
+	# 2. Start with filename parsing of the actual path on disk as fallback
+	filename_name, filename_mod_id, filename_version = parse_mod_filename(path.name)
+	
+	# 3. Prefer cleaned-up provided values
+	final_name = provided_name or filename_name
+	final_mod_id = provided_mod_id or filename_mod_id
+	final_version = provided_version or filename_version
+	
+	# 4. Clean up and Normalize
+	if final_name:
+		# Always normalize underscores to spaces for consistent duplication checking
+		final_name = final_name.replace("_", " ").strip()
+		# Collapse multiple spaces
+		final_name = re.sub(r'\s+', ' ', final_name)
+	if final_version:
+		final_version = final_version.strip()
+
+	
+	return final_name, final_mod_id, final_version
+
+
+
+def _find_duplicate_download(
+	cur,
+	candidate_name: str,
+	candidate_version: str,
+	mod_id: Optional[int],
+) -> Optional[Tuple[int, Optional[str], Optional[str], Optional[str]]]:
+	"""Check if a download with the same name + version + mod_id already exists.
+	
+	Returns (download_id, name, version, path) if duplicate found AND file exists.
+	Uses exact string matching for name and version (case-insensitive).
+	"""
+	if mod_id is not None:
+		rows = cur.execute(
+			"""
+			SELECT id, name, version, path
+			FROM local_downloads
+			WHERE LOWER(name) = LOWER(?) AND mod_id = ?
+			""",
+			(candidate_name, mod_id),
+		).fetchall()
+	else:
+		rows = cur.execute(
+			"""
+			SELECT id, name, version, path
+			FROM local_downloads
+			WHERE LOWER(name) = LOWER(?)
+			""",
+			(candidate_name,),
+		).fetchall()
+	
+	candidate_version_normalized = (candidate_version or "").strip().lower()
+	for existing_id, existing_name, existing_version, existing_path in rows:
+		existing_version_normalized = (existing_version or "").strip().lower()
+		# Use prefix-aware matching: "2" matches "2.177.1" because "2" is the
+		# real Nexus version and "177.1" are file-sub-ID / timestamp artifacts
+		# from filename parsing.  Also handles the reverse direction.
+		versions_match = (
+			existing_version_normalized == candidate_version_normalized
+			or existing_version_normalized.startswith(candidate_version_normalized + ".")
+			or candidate_version_normalized.startswith(existing_version_normalized + ".")
+		)
+		if versions_match:
+			# PHYSICAL EXISTENCE CHECK:
+			# If the file is missing from disk, we allow re-ingestion.
+			abs_path = resolve_absolute_download_path(existing_path)
+			if abs_path.exists():
+				return existing_id, existing_name, existing_version, existing_path
+			else:
+				logger.info(f"[dupe_check] Duplicate '{existing_name}' ({existing_version}) found in DB but file is missing at '{existing_path}'. Permitting re-ingestion.")
+	
+	return None
+
+
 def _ingest_resolved_download(
 	path: Path,
 	*,
@@ -1218,55 +1315,44 @@ def _ingest_resolved_download(
 ) -> Dict[str, Any]:
 	"""Ingest a resolved local archive/pak into ``local_downloads`` and related tables."""
 
-	def _find_duplicate_download(
-		cur,
-		candidate_name: str,
-		candidate_version: str,
-		candidate_contents: Iterable[str],
-	) -> Optional[Tuple[int, Optional[str], Optional[str], Optional[str]]]:
-		"""Check if a download with the same name + version + mod_id already exists.
-		
-		Returns (download_id, name, version, path) if duplicate found, None otherwise.
-		Uses exact string matching for name and version (case-insensitive).
-		When the candidate has a mod_id, only matches against downloads with the
-		same mod_id — different mods that happen to share a display name are NOT
-		considered duplicates.
-		"""
-		# When mod_id is available, use it to scope the duplicate check.
-		# Two different Nexus mods (different mod_id) are never duplicates
-		# even if they share the same display name and version.
-		if mod_id is not None:
-			rows = cur.execute(
-				"""
-				SELECT id, name, version, path
-				FROM local_downloads
-				WHERE LOWER(name) = LOWER(?) AND mod_id = ?
-				""",
-				(candidate_name, mod_id),
-			).fetchall()
-		else:
-			# No mod_id — fall back to name-only matching
-			rows = cur.execute(
-				"""
-				SELECT id, name, version, path
-				FROM local_downloads
-				WHERE LOWER(name) = LOWER(?)
-				""",
-				(candidate_name,),
-			).fetchall()
-		
-		# Check for exact version match (case-insensitive)
-		candidate_version_normalized = (candidate_version or "").strip().lower()
-		for existing_id, existing_name, existing_version, existing_path in rows:
-			existing_version_normalized = (existing_version or "").strip().lower()
-			# Exact match on normalized name + version
-			if existing_version_normalized == candidate_version_normalized:
-				return existing_id, existing_name, existing_version, existing_path
-		
-		return None
-
 	path = path.resolve()
 	normalized_path = normalize_download_path(path)
+	
+	# 1. EARLY DUPLICATION CHECK (Before expensive extraction)
+	conn = get_db()
+	try:
+		cur = conn.cursor()
+		
+		# A. Check by name + version + mod_id (logical check)
+		duplicate = _find_duplicate_download(cur, name, version, mod_id)
+		
+		# B. Check by physical path (physical check)
+		# If the exact same path is already in DB, it's a duplicate.
+		if duplicate is None:
+			existing_by_path = cur.execute(
+				"SELECT id, name, version FROM local_downloads WHERE path = ?", 
+				(normalized_path,)
+			).fetchone()
+			if existing_by_path:
+				duplicate = (existing_by_path[0], existing_by_path[1], existing_by_path[2], normalized_path)
+
+		if duplicate is not None:
+			existing_id, existing_name, existing_version, existing_path = duplicate
+			raise DuplicateDownloadError(
+				existing_id,
+				existing_name=existing_name,
+				existing_version=existing_version,
+				existing_path=existing_path,
+				candidate_name=name,
+				candidate_version=version,
+			)
+	finally:
+		try:
+			conn.close()
+		except Exception:
+			pass
+
+
 	repo_root = _ROOT
 	current = _get_current_settings()
 	aes_key = current.aes_key_hex or None
@@ -1278,6 +1364,7 @@ def _ingest_resolved_download(
 	pak_map: Dict[str, List[str]] = {}
 	ingest_prep_error: Optional[Exception] = None
 
+
 	# Extract and enumerate PAK files from archives
 	if is_archive and path.exists():
 		tmpdir = None
@@ -1287,18 +1374,32 @@ def _ingest_resolved_download(
 			tmpdir = tempfile.mkdtemp(prefix="ingest_mod_")
 			extract_archive(str(path), tmpdir)
 			
-			# Extract PAK asset map from the extracted folder
+			# Enumerate archive contents to preserve hierarchical paths for the UI
+			try:
+				all_entries = list_entries(str(path))
+				# Filter for relevant Unreal Engine file types
+				contents = [
+					e for e in all_entries 
+					if e.lower().endswith(('.pak', '.utoc', '.ucas', '.sig'))
+				]
+				logger.info(f"[ingest] Enumerated {len(contents)} relevant file(s) from archive: {contents}")
+			except Exception as e:
+				logger.warning(f"[ingest] Failed to list archive entries for {path.name}: {e}")
+				contents = []
+
+			# Extract PAK asset map from the extracted folder for conflict detection
 			pak_map = extract_pak_asset_map_from_folder(tmpdir, aes_key=aes_key)
 			
-			# Populate contents with PAK file names
-			if pak_map:
-				contents = list(pak_map.keys())
-				logger.info(f"[ingest] Found {len(contents)} PAK file(s) in archive: {contents}")
-				# Collapse bundled .pak + .utoc pairs
+			if contents or pak_map:
+				if not contents and pak_map:
+					# Fallback to pak_map keys if archive enumeration failed but map has entries
+					contents = list(pak_map.keys())
+				
+				# Collapse bundled .pak + .utoc pairs (preserves hierarchical paths correctly)
 				contents = collapse_pak_bundle(contents)
-				logger.info(f"[ingest] After collapsing bundles: {contents}")
+				logger.info(f"[ingest] Final contents after collapsing: {contents}")
 			else:
-				logger.warning(f"[ingest] No PAK files found via asset map in archive {path.name}. Falling back to directory scan.")
+				logger.warning(f"[ingest] No PAK files found via asset map (Rust) or enumeration (list_entries) in archive {path.name}. Falling back to directory scan.")
 				fallback_paks = []
 				for root, _, files in os.walk(tmpdir):
 					for file in files:
@@ -1344,17 +1445,7 @@ def _ingest_resolved_download(
 	conn = get_db()
 	try:
 		cur = conn.cursor()
-		duplicate = _find_duplicate_download(cur, name, version, contents)
-		if duplicate is not None:
-			existing_id, existing_name, existing_version, existing_path = duplicate
-			raise DuplicateDownloadError(
-				existing_id,
-				existing_name=existing_name,
-				existing_version=existing_version,
-				existing_path=existing_path,
-				candidate_name=name,
-				candidate_version=version,
-			)
+		
 
 		local_download_id = next_local_download_id(conn)
 		created_at_hints: List[Any] = []
@@ -1364,7 +1455,7 @@ def _ingest_resolved_download(
 
 		cur.execute(
 			"""
-			INSERT INTO local_downloads(path, id, name, mod_id, version, contents, active_paks, created_at)
+			INSERT OR REPLACE INTO local_downloads(path, id, name, mod_id, version, contents, active_paks, created_at)
 			VALUES(?, ?, ?, ?, ?, ?, ?, ?)
 			""",
 			(
@@ -2141,64 +2232,53 @@ def get_conflicts_active(limit: int = 10) -> List[Dict[str, Any]]:
 
 @app.post("/api/mods/add")
 def add_mod(payload: Dict[str, Any] = Body(...)) -> Dict[str, Any]:
-		"""Register a local mod archive or pak in local_downloads; minimal ingestion.
-		Body: { localPath: str, name?: str, modId?: int, version?: str }
-		"""
-		local_path_val = payload.get("localPath")
-		if not local_path_val or not isinstance(local_path_val, str):
-			raise HTTPException(status_code=400, detail="localPath is required")
-		local_path = local_path_val.strip()
-		if not local_path:
-			raise HTTPException(status_code=400, detail="localPath is required")
-		source_url_val = payload.get("sourceUrl")
-		if isinstance(source_url_val, str) and source_url_val.strip():
-			source_url: Optional[str] = source_url_val.strip()
-		else:
-			source_url = None
-		if _looks_like_url(local_path):
-			source_url = source_url or local_path
-			path = _download_remote_archive(local_path)
-		else:
-			candidate = Path(local_path).expanduser()
-			if not candidate.exists():
-				alt = (_downloads_root_from_env() / local_path).expanduser()
-				if alt.exists():
-					candidate = alt
-			if not candidate.exists():
-				raise HTTPException(status_code=400, detail="localPath not found")
-			path = candidate
-		derived_name, derived_mod_id, derived_version = parse_mod_filename(path.name)
-		provided_name_val = payload.get("name")
-		if isinstance(provided_name_val, str) and provided_name_val.strip():
-			name = provided_name_val.strip()
-		else:
-			name = derived_name or path.stem
-		mod_id_val = payload.get("modId")
-		try:
-			mod_id_int: Optional[int] = int(mod_id_val) if mod_id_val is not None else None
-		except Exception:
-			mod_id_int = None
-		if mod_id_int is None:
-			mod_id_int = derived_mod_id
-		version_val = payload.get("version")
-		if isinstance(version_val, str) and version_val.strip():
-			version = version_val.strip()
-		elif derived_version:
-			version = derived_version
-		else:
-			version = ""
-		created_at_hint = _extract_created_at_hint(payload)
-		try:
-			return _ingest_resolved_download(
-				path,
-				name=name,
-				mod_id=mod_id_int,
-				version=version,
-				source_url=source_url,
-				created_at_hint=created_at_hint,
-			)
-		except DuplicateDownloadError as exc:
-			raise HTTPException(status_code=409, detail=_duplicate_detail_from_error(exc))
+	"""Register a local mod archive or pak in local_downloads; minimal ingestion.
+	Body: { localPath: str, name?: str, mod_id?: int, version?: str }
+	"""
+	local_path_val = payload.get("localPath")
+	if not local_path_val or not isinstance(local_path_val, str):
+		raise HTTPException(status_code=400, detail="localPath is required")
+	local_path = local_path_val.strip()
+	if not local_path:
+		raise HTTPException(status_code=400, detail="localPath is required")
+	
+	source_url_val = payload.get("sourceUrl")
+	source_url = source_url_val.strip() if isinstance(source_url_val, str) and source_url_val.strip() else None
+
+	if _looks_like_url(local_path):
+		source_url = source_url or local_path
+		path = _download_remote_archive(local_path)
+	else:
+		candidate = Path(local_path).expanduser()
+		if not candidate.exists():
+			alt = (_downloads_root_from_env() / local_path).expanduser()
+			if alt.exists():
+				candidate = alt
+		if not candidate.exists():
+			raise HTTPException(status_code=400, detail="localPath not found")
+		path = candidate
+
+	# Unified metadata resolution
+	name, mod_id, version = _resolve_mod_metadata(
+		path,
+		provided_name=payload.get("name"),
+		provided_mod_id=payload.get("modId"),
+		provided_version=payload.get("version"),
+	)
+
+	created_at_hint = _extract_created_at_hint(payload)
+	try:
+		return _ingest_resolved_download(
+			path,
+			name=name,
+			mod_id=mod_id,
+			version=version,
+			source_url=source_url,
+			created_at_hint=created_at_hint,
+		)
+	except DuplicateDownloadError as exc:
+		raise HTTPException(status_code=409, detail=_duplicate_detail_from_error(exc))
+
 
 def _eager_resolve_mod_name(record: Dict[str, Any], nxm_request) -> None:
 	"""Best-effort resolve the mod name and store it in the handoff metadata.
@@ -2718,112 +2798,97 @@ def ingest_nxm_handoff(handoff_id: str, payload: Optional[Dict[str, Any]] = Body
 	logger.info(
 		"[nxm_handoff] resolving mod_id=%s file_id=%s handoff=%s via nxm redirect", mod_id, file_id, record.get("id")
 	)
-	
-	# EARLY DUPLICATE CHECK: Check if this mod+version already exists BEFORE downloading
-	# This saves bandwidth and time by not downloading files we already have
+	# 1. EARLY METADATA RESOLUTION
+	# We clean the name and version BEFORE checking for duplicates or downloading.
 	version = selected_entry.get("version") or selected_entry.get("mod_version") or ""
 	remote_name = selected_entry.get("file_name") or selected_entry.get("name") or ""
 	
-	if remote_name and version:
-		conn = get_db()
-		try:
-			cur = conn.cursor()
-			# Check for existing download with same name + version + mod_id
-			# Include mod_id so that different mods with the same display
-			# name and version are NOT considered duplicates.
-			existing = cur.execute(
-				"""
-				SELECT id, name, version, path
-				FROM local_downloads
-				WHERE LOWER(name) = LOWER(?) AND LOWER(version) = LOWER(?)
-				  AND mod_id = ?
-				LIMIT 1
-				""",
-				(remote_name, version, mod_id),
-			).fetchone()
-			
-			if existing:
-				existing_id, existing_name, existing_version, existing_path = existing
-				logger.info(
-					f"[nxm_handoff] SKIPPING DOWNLOAD - duplicate found: '{remote_name}' v{version} already exists (id={existing_id})"
-				)
-				# Mark handoff as consumed to prevent retries
-				if handoff_identifier:
-					update_handoff_progress(
-						handoff_identifier,
-						stage="complete",
-						message=f"Already downloaded: {remote_name} v{version}",
-					)
-					mark_handoff_consumed(handoff_identifier)
-				
-				raise DuplicateDownloadError(
-					existing_id,
-					existing_name=existing_name,
-					existing_version=existing_version,
-					existing_path=existing_path,
-					candidate_name=remote_name,
-					candidate_version=version,
-				)
-		finally:
-			try:
-				conn.close()
-			except Exception:
-				pass
-	
-	download_path, resolved_url = _download_archive_via_nxm(record, game_domain, file_id)
-	logger.info(
-		"[nxm_handoff] download complete path=%s mod_id=%s file_id=%s", download_path, mod_id, file_id
+	clean_name, clean_mod_id, clean_version = _resolve_mod_metadata(
+		Path(selected_entry.get("file_name") or "unknown.zip"),
+		provided_name=remote_name,
+		provided_mod_id=mod_id,
+		provided_version=version,
 	)
-	version = selected_entry.get("version") or selected_entry.get("mod_version") or ""
-	remote_name = selected_entry.get("file_name") or selected_entry.get("name") or download_path.name
-	# Parse the filename to extract a clean display name (strip mod_id/version suffix)
-	parsed_name, _, _ = parse_mod_filename(remote_name)
-	remote_name = parsed_name or remote_name
-	file_created_at_hint = _extract_created_at_hint(selected_entry)
-	if handoff_identifier:
-		update_handoff_progress(
-			handoff_identifier,
-			stage="ingesting",
-			message="Processing download…",
-		)
+
 	try:
+		# EARLY DUPLICATE CHECK: Check if this mod+version already exists BEFORE downloading
+		if clean_name and clean_version:
+			conn = get_db()
+			try:
+				cur = conn.cursor()
+				# UNIFIED EARLY DUPLICATE CHECK using clean metadata
+				duplicate = _find_duplicate_download(cur, clean_name, clean_version, clean_mod_id)
+				if duplicate:
+					existing_id, existing_name, existing_version, existing_path = duplicate
+					logger.info(
+						f"[nxm_handoff] SKIPPING DOWNLOAD - duplicate found: '{clean_name}' v{clean_version} already exists (id={existing_id})"
+					)
+
+					# Mark handoff as consumed to prevent retries
+					if handoff_identifier:
+						update_handoff_progress(
+							handoff_identifier,
+							stage="complete",
+							message=f"Already downloaded: {clean_name} v{clean_version}",
+						)
+						mark_handoff_consumed(handoff_identifier)
+					
+					raise DuplicateDownloadError(
+						existing_id,
+						existing_name=existing_name,
+						existing_version=existing_version,
+						existing_path=existing_path,
+						candidate_name=clean_name,
+						candidate_version=clean_version,
+					)
+
+			finally:
+				try:
+					conn.close()
+				except Exception:
+					pass
+		
+		download_path, resolved_url = _download_archive_via_nxm(record, game_domain, file_id)
+		logger.info(
+			"[nxm_handoff] download complete path=%s mod_id=%s file_id=%s", download_path, mod_id, file_id
+		)
+		
+		# Unified metadata resolution from the downloaded file
+		final_name, final_mod_id, final_version = _resolve_mod_metadata(
+			download_path,
+			provided_name=remote_name,
+			provided_mod_id=mod_id,
+			provided_version=version,
+		)
+		
+		file_created_at_hint = _extract_created_at_hint(selected_entry)
 		ingest_result = _ingest_resolved_download(
 			download_path,
-			name=remote_name,
-			mod_id=mod_id,
-			version=version,
+			name=final_name,
+			mod_id=final_mod_id,
+			version=final_version,
 			source_url=resolved_url,
 			metadata_snapshot=raw_metadata,
 			filtered_metadata=filtered_metadata,
 			created_at_hint=file_created_at_hint,
 		)
 	except DuplicateDownloadError as exc:
-		try:
-			import traceback
-			import sys
-			print(f"[ingest_debug] DuplicateDownloadError caught: {exc}", file=sys.stderr)
-			if handoff_identifier:
-				update_handoff_progress(
-					handoff_identifier,
-					stage="failed",
-					error=str(exc),
-					message="Duplicate download detected",
-				)
-				register_handoff_failure(handoff_identifier, str(exc))
-				# Mark as consumed to prevent infinite retry loops on frontend restart
-				print(f"[ingest_debug] Marking handoff {handoff_identifier} as consumed", file=sys.stderr)
-				mark_handoff_consumed(handoff_identifier)
-			
-			print(f"[ingest_debug] Generating detail from error", file=sys.stderr)
-			detail = _duplicate_detail_from_error(exc)
-			print(f"[ingest_debug] Raising 409", file=sys.stderr)
-			raise HTTPException(status_code=409, detail=detail)
-		except HTTPException:
-			raise
-			# ... (duplicate block maintained)
-			raise HTTPException(status_code=409, detail=detail)
+		if handoff_identifier:
+			update_handoff_progress(
+				handoff_identifier,
+				stage="failed",
+				error=str(exc),
+				message="Duplicate download detected",
+			)
+			register_handoff_failure(handoff_identifier, str(exc))
+			# Mark as consumed to prevent infinite retry loops on frontend restart
+			mark_handoff_consumed(handoff_identifier)
+		
+		raise HTTPException(status_code=409, detail=_duplicate_detail_from_error(exc))
+
 	except HTTPException:
 		raise
+
 	except Exception as e:
 		# Graceful error handling for fatal errors
 		import traceback
