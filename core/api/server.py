@@ -74,6 +74,7 @@ from core.db import (
 	upsert_mod_pak,
 	upsert_pak_assets_json,
 	update_local_download_active_paks,
+	versions_equivalent,
 )
 from core.ingestion.scan_active_mods import main as scan_active_main
 from core.nexus import DEFAULT_GAME, collect_all_for_mod, get_api_key, get_mod_file_download_link
@@ -1285,11 +1286,9 @@ def _find_duplicate_download(
 		# Use prefix-aware matching: "2" matches "2.177.1" because "2" is the
 		# real Nexus version and "177.1" are file-sub-ID / timestamp artifacts
 		# from filename parsing.  Also handles the reverse direction.
-		versions_match = (
-			existing_version_normalized == candidate_version_normalized
-			or existing_version_normalized.startswith(candidate_version_normalized + ".")
-			or candidate_version_normalized.startswith(existing_version_normalized + ".")
-		)
+		# Use robust version matching logic: handles prefix matching (e.g., "2" matches "2.177.1")
+		# and other specific cases requested by the user.
+		versions_match = versions_equivalent(existing_version, candidate_version)
 		if versions_match:
 			# PHYSICAL EXISTENCE CHECK:
 			# If the file is missing from disk, we allow re-ingestion.
@@ -3261,9 +3260,11 @@ def update_mod(mod_id: int, payload: Optional[Dict[str, Any]] = Body(default=Non
 		latest_version_key = make_version_key(latest_version)[0]
 
 	already_installed = False
-	if latest_version.lower() in (s.lower() for s in local_version_strings if s):
-		already_installed = True
-	if latest_version_key and best_local_key and latest_version_key <= best_local_key:
+	for local_v in local_version_strings:
+		if versions_equivalent(local_v, latest_version):
+			already_installed = True
+			break
+	if not already_installed and latest_version_key and best_local_key and latest_version_key <= best_local_key:
 		already_installed = True
 
 	if already_installed and not options.get("force", False):
@@ -4468,7 +4469,9 @@ def list_downloads(limit: int = 500) -> List[Dict[str, Any]]:
 
 		local_version_key = make_version_key(version)[0]
 		needs_update = False
-		if latest_version_key and local_version_key:
+		if versions_equivalent(version, latest_version):
+			needs_update = False
+		elif latest_version_key and local_version_key:
 			needs_update = latest_version_key > local_version_key
 		elif latest_version and (version or "").strip():
 			needs_update = latest_version.strip() != (version or "").strip()

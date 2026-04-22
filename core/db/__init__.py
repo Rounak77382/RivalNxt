@@ -17,6 +17,7 @@ from .db import (
     upsert_pak_assets_json,
     rebuild_conflicts,
     resolve_created_at,
+    versions_equivalent,
 )
 from . import queries as _queries
 
@@ -60,4 +61,5 @@ __all__ = [
     'mod_with_local_and_latest',
     'list_mod_files',
     'get_changelogs',
+    'versions_equivalent',
 ]

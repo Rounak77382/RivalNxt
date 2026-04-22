@@ -952,36 +952,32 @@ def versions_equivalent(local: Optional[str], reference: Optional[str]) -> bool:
     if local_trimmed == reference_trimmed:
         return True
 
-    if local_trimmed.startswith(reference_trimmed):
-        remainder = local_trimmed[len(reference_trimmed) :]
-        remainder = remainder.lstrip(".-_ ")
-        if not remainder:
-            return True
-        if remainder.isdigit():
-            return True
+    # New logic: compare components up to the minimum number of parts present in either.
+    # This ensures that "2" and "2.177.1" match, and "1.2.123" and "1.2" match,
+    # while "1.2" and "1.3" remain different.
+    def _get_parts_count(v: str) -> int:
+        return len([p for p in re.split(r"[^0-9]+", v) if p])
 
-    local_key, local_maj, local_min, local_patch, local_build = make_version_key(local_trimmed)
-    remote_key, remote_maj, remote_min, remote_patch, remote_build = make_version_key(reference_trimmed)
+    l_count = _get_parts_count(local_trimmed)
+    r_count = _get_parts_count(reference_trimmed)
 
-    if local_key and remote_key and local_key == remote_key:
-        return True
+    # Use existing make_version_key to get normalized numeric components (handles timestamp shifting)
+    _, l_maj, l_min, l_patch, l_build = make_version_key(local_trimmed)
+    _, r_maj, r_min, r_patch, r_build = make_version_key(reference_trimmed)
 
-    if (
-        local_maj is not None
-        and remote_maj is not None
-        and local_min is not None
-        and remote_min is not None
-        and local_maj == remote_maj
-        and local_min == remote_min
-    ):
-        local_patch = local_patch or 0
-        remote_patch = remote_patch or 0
-        local_build = local_build or 0
-        remote_build = remote_build or 0
-        if remote_patch == 0 and remote_build == 0 and local_patch == 0:
-            return True
+    l_nums = [l_maj, l_min, l_patch, l_build]
+    r_nums = [r_maj, r_min, r_patch, r_build]
 
-    return False
+    # Compare up to the length of the version string that has fewer parts (capped at 4)
+    num_to_compare = min(l_count, r_count, 4)
+    if num_to_compare == 0:
+        return False
+
+    for i in range(num_to_compare):
+        if l_nums[i] != r_nums[i]:
+            return False
+
+    return True
 
 def replace_local_downloads(conn: sqlite3.Connection, rows: Iterable[Dict[str, Any]]) -> int:
     cur = conn.cursor()
