@@ -3620,8 +3620,55 @@ def copy_to_downloads(request: CopyToDownloadsRequest) -> Dict[str, Any]:
 	
 	dest_path = downloads_root / safe_name
 	
-	# Handle existing file - add counter suffix
+	# PRE-COPY DUPLICATE CHECK:
+	# If a file with the same name already exists in the downloads folder,
+	# check if it's already ingested. If so, return the existing path instead
+	# of creating a renamed copy (e.g. ModName-1.zip) which bypasses dupe detection.
 	if dest_path.exists():
+		candidate_name, candidate_mod_id, candidate_version = _resolve_mod_metadata(
+			dest_path,
+			provided_name=None,
+			provided_mod_id=None,
+			provided_version=None,
+		)
+		if candidate_name:
+			conn = get_db()
+			try:
+				cur = conn.cursor()
+				duplicate = _find_duplicate_download(cur, candidate_name, candidate_version, candidate_mod_id)
+				if duplicate is None:
+					# Also check by exact path
+					existing_by_path = cur.execute(
+						"SELECT id FROM local_downloads WHERE path = ?",
+						(normalize_download_path(dest_path),)
+					).fetchone()
+					if existing_by_path:
+						duplicate = (existing_by_path[0], candidate_name, candidate_version, normalize_download_path(dest_path))
+			finally:
+				try:
+					conn.close()
+				except Exception:
+					pass
+			
+			if duplicate:
+				# File already exists in DB — skip copy, return existing path
+				# so addMod will correctly raise a 409 DuplicateDownloadError
+				logger.info(f"[copy_to_downloads] Skipping copy — duplicate already in DB: {dest_path}")
+				size = dest_path.stat().st_size
+				try:
+					relative = str(dest_path.relative_to(downloads_root))
+				except ValueError:
+					relative = dest_path.name
+				return {
+					"ok": True,
+					"path": str(dest_path.resolve()),
+					"filename": dest_path.name,
+					"size": size,
+					"relative_path": relative,
+					"downloads_root": str(downloads_root),
+				}
+		
+		# Not a duplicate — add counter suffix so we don't overwrite
 		stem = dest_path.stem
 		suffix = dest_path.suffix
 		counter = 1
@@ -3650,6 +3697,7 @@ def copy_to_downloads(request: CopyToDownloadsRequest) -> Dict[str, Any]:
 		"relative_path": relative,
 		"downloads_root": str(downloads_root),
 	}
+
 
 
 @app.post("/api/refresh/conflicts")

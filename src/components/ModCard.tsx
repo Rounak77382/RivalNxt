@@ -70,7 +70,6 @@ function ModCardInner({
   onInstall,
   onFavorite,
   onView,
-  onOpenFilesTab,
 }: ModCardProps) {
   // NSFW blur filter
   const { nsfwBlurEnabled } = useNsfwFilter();

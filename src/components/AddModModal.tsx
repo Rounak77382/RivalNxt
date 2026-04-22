@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -45,6 +45,8 @@ export function AddModModal({
     null,
   );
   const [isDragging, setIsDragging] = useState(false);
+  // Guard to prevent Tauri native drop + React onDrop from both firing
+  const isDragProcessingRef = useRef(false);
 
   const parseNexusModLink = (raw: string) => {
     try {
@@ -400,6 +402,9 @@ export function AddModModal({
             setIsDragging(false);
             const paths = event.payload.paths;
             if (paths && paths.length > 0) {
+              // Guard: prevent React onDrop from also processing this drop
+              if (isDragProcessingRef.current) return;
+              isDragProcessingRef.current = true;
               const filePath = paths[0];
 
               // First copy the file to the downloads folder, then add it
@@ -467,6 +472,7 @@ export function AddModModal({
                 }
               } finally {
                 setUploading(false);
+                isDragProcessingRef.current = false;
               }
             }
           }
@@ -631,6 +637,10 @@ export function AddModModal({
               e.preventDefault();
               e.stopPropagation();
               setIsDragging(false);
+              // Tauri's onDragDropEvent handles OS file drops with native paths.
+              // This React handler only fires in browser-context (non-Tauri) or
+              // when the Tauri handler is NOT already processing the drop.
+              if (isDragProcessingRef.current) return;
               const files = e.dataTransfer.files;
               if (files && files.length > 0) {
                 handleBrowse(files[0]);
