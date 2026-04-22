@@ -43,6 +43,9 @@ export function DownloadsPage({
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [selectedMod, setSelectedMod] = useState<Mod | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalInitialTab, setModalInitialTab] = useState<
+    "overview" | "files" | "changelog" | "images" | "assets"
+  >("overview");
   const [tagLookupMap, setTagLookupMap] = useState<TagLookupResponse>({});
 
   // Build a stable signature of all tags so we re-fetch only when tags actually change
@@ -85,6 +88,15 @@ export function DownloadsPage({
       setSelectedMod(updated);
     }
   }, [mods, selectedMod]);
+
+  const handleOpenFilesTab = (modId: string) => {
+    const mod = mods.find((m) => m.id === modId);
+    if (mod) {
+      setSelectedMod(mod);
+      setModalInitialTab("files");
+      setIsModalOpen(true);
+    }
+  };
 
   // Base: show only installed mods
   let filteredMods = mods.filter((mod) => mod.isInstalled);
@@ -355,9 +367,11 @@ export function DownloadsPage({
                     onCheckUpdate={onCheckUpdate}
                     onView={(m) => {
                       setSelectedMod(m);
+                      setModalInitialTab("overview");
                       setIsModalOpen(true);
                     }}
                     onFavorite={onFavorite}
+                    onOpenFilesTab={handleOpenFilesTab}
                   />
                 ))}
               </div>
@@ -376,11 +390,16 @@ export function DownloadsPage({
         <ModModal
           mod={selectedMod}
           isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
+          onClose={() => {
+            setIsModalOpen(false);
+            setModalInitialTab("overview");
+          }}
           onInstall={() => {}}
           onFavorite={onFavorite}
           onConflictStateChanged={onConflictStateChanged}
           onRefresh={onRefresh}
+          initialTab={modalInitialTab}
+          onUpdate={onUpdate}
         />
       )}
     </>

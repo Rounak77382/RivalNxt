@@ -61,6 +61,7 @@ interface ModCardProps {
   onInstall: (modId: string) => void;
   onFavorite: (modId: string) => void;
   onView: (mod: Mod) => void;
+  onOpenFilesTab: (modId: string) => void;
 }
 
 function ModCardInner({
@@ -69,6 +70,7 @@ function ModCardInner({
   onInstall,
   onFavorite,
   onView,
+  onOpenFilesTab,
 }: ModCardProps) {
   // NSFW blur filter
   const { nsfwBlurEnabled } = useNsfwFilter();

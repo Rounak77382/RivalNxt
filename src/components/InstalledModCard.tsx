@@ -36,6 +36,7 @@ interface InstalledModCardProps {
   onCheckUpdate: (modId: string) => void | Promise<void>;
   onView: (mod: Mod) => void;
   onFavorite: (modId: string) => void;
+  onOpenFilesTab: (modId: string) => void;
 }
 
 function InstalledModCardInner({
@@ -46,6 +47,7 @@ function InstalledModCardInner({
   onCheckUpdate,
   onView,
   onFavorite,
+  onOpenFilesTab,
 }: InstalledModCardProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isUninstalling, setIsUninstalling] = useState(false);
@@ -206,10 +208,21 @@ function InstalledModCardInner({
                     >
                       {mod.name}
                     </h3>
-                    {mod.hasUpdate && (
-                      <Badge variant="destructive" className="text-xs shrink-0">
-                        Update Available
-                      </Badge>
+                    {(mod.hasUpdate || mod.isUpdating) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onOpenFilesTab(mod.id)}
+                        className="h-8 px-3 gap-1.5 text-sm font-medium bg-transparent border border-white/10 hover:bg-white hover:text-black transition-all"
+                        disabled={mod.isUpdating}
+                      >
+                        <RefreshCw
+                          className={`w-3 h-3${
+                            mod.isUpdating ? " animate-spin" : ""
+                          }`}
+                        />
+                        {mod.isUpdating ? "Updating…" : "Update Available"}
+                      </Button>
                     )}
                   </div>
                 </div>
@@ -255,24 +268,6 @@ function InstalledModCardInner({
                       }`}
                     />
                   </Button>
-
-                  {(mod.hasUpdate || mod.isUpdating) && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onUpdate(mod.id)}
-                      className="gap-1 shrink-0"
-                      disabled={mod.isUpdating}
-                      aria-disabled={mod.isUpdating}
-                    >
-                      <RefreshCw
-                        className={`w-3 h-3${
-                          mod.isUpdating ? " animate-spin" : ""
-                        }`}
-                      />
-                      {mod.isUpdating ? "Updating…" : "Update"}
-                    </Button>
-                  )}
 
                   <Button
                     variant="ghost"
@@ -545,7 +540,7 @@ function InstalledModCardInner({
                   <Button
                     variant="default"
                     size="sm"
-                    onClick={() => onUpdate(mod.id)}
+                    onClick={() => onOpenFilesTab(mod.id)}
                     className="flex-1 gap-2"
                     disabled={mod.isUpdating}
                     aria-disabled={mod.isUpdating}

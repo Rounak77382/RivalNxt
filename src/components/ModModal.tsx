@@ -38,6 +38,7 @@ import {
   Pencil,
   Check,
   X as XIcon,
+  RefreshCw,
 } from "lucide-react";
 import type { Mod } from "./ModCard";
 import {
@@ -82,6 +83,12 @@ type DownloadEntry = {
   version: string | null;
   created_at?: string | null;
   name?: string | null;
+  // NEW fields (already returned by /api/local_downloads/:id)
+  local_version_key?: string | null;
+  latest_version?: string | null;
+  latest_version_key?: string | null;
+  latest_file_id?: number | null;
+  needs_update?: boolean;
 };
 
 type PakGroup = { primary: string; files: string[] };
@@ -355,6 +362,10 @@ interface ModModalProps {
   onFavorite: (modId: string) => void;
   onConflictStateChanged?: () => void;
   onRefresh?: () => void;
+  // NEW: open on a specific tab (default = "overview")
+  initialTab?: "overview" | "files" | "changelog" | "images" | "assets";
+  // NEW: called when user clicks Update on a specific variant
+  onUpdate?: (modId: string, downloadId?: number) => void | Promise<void>;
 }
 
 export function ModModal({
@@ -365,6 +376,8 @@ export function ModModal({
   onFavorite,
   onConflictStateChanged,
   onRefresh,
+  initialTab,
+  onUpdate,
 }: ModModalProps) {
   const [details, setDetails] = useState<ApiModDetails | null>(null);
   // Files list from server is not needed for toggle UI; using local download contents instead
@@ -543,6 +556,11 @@ export function ModModal({
                 null,
               created_at: dl.created_at ?? null,
               name: dl.name ?? null,
+              local_version_key: dl.local_version_key ?? null,
+              latest_version: dl.latest_version ?? null,
+              latest_version_key: dl.latest_version_key ?? null,
+              latest_file_id: dl.latest_file_id ?? null,
+              needs_update: dl.needs_update ?? false,
             } as DownloadEntry;
           } catch (error) {
             console.warn(
@@ -686,6 +704,15 @@ export function ModModal({
       })),
     [downloadEntries],
   );
+
+  const highestLocalVersionKey = useMemo(() => {
+    return downloadEntries.reduce<string | null>((best, entry) => {
+      if (!entry.local_version_key) return best;
+      if (!best || entry.local_version_key > best)
+        return entry.local_version_key;
+      return best;
+    }, null);
+  }, [downloadEntries]);
 
   const handleToggle = useCallback(
     async (downloadId: number, files: string[], willCheck: boolean) => {
@@ -1465,7 +1492,8 @@ export function ModModal({
             style={{ height: "calc(100% - 200px)" }}
           >
             <Tabs
-              defaultValue="overview"
+              key={initialTab ?? "overview"}
+              defaultValue={initialTab ?? "overview"}
               className="flex flex-col"
             >
               <TabsList className="mx-6 mt-4 mb-0 flex-shrink-0">
@@ -1796,6 +1824,46 @@ export function ModModal({
                                     </Badge>
                                   </div>
                                   <div className="flex items-center gap-2">
+                                    {(() => {
+                                      const isHighestLocal =
+                                        entry.local_version_key != null &&
+                                        entry.local_version_key ===
+                                          highestLocalVersionKey;
+
+                                      const variantNeedsUpdate =
+                                        isHighestLocal &&
+                                        Boolean(entry.needs_update) &&
+                                        entry.local_version_key != null &&
+                                        entry.latest_version_key != null &&
+                                        entry.local_version_key <
+                                          entry.latest_version_key;
+
+                                      if (!variantNeedsUpdate) return null;
+
+                                      return (
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() =>
+                                            onUpdate?.(
+                                              String(
+                                                mod!.backendModId ?? mod!.id,
+                                              ),
+                                              entry.latest_file_id ?? undefined,
+                                            )
+                                          }
+                                          disabled={isApplying}
+                                          className="h-8 px-3 gap-1.5 text-sm font-medium bg-transparent border border-white/10 hover:bg-white hover:text-black transition-all"
+                                          title={`Update to v${
+                                            entry.latest_version ?? "latest"
+                                          }`}
+                                        >
+                                          <RefreshCw className="w-3.5 h-3.5" />
+                                          Update to v
+                                          {entry.latest_version ?? "latest"}
+                                        </Button>
+                                      );
+                                    })()}
                                     <Button
                                       variant="ghost"
                                       size="sm"

@@ -383,6 +383,7 @@
   button,
   input:where([type="button"], [type="reset"], [type="submit"]) {
     appearance: button;
+    cursor: pointer;
   }
 
   ::file-selector-button {

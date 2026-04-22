@@ -44,6 +44,9 @@ export function ActiveModsView({
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [selectedMod, setSelectedMod] = useState<Mod | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalInitialTab, setModalInitialTab] = useState<
+    "overview" | "files" | "changelog" | "images" | "assets"
+  >("overview");
   const [tagLookupMap, setTagLookupMap] = useState<TagLookupResponse>({});
 
   // Build a stable signature of all tags so we re-fetch only when tags change
@@ -86,6 +89,15 @@ export function ActiveModsView({
       setSelectedMod(updated);
     }
   }, [mods, selectedMod]);
+
+  const handleOpenFilesTab = (modId: string) => {
+    const mod = mods.find((m) => m.id === modId);
+    if (mod) {
+      setSelectedMod(mod);
+      setModalInitialTab("files");
+      setIsModalOpen(true);
+    }
+  };
 
   const installedMods = mods.filter((mod) => mod.isInstalled);
   let filteredMods = [...installedMods];
@@ -364,9 +376,11 @@ export function ActiveModsView({
                       onCheckUpdate={onCheckUpdate}
                       onView={(m) => {
                         setSelectedMod(m);
+                        setModalInitialTab("overview");
                         setIsModalOpen(true);
                       }}
                       onFavorite={onFavorite}
+                      onOpenFilesTab={handleOpenFilesTab}
                     />
                   ))}
                 </div>
@@ -396,9 +410,11 @@ export function ActiveModsView({
                       onCheckUpdate={onCheckUpdate}
                       onView={(m) => {
                         setSelectedMod(m);
+                        setModalInitialTab("overview");
                         setIsModalOpen(true);
                       }}
                       onFavorite={onFavorite}
+                      onOpenFilesTab={handleOpenFilesTab}
                     />
                   ))}
                 </div>
@@ -425,12 +441,15 @@ export function ActiveModsView({
           isOpen={isModalOpen}
           onClose={() => {
             setIsModalOpen(false);
+            setModalInitialTab("overview");
             setSelectedMod(null);
           }}
           onInstall={() => {}}
           onFavorite={onFavorite}
           onConflictStateChanged={onConflictStateChanged}
           onRefresh={onRefresh}
+          initialTab={modalInitialTab}
+          onUpdate={onUpdate}
         />
       )}
     </>

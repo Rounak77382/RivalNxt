@@ -833,7 +833,7 @@ export default function App() {
     }
   };
 
-  const handleUpdate = async (modId: string) => {
+  const handleUpdate = async (modId: string, targetFileId?: number) => {
     const target = mods.find((m) => m.id === modId);
     if (!target) {
       return;
@@ -925,6 +925,7 @@ export default function App() {
     try {
       const response = await updateMod(backendModId, {
         activate: shouldActivate,
+        ...(targetFileId != null ? { fileId: targetFileId } : {}),
       });
       await applyUpdateSuccess(response);
       return;

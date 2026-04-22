@@ -6162,14 +6162,24 @@ def get_local_download(download_id: int) -> Dict[str, Any]:
 		cur = conn.cursor()
 		row = cur.execute(
 			"""
-			SELECT id, name, mod_id, version, path, contents, active_paks, created_at
-			FROM local_downloads WHERE id = ?
+			SELECT l.id, l.name, l.mod_id, l.version, l.path, l.contents, l.active_paks, l.created_at,
+			   latest.file_version,
+			   latest.latest_uploaded_at,
+			   latest.latest_file_id,
+			   latest.latest_version_key,
+			   latest.file_name
+			FROM local_downloads l
+			LEFT JOIN v_mods_with_latest_by_version latest ON latest.mod_id = l.mod_id
+			WHERE l.id = ?
 			""",
 			(download_id,),
 		).fetchone()
 		if not row:
 			raise HTTPException(status_code=404, detail="local_download not found")
-		id_, name, mod_id, version, path, contents_raw, active_raw, created_at = row
+		
+		(id_, name, mod_id, version, path, contents_raw, active_raw, created_at,
+		 latest_version, latest_uploaded_at, latest_file_id, latest_version_key, latest_file_name) = row
+
 		try:
 			contents = json.loads(contents_raw) if contents_raw else []
 			if not isinstance(contents, list):
@@ -6182,6 +6192,16 @@ def get_local_download(download_id: int) -> Dict[str, Any]:
 				active_paks = []
 		except Exception:
 			active_paks = []
+
+		local_version_key = make_version_key(version)[0]
+		needs_update = False
+		if versions_equivalent(version, latest_version):
+			needs_update = False
+		elif latest_version_key and local_version_key:
+			needs_update = latest_version_key > local_version_key
+		elif latest_version and (version or "").strip():
+			needs_update = latest_version.strip() != (version or "").strip()
+
 		return {
 			"id": id_,
 			"name": name,
@@ -6191,6 +6211,13 @@ def get_local_download(download_id: int) -> Dict[str, Any]:
 			"contents": contents,
 			"active_paks": active_paks,
 			"created_at": created_at,
+			"latest_version": latest_version,
+			"latest_uploaded_at": latest_uploaded_at,
+			"latest_file_id": latest_file_id,
+			"latest_version_key": latest_version_key,
+			"latest_file_name": latest_file_name,
+			"local_version_key": local_version_key,
+			"needs_update": needs_update,
 		}
 	finally:
 		try:

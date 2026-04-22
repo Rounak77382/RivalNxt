@@ -8,14 +8,23 @@ interface BrowsePageProps {
   mods: Mod[];
   onInstall: (modId: string) => void;
   onFavorite: (modId: string) => void;
+  onUpdate?: (modId: string, downloadId?: number) => void | Promise<void>;
 }
 
-export function BrowsePage({ mods, onInstall, onFavorite }: BrowsePageProps) {
+export function BrowsePage({
+  mods,
+  onInstall,
+  onFavorite,
+  onUpdate,
+}: BrowsePageProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [sortBy, setSortBy] = useState("Popular");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [selectedMod, setSelectedMod] = useState<Mod | null>(null);
+  const [modalInitialTab, setModalInitialTab] = useState<
+    "overview" | "files" | "changelog" | "images" | "assets"
+  >("overview");
 
   // Build filtered mods from live data (no mock helpers)
   let filteredMods = [...mods];
@@ -151,7 +160,16 @@ export function BrowsePage({ mods, onInstall, onFavorite }: BrowsePageProps) {
   // Event handlers
 
   const handleViewMod = (mod: Mod) => {
+    setModalInitialTab("overview");
     setSelectedMod(mod);
+  };
+
+  const handleOpenFilesTab = (modId: string) => {
+    const mod = mods.find((m) => m.id === modId);
+    if (mod) {
+      setSelectedMod(mod);
+      setModalInitialTab("files");
+    }
   };
 
   return (
@@ -241,6 +259,7 @@ export function BrowsePage({ mods, onInstall, onFavorite }: BrowsePageProps) {
                   onInstall={onInstall}
                   onFavorite={onFavorite}
                   onView={handleViewMod}
+                  onOpenFilesTab={handleOpenFilesTab}
                 />
               ))}
             </div>
@@ -252,9 +271,14 @@ export function BrowsePage({ mods, onInstall, onFavorite }: BrowsePageProps) {
       <ModModal
         mod={selectedMod}
         isOpen={!!selectedMod}
-        onClose={() => setSelectedMod(null)}
+        onClose={() => {
+          setSelectedMod(null);
+          setModalInitialTab("overview");
+        }}
         onInstall={onInstall}
         onFavorite={onFavorite}
+        initialTab={modalInitialTab}
+        onUpdate={onUpdate}
       />
     </div>
   );
