@@ -13,6 +13,9 @@ def parse_mod_filename(filename: str) -> Tuple[str, Optional[int], str]:
     if not base:
         return "", None, ""
 
+    # Strip Unreal Engine .pak suffixes like _9999999_P, _P, _p
+    base = re.sub(r"_(?:\d+_)?(?:P|p)$", "", base)
+
     # Try different separators to find a Mod ID
     # We prioritize hyphens as they are standard for Nexus filenames
     for sep in ["-", "_"]:

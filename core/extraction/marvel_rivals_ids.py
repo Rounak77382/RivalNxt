@@ -41,34 +41,73 @@ def is_internal_name(name: str) -> bool:
     return False
 
 
-def extract_character_names_from_locres(paks_dir):
-    """Extract character names from pakchunkLocres using discovered patterns."""
-    output_dir_locres = Path("temp_locres_chars")
-    output_dir_locres.mkdir(exist_ok=True)
+def get_all_locres_strings(paks_dir):
+    """Helper to extract all strings from all relevant locres files."""
+    paks_to_process = []
     
+    # 1. Base Locres
+    base_locres = paks_dir / "pakchunkLocres-Windows.pak"
+    if base_locres.exists():
+        paks_to_process.append(base_locres)
+        
+    # 2. Patch PAKs
+    all_patch_paks = sorted(paks_dir.glob("Patch*Windows*.pak"))
+    paks_to_process.extend(all_patch_paks)
+    
+    all_strings = {}
+    unpacker = PyUnpacker()
+    
+    for pak_path in paks_to_process:
+        pak_temp_dir = Path(f"temp_locres_{pak_path.stem}")
+        pak_temp_dir.mkdir(exist_ok=True)
+        
+        try:
+            unpacker.unpack_pak(
+                str(pak_path),
+                str(pak_temp_dir),
+                aes_key=SETTINGS.aes_key_hex,
+                force=True,
+                quiet=True,
+                include_patterns=["**/*.locres", "*locres"]
+            )
+            
+            locres_files = list(pak_temp_dir.rglob("*.locres"))
+            if not locres_files:
+                continue
+                
+            # Prefer English, fallback to first found
+            en_files = [lf for lf in locres_files if 'en' in lf.parent.name.lower()]
+            locres_file_to_read = en_files[0] if en_files else locres_files[0]
+            
+            lf = LocresFile()
+            lf.read(str(locres_file_to_read))
+            
+            for ns_name, namespace in lf.namespaces.items():
+                if ns_name not in all_strings:
+                    all_strings[ns_name] = {}
+                for entry_key, entry in namespace.entrys.items():
+                    # Later paks (patches/mods) overwrite earlier ones
+                    all_strings[ns_name][entry_key] = entry.translation
+                    
+        except Exception as e:
+            # Skip problematic paks but keep going
+            print(f"Warning: Failed to process {pak_path.name}: {e}")
+        finally:
+            # Cleanup temp dir
+            import shutil
+            if pak_temp_dir.exists():
+                shutil.rmtree(pak_temp_dir)
+                
+    return all_strings
+
+
+def extract_character_names_from_locres(paks_dir):
+    """Extract character names from locres files using discovered patterns."""
     try:
-        unpacker = PyUnpacker()
-        unpacker.unpack_pak(
-            str(paks_dir / "pakchunkLocres-Windows.pak"),
-            str(output_dir_locres),
-            aes_key=SETTINGS.aes_key_hex,
-            force=True,
-            quiet=True
-        )
-        
-        locres_files = list(output_dir_locres.rglob("*.locres"))
-        en_files = [lf for lf in locres_files if 'en' in lf.parent.name.lower()]
-        en_file = en_files[0] if en_files else locres_files[0]
-        
-        lf = LocresFile()
-        lf.read(str(en_file))
-        
-        all_strings = {}
-        for ns_name, namespace in lf.namespaces.items():
-            all_strings[ns_name] = {}
-            for entry_key, entry in namespace.entrys.items():
-                all_strings[ns_name][entry_key] = entry.translation
-        
+        all_strings = get_all_locres_strings(paks_dir)
+        if not all_strings:
+            return {}
+            
         character_names = {}
         
         # Pattern 1: MarvelItemTable_{CHAR_ID}_ItemName
@@ -102,9 +141,9 @@ def extract_character_names_from_locres(paks_dir):
         filtered_character_names = {k: v for k, v in character_names.items() if not is_internal_name(v)}
         return filtered_character_names
         
-    finally:
-        import shutil
-        shutil.rmtree(output_dir_locres, ignore_errors=True)
+    except Exception as e:
+        print(f"Error extracting character names: {e}")
+        return {}
 
 
 def extract_skin_ids_from_pak(paks_dir):
@@ -159,6 +198,9 @@ def extract_skin_ids_from_pak(paks_dir):
             if utoc_path.exists():
                 # Use list_utoc for IoStore containers
                 assets = unpacker.list_utoc(str(utoc_path), aes_key=SETTINGS.aes_key_hex, json_format=False)
+                if not assets:
+                    # Fallback for hybrid PAKs
+                    assets = unpacker.get_pak_file_list(str(pak_path), aes_key=SETTINGS.aes_key_hex)
             else:
                 # Use get_pak_file_list for legacy/standalone PAKs
                 assets = unpacker.get_pak_file_list(str(pak_path), aes_key=SETTINGS.aes_key_hex)
@@ -192,81 +234,12 @@ def extract_skin_ids_from_pak(paks_dir):
 
 
 def extract_skin_names_from_locres(paks_dir):
-    """Extract skin names from pakchunkLocres and Patch PAKs using all discovered patterns."""
-    output_dir = Path("temp_locres")
-    output_dir.mkdir(exist_ok=True)
-    
+    """Extract skin names from locres files using discovered patterns."""
     try:
-        # Find all relevant PAKs: Base locres + Patches
-        # Note: We prioritize patches by loading them later (overwriting base values)
-        paks_to_process = []
-        
-        # 1. Base Locres
-        base_locres = paks_dir / "pakchunkLocres-Windows.pak"
-        if base_locres.exists():
-            paks_to_process.append(base_locres)
+        all_strings = get_all_locres_strings(paks_dir)
+        if not all_strings:
+            return {}
             
-        # 2. Patch PAKs (sorted to ensure correct overwrite order)
-        # Explicitly exclude anything that might be in a ~mods subdirectory
-        all_patch_paks = sorted(paks_dir.glob("Patch*Windows*.pak"))
-        patch_paks = [p for p in all_patch_paks if "~mods" not in str(p).lower()]
-        paks_to_process.extend(patch_paks)
-            
-        all_strings = {} # Shared dictionary for all translations (merged)
-
-        # Iterate through all PAKs
-        for pak_path in paks_to_process:
-            # Create a unique sub-temp dir for this pak to avoid conflicts
-            pak_temp_dir = output_dir / pak_path.stem
-            pak_temp_dir.mkdir(parents=True, exist_ok=True)
-            
-            try:
-                unpacker = PyUnpacker()
-                unpacker.unpack_pak(
-                    str(pak_path),
-                    str(pak_temp_dir),
-                    aes_key=SETTINGS.aes_key_hex,
-                    force=True,
-                    quiet=True
-                )
-                
-                # Find locres files in this unpacked PAK
-                locres_files = list(pak_temp_dir.rglob("*.locres"))
-                
-                # Filter for English or Game.locres
-                # In patches, it's often just 'Content/Localization/Game/en/Game.locres'
-                target_files = []
-                for lf in locres_files:
-                    # Prefer english, but grab everything if we want to be safe. 
-                    # Usually we just want the 'en' folder one.
-                    if 'en' in lf.parent.name.lower():
-                        target_files.append(lf)
-                
-                # If no specific 'en' folder found, fallback to all locres (unlikely but safe)
-                if not target_files:
-                    target_files = locres_files
-                
-                for locres_file in target_files:
-                    lf = LocresFile()
-                    lf.read(str(locres_file))
-                    
-                    # Merge into master dict
-                    for ns_name, namespace in lf.namespaces.items():
-                        if ns_name not in all_strings:
-                            all_strings[ns_name] = {}
-                        
-                        for entry_key, entry in namespace.entrys.items():
-                            all_strings[ns_name][entry_key] = entry.translation
-                            
-            except Exception as e:
-                print(f"Error processing {pak_path.name}: {e}")
-            finally:
-                # Clean up individual pak extraction to save space/time
-                import shutil
-                shutil.rmtree(pak_temp_dir, ignore_errors=True)
-        
-        # --- Extraction Logic (Standard Patterns) ---
-        
         skin_names = {}
         
         # Pattern 1: HeroUIAsset namespaces
@@ -317,9 +290,9 @@ def extract_skin_names_from_locres(paks_dir):
         filtered_skin_names = {k: v for k, v in skin_names.items() if not is_internal_name(v)}
         return filtered_skin_names
         
-    finally:
-        import shutil
-        shutil.rmtree(output_dir, ignore_errors=True)
+    except Exception as e:
+        print(f"Error extracting skin names: {e}")
+        return {}
 
 
 def combine_extraction_data(character_names, character_skins, skin_names):

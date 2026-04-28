@@ -161,4 +161,6 @@ extracted_wheel/
 *.whl.info
 *.dist-info/
 
+#scratch files
+**/scratch/
 

@@ -1756,10 +1756,7 @@ export default function App() {
     const byMod = new Map<number, ApiDownload>();
     const byName = new Map<string, ApiDownload>();
 
-    const isFuzzyMatch = (a: string | null | undefined, b: string | null | undefined) => {
-      if (!a || !b) return false;
-      return a.replace(/[^a-zA-Z0-9]/g, "").toLowerCase() === b.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
-    };
+
 
     const mergeMetadata = (target: ApiDownload, incoming: ApiDownload) => {
       if (!target.latest_version && incoming.latest_version)
@@ -1799,9 +1796,6 @@ export default function App() {
       }
 
       let incomingNeedsUpdate = Boolean(incoming.needs_update);
-      if (incoming.latest_file_name && incoming.name && !isFuzzyMatch(incoming.latest_file_name, incoming.name)) {
-        incomingNeedsUpdate = false;
-      }
       target.needs_update = Boolean(target.needs_update || incomingNeedsUpdate);
 
       // Simple override if grouped version has reached API version locally
@@ -1833,9 +1827,6 @@ export default function App() {
         const prev = byName.get(key);
         if (!prev) {
           let initialNeedsUpdate = Boolean(d.needs_update);
-          if (d.latest_file_name && d.name && !isFuzzyMatch(d.latest_file_name, d.name)) {
-            initialNeedsUpdate = false;
-          }
           byName.set(key, {
             ...d,
             contents: [...(d.contents || [])],
@@ -1897,9 +1888,6 @@ export default function App() {
       const prev = byMod.get(d.mod_id);
       if (!prev) {
         let initialNeedsUpdate = Boolean(d.needs_update);
-        if (d.latest_file_name && d.name && !isFuzzyMatch(d.latest_file_name, d.name)) {
-          initialNeedsUpdate = false;
-        }
         byMod.set(d.mod_id, {
           ...d,
           contents: [...(d.contents || [])],

@@ -155,14 +155,15 @@ def find_category(path: str) -> Optional[str]:
 
 def find_entity_key(path_segments: List[str]) -> Tuple[Optional[str], Optional[str], Optional[str]]:
     # Returns (char_id4, skin_id7, alpha_key)
-    # NEW LOGIC: Strict path-based pattern matching
-    # Look for /XXXXXXX/ (7-digit skin ID) first, then /XXXX/ (4-digit character ID)
+    # NEW LOGIC: Robust ID detection in both folders and filenames
     
-    # Convert path segments to normalized path string for pattern matching
-    path_str = "/" + "/".join(path_segments) + "/"
+    # Join with slashes but also search in individual segments
+    path_str = "/".join(path_segments)
     
-    # Pattern 1: Look for 7-digit skin IDs in path (e.g., /1011100/)
-    skin_pattern = r'/(\d{7})/'
+    # Pattern 1: Look for 7-digit skin IDs (e.g., /1011100/ or SK_1011100)
+    # Using word boundaries \b to avoid matching parts of longer numbers
+    # Also ensuring it's not part of a larger digit sequence
+    skin_pattern = r'(?<!\d)(\d{7})(?!\d)'
     skin_matches = re.findall(skin_pattern, path_str)
     if skin_matches:
         # Take the last match (closest to filename)
@@ -170,8 +171,8 @@ def find_entity_key(path_segments: List[str]) -> Tuple[Optional[str], Optional[s
         char_id4 = skin_id7[:4]
         return char_id4, skin_id7, None
     
-    # Pattern 2: Look for 4-digit character IDs in path (e.g., /1011/)
-    char_pattern = r'/(\d{4})/'
+    # Pattern 2: Look for 4-digit character IDs (e.g., /1011/ or CH_1011)
+    char_pattern = r'(?<!\d)(\d{4})(?!\d)'
     char_matches = re.findall(char_pattern, path_str)
     if char_matches:
         # Take the last match (closest to filename)
@@ -223,13 +224,20 @@ def tag_asset(path: str, entity_map: Dict[str, str]) -> str:
     # Build tags as a list
     tags = []
     
-    # If we found a skin ID, add both character and skin name
-    if skin_id7 and skin_id7 in entity_map:
-        # Add character name first
+    # If we found a skin ID
+    if skin_id7:
+        # Add character name if known
         if char_id4 and char_id4 in entity_map:
             tags.append(entity_map[char_id4])
-        # Add skin name second
-        tags.append(entity_map[skin_id7])
+        
+        # Add skin name if known, otherwise fallback to variant ID
+        if skin_id7 in entity_map:
+            tags.append(entity_map[skin_id7])
+        else:
+            # Fallback for skins not in DB: "variant XXX" (last 3 digits)
+            # Standard Marvel skin IDs are 1031305 -> variant 305
+            variant_id = skin_id7[4:] if len(skin_id7) >= 7 else skin_id7
+            tags.append(f"variant {variant_id}")
     # Otherwise just add character if found
     elif char_id4 and char_id4 in entity_map:
         tags.append(entity_map[char_id4])

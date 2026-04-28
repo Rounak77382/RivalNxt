@@ -1288,7 +1288,11 @@ def _find_duplicate_download(
 		# from filename parsing.  Also handles the reverse direction.
 		# Use robust version matching logic: handles prefix matching (e.g., "2" matches "2.177.1")
 		# and other specific cases requested by the user.
-		versions_match = versions_equivalent(existing_version, candidate_version)
+		versions_match = (
+			not existing_version_normalized
+			or not candidate_version_normalized
+			or versions_equivalent(existing_version, candidate_version)
+		)
 		if versions_match:
 			# PHYSICAL EXISTENCE CHECK:
 			# If the file is missing from disk, we allow re-ingestion.
@@ -4427,15 +4431,22 @@ def list_downloads(limit: int = 500) -> List[Dict[str, Any]]:
 		   m.author_profile_url, m.author_member_id,
 		   m.contains_adult_content,
 		   v.tags_json,
-		   latest.file_version,
-		   latest.latest_uploaded_at,
-		   latest.latest_file_id,
-		   latest.latest_version_key,
-		   latest.file_name
+		   COALESCE(variant_latest.version, overall_latest.file_version) AS file_version,
+		   COALESCE(variant_latest.uploaded_at, overall_latest.latest_uploaded_at) AS latest_uploaded_at,
+		   COALESCE(variant_latest.file_id, overall_latest.latest_file_id) AS latest_file_id,
+		   COALESCE(variant_latest.version_key, overall_latest.latest_version_key) AS latest_version_key,
+		   COALESCE(variant_latest.name, overall_latest.file_name) AS file_name
 		FROM local_downloads l
 		LEFT JOIN mods m ON m.mod_id = l.mod_id
 		LEFT JOIN v_local_downloads_with_tags v ON v.download_id = l.id
-		LEFT JOIN v_mods_with_latest_by_version latest ON latest.mod_id = l.mod_id
+		LEFT JOIN v_mods_with_latest_by_version overall_latest ON overall_latest.mod_id = l.mod_id
+		LEFT JOIN (
+			SELECT mod_id, file_id, version, uploaded_at, name, version_key,
+			       ROW_NUMBER() OVER (PARTITION BY mod_id, REPLACE(REPLACE(REPLACE(LOWER(name), ' ', ''), '-', ''), '_', '') ORDER BY uploaded_at DESC, file_id DESC) as rn
+			FROM mod_files
+		) variant_latest ON variant_latest.mod_id = l.mod_id 
+		    AND variant_latest.rn = 1 
+		    AND REPLACE(REPLACE(REPLACE(LOWER(variant_latest.name), ' ', ''), '-', ''), '_', '') = REPLACE(REPLACE(REPLACE(LOWER(l.name), ' ', ''), '-', ''), '_', '')
 		ORDER BY l.created_at DESC
 		LIMIT ?
 		""",
@@ -6211,13 +6222,20 @@ def get_local_download(download_id: int) -> Dict[str, Any]:
 		row = cur.execute(
 			"""
 			SELECT l.id, l.name, l.mod_id, l.version, l.path, l.contents, l.active_paks, l.created_at,
-			   latest.file_version,
-			   latest.latest_uploaded_at,
-			   latest.latest_file_id,
-			   latest.latest_version_key,
-			   latest.file_name
+			   COALESCE(variant_latest.version, overall_latest.file_version) AS file_version,
+			   COALESCE(variant_latest.uploaded_at, overall_latest.latest_uploaded_at) AS latest_uploaded_at,
+			   COALESCE(variant_latest.file_id, overall_latest.latest_file_id) AS latest_file_id,
+			   COALESCE(variant_latest.version_key, overall_latest.latest_version_key) AS latest_version_key,
+			   COALESCE(variant_latest.name, overall_latest.file_name) AS file_name
 			FROM local_downloads l
-			LEFT JOIN v_mods_with_latest_by_version latest ON latest.mod_id = l.mod_id
+			LEFT JOIN v_mods_with_latest_by_version overall_latest ON overall_latest.mod_id = l.mod_id
+			LEFT JOIN (
+				SELECT mod_id, file_id, version, uploaded_at, name, version_key,
+					   ROW_NUMBER() OVER (PARTITION BY mod_id, REPLACE(REPLACE(REPLACE(LOWER(name), ' ', ''), '-', ''), '_', '') ORDER BY uploaded_at DESC, file_id DESC) as rn
+				FROM mod_files
+			) variant_latest ON variant_latest.mod_id = l.mod_id 
+				AND variant_latest.rn = 1 
+				AND REPLACE(REPLACE(REPLACE(LOWER(variant_latest.name), ' ', ''), '-', ''), '_', '') = REPLACE(REPLACE(REPLACE(LOWER(l.name), ' ', ''), '-', ''), '_', '')
 			WHERE l.id = ?
 			""",
 			(download_id,),
