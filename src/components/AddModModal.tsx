@@ -23,6 +23,8 @@ import {
   createNxmProgressController,
   formatBytes,
   getModLabel,
+  isNexusOfficialNaming,
+  parseNexusFilename,
 } from "../lib/nxmHelpers";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 
@@ -684,6 +686,21 @@ export function AddModModal({
                 </Button>
               </div>
               <div className="mt-1 break-all">{localPath}</div>
+              {(() => {
+                const fileName = localPath.split(/[/\\]/).pop() || "";
+                if (isNexusOfficialNaming(fileName)) {
+                  const meta = parseNexusFilename(fileName);
+                  return (
+                    <div className="mt-2 flex items-center gap-2 text-[10px] font-medium text-primary bg-primary/10 w-fit px-2 py-0.5 rounded border border-primary/20">
+                      <span className="opacity-70">Nexus Official Naming:</span>
+                      <span>
+                        Mod #{meta?.modId} · v{meta?.version}
+                      </span>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
               {uploadInfo && (
                 <div className="mt-1">
                   Stored under downloads as {uploadInfo.relative_path} (

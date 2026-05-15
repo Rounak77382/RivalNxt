@@ -733,75 +733,25 @@ def _init_views(conn: sqlite3.Connection) -> None:
     cur.execute(
         """
         CREATE VIEW IF NOT EXISTS v_asset_conflicts_active AS
-        WITH raw_active AS (
-            SELECT DISTINCT
-                lower(trim(json_each.value)) AS pak_name
-            FROM local_downloads,
-                 json_each(COALESCE(local_downloads.active_paks, '[]'))
-            WHERE json_each.value IS NOT NULL
-        ),
-        active_stems AS (
-            SELECT DISTINCT
-                CASE
-                    WHEN pak_name LIKE '%.pak' THEN substr(pak_name, 1, length(pak_name) - 4)
-                    WHEN pak_name LIKE '%.utoc' THEN substr(pak_name, 1, length(pak_name) - 5)
-                    WHEN pak_name LIKE '%.ucas' THEN substr(pak_name, 1, length(pak_name) - 5)
-                    ELSE pak_name
-                END AS stem
-            FROM raw_active
-            WHERE pak_name IS NOT NULL AND pak_name != ''
-        ),
-        active_paks AS (
-            SELECT pak_name FROM raw_active
-            UNION
-            SELECT stem || '.pak' FROM active_stems WHERE stem IS NOT NULL AND stem != ''
-            UNION
-            SELECT stem || '.utoc' FROM active_stems WHERE stem IS NOT NULL AND stem != ''
-            UNION
-            SELECT stem || '.ucas' FROM active_stems WHERE stem IS NOT NULL AND stem != ''
-        ),
-        base AS (
-            SELECT
-                pa.asset_path,
-                pa.pak_name,
-                mp.mod_id,
-                mp.source_zip,
-                mp.local_download_id,
-                CASE
-                    WHEN mp.mod_id IS NOT NULL THEN CAST(mp.mod_id AS TEXT)
-                    WHEN mp.local_download_id IS NOT NULL THEN 'local:' || CAST(mp.local_download_id AS TEXT)
-                    WHEN mp.source_zip IS NOT NULL THEN 'zip:' || LOWER(mp.source_zip)
-                    ELSE 'pak:' || LOWER(pa.pak_name)
-                END AS provider_key
-            FROM pak_assets pa
-            JOIN mod_paks mp ON mp.pak_name = pa.pak_name
-            JOIN active_paks ap ON ap.pak_name = lower(pa.pak_name)
-        ),
-        agg AS (
-            SELECT
-                asset_path,
-                COUNT(DISTINCT provider_key) AS mod_count,
-                COUNT(DISTINCT pak_name) AS pak_count,
-                json_group_array(
-                    DISTINCT json_object(
-                        'pak_name', pak_name,
-                        'source_zip', source_zip,
-                        'mod_id', mod_id,
-                        'local_download_id', local_download_id
-                    )
-                ) AS conflict_paks_json
-            FROM base
-            GROUP BY asset_path
-            HAVING mod_count > 1
-        )
+        -- Fast read from pre-built tables (populated by rebuild_conflicts).
+        -- Avoids recomputing the full active-pak analysis on every request.
         SELECT
-            agg.asset_path,
-            agg.mod_count,
-            agg.pak_count,
-            agg.conflict_paks_json,
-            aca.detected_at
-        FROM agg
-        LEFT JOIN asset_conflicts_active aca ON aca.asset_path = agg.asset_path;
+            ac.asset_path,
+            ac.distinct_mods  AS mod_count,
+            ac.distinct_paks  AS pak_count,
+            (
+                SELECT json_group_array(json_object(
+                    'pak_name',        acp.pak_name,
+                    'source_zip',      acp.source_zip,
+                    'mod_id',          acp.mod_id,
+                    'local_download_id', mp.local_download_id
+                ))
+                FROM   asset_conflict_participants_active acp
+                LEFT JOIN mod_paks mp ON mp.pak_name = acp.pak_name
+                WHERE  acp.asset_path = ac.asset_path
+            ) AS conflict_paks_json,
+            ac.detected_at
+        FROM asset_conflicts_active ac;
         """
     )
     # Local downloads with consolidated tags from pak_tags_json (NULL when none)
@@ -1800,21 +1750,36 @@ def rebuild_conflicts(conn: sqlite3.Connection, *, active_only: bool | None = No
                      json_each(COALESCE(local_downloads.active_paks, '[]'))
                 WHERE json_each.value IS NOT NULL
             ),
+            -- Recursively strip directory prefixes to extract bare filenames.
+            -- e.g. 'subdir/xl/thicc_luna.pak' -> 'thicc_luna.pak'
+            -- This avoids a leading-wildcard LIKE scan on pak_assets (unindexable).
+            strip_paths(remaining) AS (
+                SELECT pak_name FROM raw_active
+                UNION ALL
+                SELECT substr(remaining, instr(remaining, '/') + 1)
+                FROM   strip_paths
+                WHERE  instr(remaining, '/') > 0
+            ),
+            active_basenames AS (
+                SELECT DISTINCT remaining AS pak_name
+                FROM   strip_paths
+                WHERE  instr(remaining, '/') = 0 AND remaining != ''
+            ),
             active_stems AS (
                 SELECT DISTINCT
                     CASE
-                        WHEN pak_name LIKE '%.pak' THEN substr(pak_name, 1, length(pak_name) - 4)
+                        WHEN pak_name LIKE '%.pak'  THEN substr(pak_name, 1, length(pak_name) - 4)
                         WHEN pak_name LIKE '%.utoc' THEN substr(pak_name, 1, length(pak_name) - 5)
                         WHEN pak_name LIKE '%.ucas' THEN substr(pak_name, 1, length(pak_name) - 5)
                         ELSE pak_name
                     END AS stem
-                FROM raw_active
+                FROM active_basenames
                 WHERE pak_name != '' AND pak_name IS NOT NULL
             ),
             active_paks AS (
-                SELECT pak_name FROM raw_active
+                SELECT pak_name FROM active_basenames
                 UNION
-                SELECT stem || '.pak' FROM active_stems WHERE stem != '' AND stem IS NOT NULL
+                SELECT stem || '.pak'  FROM active_stems WHERE stem != '' AND stem IS NOT NULL
                 UNION
                 SELECT stem || '.utoc' FROM active_stems WHERE stem != '' AND stem IS NOT NULL
                 UNION

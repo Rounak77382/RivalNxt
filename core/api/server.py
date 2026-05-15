@@ -733,31 +733,30 @@ def _task_rebuild_conflicts() -> int:
 	return 0
 
 
-def _task_rebuild_character_data() -> int:
+def _task_rebuild_character_data() -> Tuple[int, Optional[Dict[str, Any]]]:
 	"""Rebuild character and skin data from PAK files."""
 	from core.config.settings import load_settings
 	
 	# Reload settings to ensure we have the latest marvel_rivals_root path
-	# This is critical when called from bootstrap after user saves settings
 	current_settings = load_settings()
 	
 	# Verify marvel_rivals_root is configured
 	if not current_settings.marvel_rivals_root:
 		print("ERROR: marvel_rivals_root is not configured")
 		print("Please set your Marvel Rivals installation path in Settings")
-		return 1
+		return 1, None
 	
 	try:
 		from core.extraction.service import extract_and_ingest
 		print("Extracting character and skin data from PAK files...")
-		extract_and_ingest()
+		changes = extract_and_ingest()
 		print("Character data rebuild complete!")
-		return 0
+		return 0, changes
 	except Exception as exc:
 		print(f"Character data rebuild failed: {exc}")
 		import traceback
 		traceback.print_exc()
-		return 1
+		return 1, None
 
 
 def _task_bootstrap_rebuild() -> int:
@@ -1032,9 +1031,14 @@ def _run_settings_task(
 			return _task_rebuild_character_data()
 		raise HTTPException(status_code=400, detail=f"Unknown task: {task}")
 
+	metadata: Optional[Any] = None
 	try:
 		with contextlib.redirect_stdout(buffer), contextlib.redirect_stderr(buffer):
-			exit_code = runner()
+			res = runner()
+			if isinstance(res, tuple):
+				exit_code, metadata = res
+			else:
+				exit_code = res
 	except HTTPException:
 		raise
 	except SystemExit as exc:
@@ -1070,6 +1074,7 @@ def _run_settings_task(
 		"started_at": started_at,
 		"finished_at": finished_at,
 		"duration_ms": duration_ms,
+		"metadata": metadata,
 	}
 
 def _extract_member_id(value: Any) -> Optional[int]:
@@ -2277,7 +2282,7 @@ def add_mod(payload: Dict[str, Any] = Body(...)) -> Dict[str, Any]:
 			mod_id=mod_id,
 			version=version,
 			source_url=source_url,
-			created_at_hint=created_at_hint,
+			created_at_hint=datetime.now(timezone.utc).isoformat(),
 		)
 	except DuplicateDownloadError as exc:
 		raise HTTPException(status_code=409, detail=_duplicate_detail_from_error(exc))
@@ -2873,7 +2878,7 @@ def ingest_nxm_handoff(handoff_id: str, payload: Optional[Dict[str, Any]] = Body
 			source_url=resolved_url,
 			metadata_snapshot=raw_metadata,
 			filtered_metadata=filtered_metadata,
-			created_at_hint=file_created_at_hint,
+			created_at_hint=datetime.now(timezone.utc).isoformat(),
 		)
 	except DuplicateDownloadError as exc:
 		if handoff_identifier:
@@ -3433,7 +3438,7 @@ def update_mod(mod_id: int, payload: Optional[Dict[str, Any]] = Body(default=Non
 			mod_id=mod_id,
 			version=latest_version,
 			source_url=download_url,
-			created_at_hint=latest_uploaded_at,
+			created_at_hint=datetime.now(timezone.utc).isoformat(),
 		)
 	except DuplicateDownloadError as exc:
 		raise HTTPException(status_code=409, detail=_duplicate_detail_from_error(exc))
@@ -3830,7 +3835,41 @@ def get_pak_version_status_endpoint(
 			pass
 
 
+def _downscale_base64_image(base64_str: str, max_size: int = 400) -> str:
+	"""Downscale a base64 encoded image to reduce transfer size."""
+	if not base64_str:
+		return base64_str
+	try:
+		from PIL import Image
+		import io
+		import base64
+		
+		# Decode
+		img_data = base64.b64decode(base64_str)
+		img = Image.open(io.BytesIO(img_data))
+		
+		# Skip if already small
+		if max(img.width, img.height) <= max_size:
+			return base64_str
+			
+		# Resize preserving aspect ratio
+		img.thumbnail((max_size, max_size), Image.Resampling.LANCZOS)
+		
+		# Encode back to JPEG for maximum compression
+		output = io.BytesIO()
+		# Convert to RGB if needed (for JPEG)
+		if img.mode in ("RGBA", "P"):
+			img = img.convert("RGB")
+		img.save(output, format="JPEG", quality=85, optimize=True)
+		return base64.b64encode(output.getvalue()).decode('utf-8')
+	except Exception as e:
+		import logging
+		logging.getLogger("modmanager.api").warning(f"Failed to downscale image: {e}")
+		return base64_str
+
+
 @app.get("/api/mods/custom-images-preview")
+
 def get_custom_images_preview(mod_ids: str = Query(..., description="Comma-separated mod IDs")) -> Dict[str, Any]:
 	"""
 	Returns first custom image (base64) for each mod_id provided.
@@ -3869,8 +3908,10 @@ def get_custom_images_preview(mod_ids: str = Query(..., description="Comma-separ
 		result = {}
 		for mod_id, image_data, mime_type in rows:
 			if image_data:
-				# Return as data URL
-				result[str(mod_id)] = f"data:{mime_type or 'image/png'};base64,{image_data}"
+				# Downscale for preview to save bandwidth
+				downscaled = _downscale_base64_image(image_data, max_size=400)
+				# Return as data URL (Force image/jpeg as we convert during downscale)
+				result[str(mod_id)] = f"data:image/jpeg;base64,{downscaled}"
 		
 		logger.info(f"[get_custom_images_preview] Fetched {len(result)} custom images for {len(parsed_ids)} mods")
 		return {"ok": True, "images": result}

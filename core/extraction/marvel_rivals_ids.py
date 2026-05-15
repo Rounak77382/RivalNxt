@@ -264,7 +264,23 @@ def extract_skin_names_from_locres(paks_dir):
                     if skin_id not in skin_names:
                         skin_names[skin_id] = value.strip().lower()
         
-        # Pattern 3: MarvelItemTable in Customize namespaces
+        # Pattern 4 (run BEFORE Pattern 3): Color variants with ps prefix — these are
+        # the clean RETAIL names (e.g. "PINE OPPOSITION" vs the internal "[SG]..." name).
+        # By running first, we claim the slot so Pattern 3 won't overwrite with garbage.
+        for ns_name, entries in all_strings.items():
+            if ns_name != "123_Customize_ST":
+                continue
+            for key, value in entries.items():
+                match = re.search(r'MarvelItemTable_ps(\d{7})_ItemName', key)
+                if match:
+                    skin_id = match.group(1)
+                    cleaned = value.strip().lower()
+                    if not is_internal_name(cleaned):
+                        # Overwrite anything already set — ps names are highest priority
+                        skin_names[skin_id] = cleaned
+        
+        # Pattern 3: MarvelItemTable in Customize namespaces (fills remaining gaps)
+        # This can also return internal [SG] names, so it only runs if not already set.
         for ns_name, entries in all_strings.items():
             if not ns_name.startswith("123_Customize_"):
                 continue
@@ -275,18 +291,23 @@ def extract_skin_names_from_locres(paks_dir):
                     if skin_id not in skin_names:
                         skin_names[skin_id] = value.strip().lower()
         
-        # Pattern 4: Color variants with ps prefix
+        # Pattern 5: Extended 10-digit IDs like MarvelItemTable_1017300206_ItemName
+        # These are color sub-variants of a skin (7-digit base + 3-digit color suffix).
+        # Extract the first 7 digits as the skin ID and use the name if not already set.
         for ns_name, entries in all_strings.items():
-            if ns_name != "123_Customize_ST":
+            if not ns_name.startswith("123_Customize_"):
                 continue
             for key, value in entries.items():
-                match = re.search(r'MarvelItemTable_ps(\d{7})_ItemName', key)
+                match = re.search(r'MarvelItemTable_(\d{7})\d{3}_ItemName', key)
                 if match:
                     skin_id = match.group(1)
                     if skin_id not in skin_names:
-                        skin_names[skin_id] = value.strip().lower()
+                        cleaned = value.strip().lower()
+                        if not is_internal_name(cleaned):
+                            skin_names[skin_id] = cleaned
                         
-        # Filter out garbage/internal names
+        # Final filter: remove any remaining garbage/internal names that slipped through
+        # (Pattern 3 leftovers with no corresponding ps entry)
         filtered_skin_names = {k: v for k, v in skin_names.items() if not is_internal_name(v)}
         return filtered_skin_names
         

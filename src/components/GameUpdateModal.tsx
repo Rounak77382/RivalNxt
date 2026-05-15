@@ -13,6 +13,7 @@ import {
   RefreshCw,
   Sparkles,
   ShieldCheck,
+  User,
 } from "lucide-react";
 
 export type GameUpdateStep = {
@@ -33,6 +34,8 @@ interface GameUpdateModalProps {
   phase: GameUpdatePhase;
   steps: GameUpdateStep[];
   latestFile: string | null;
+  newCharacters?: string[];
+  newSkins?: string[];
   onDismiss: () => void;
 }
 
@@ -41,6 +44,8 @@ export function GameUpdateModal({
   phase,
   steps,
   latestFile,
+  newCharacters = [],
+  newSkins = [],
   onDismiss,
 }: GameUpdateModalProps) {
   const allDone =
@@ -294,6 +299,65 @@ export function GameUpdateModal({
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* New Content Section */}
+        {allDone && !anyFailed && (newCharacters.length > 0 || newSkins.length > 0) && (
+          <div
+            style={{
+              marginTop: "4px",
+              padding: "16px",
+              borderRadius: "12px",
+              background: "linear-gradient(135deg, rgba(139,92,246,0.1), rgba(168,85,247,0.1))",
+              border: "1px solid rgba(139,92,246,0.2)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "12px",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <Sparkles className="h-4 w-4 text-violet-400" />
+              <h3 className="text-sm font-semibold text-violet-300">What's New</h3>
+            </div>
+            
+            <div 
+              style={{ 
+                maxHeight: "150px", 
+                overflowY: "auto",
+                display: "flex",
+                flexDirection: "column",
+                gap: "8px",
+                paddingRight: "4px"
+              }}
+              className="custom-scrollbar"
+            >
+              {newCharacters.map(char => (
+                <div key={char} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <div style={{ 
+                    width: "20px", height: "20px", borderRadius: "50%", 
+                    background: "rgba(139,92,246,0.2)", display: "flex", 
+                    alignItems: "center", justifyContent: "center" 
+                  }}>
+                    <User className="h-3 w-3 text-violet-400" />
+                  </div>
+                  <span className="text-xs font-medium text-foreground">New Character: <span className="text-violet-200">{char}</span></span>
+                </div>
+              ))}
+              
+              {newSkins.map(skin => (
+                <div key={skin} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <div style={{ 
+                    width: "20px", height: "20px", borderRadius: "50%", 
+                    background: "rgba(16,185,129,0.2)", display: "flex", 
+                    alignItems: "center", justifyContent: "center" 
+                  }}>
+                    <Sparkles className="h-3 w-3 text-emerald-400" />
+                  </div>
+                  <span className="text-xs font-medium text-foreground">New Skin: <span className="text-emerald-200">{skin}</span></span>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

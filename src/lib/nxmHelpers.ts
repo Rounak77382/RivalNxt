@@ -292,3 +292,41 @@ export function createNxmProgressController(
     getLastDescription: () => lastDescription,
   };
 }
+
+/**
+ * Checks if a filename follows the Nexus Mods official naming convention:
+ * <name>-<mod_id>-<version>-<timestamp>.<ext>
+ *
+ * Examples of valid Nexus naming:
+ * - BodyReshape_SueRiannLandauTheDebater_Base-7814-1-1-1776061797.rar
+ * - Symbiote Psylocke-4664-4-5-1761343349 (1).rar
+ *
+ * Examples of invalid naming:
+ * - Luna-Mirae-2099_Alt.rar
+ * - GoldRushThing_9999999_P.zip
+ */
+export function isNexusOfficialNaming(filename: string): boolean {
+  // Matches the official Nexus Mods filename convention:
+  // <Name (non-greedy)>-<ModID 1-7 digits>-<Version>-<Timestamp 9-11 digits>[optional " (N)"].<ext>
+  // The timestamp anchor (9-11 digit Unix epoch) ensures we don't confuse
+  // version/mod_id segments with each other.
+  const nexusPattern = /^(.+?)-(\d{1,7})-(\d[\d-]*\d|\d)-(\d{9,11})(?:\s\(\d+\))?\.[^.]+$/;
+  return nexusPattern.test(filename);
+}
+
+/**
+ * Extracts mod metadata from a Nexus-style filename if possible.
+ */
+export function parseNexusFilename(filename: string) {
+  // Same pattern as isNexusOfficialNaming — anchored on 9-11 digit timestamp
+  const nexusPattern = /^(.+?)-(\d{1,7})-(\d[\d-]*\d|\d)-(\d{9,11})(?:\s\(\d+\))?\.[^.]+$/;
+  const match = filename.match(nexusPattern);
+  if (!match) return null;
+
+  return {
+    name: match[1].replace(/_/g, " ").trim(),
+    modId: parseInt(match[2], 10),
+    version: match[3].replace(/-/g, "."), // Normalize dashes to dots for display
+    timestamp: parseInt(match[4], 10),
+  };
+}

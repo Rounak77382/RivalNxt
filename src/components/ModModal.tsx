@@ -425,6 +425,8 @@ export function ModModal({
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [isUploadingImages, setIsUploadingImages] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragCounterRef = React.useRef(0);
 
   // Description editing state
   const [isEditingDescription, setIsEditingDescription] = useState(false);
@@ -963,23 +965,21 @@ export function ModModal({
   }, [deleteDialogEntry, handleDeleteDownload]);
 
   // Image handlers
-  const handleImageUpload = useCallback(
-    async (event: React.ChangeEvent<HTMLInputElement>) => {
-      const files = event.target.files;
-      if (!files || files.length === 0 || !effectiveModId) return;
+  const uploadFiles = useCallback(
+    async (fileArray: File[]) => {
+      if (!effectiveModId || fileArray.length === 0) return;
 
       setIsUploadingImages(true);
-      const toastId = toast.loading(`Uploading ${files.length} image(s)...`);
+      const toastId = toast.loading(`Uploading ${fileArray.length} image(s)...`);
 
       try {
-        const fileArray = Array.from(files);
         await uploadModImages(effectiveModId, fileArray);
 
         // Refresh images
         const updatedImages = await fetchModImages(effectiveModId);
         setModImages(updatedImages);
 
-        toast.success(`Uploaded ${files.length} image(s) successfully`, {
+        toast.success(`Uploaded ${fileArray.length} image(s) successfully`, {
           id: toastId,
           duration: 2000,
         });
@@ -995,11 +995,66 @@ export function ModModal({
         });
       } finally {
         setIsUploadingImages(false);
-        // Reset file input
-        event.target.value = "";
       }
     },
     [effectiveModId, onRefresh],
+  );
+
+  const handleImageUpload = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const files = event.target.files;
+      if (!files) return;
+      await uploadFiles(Array.from(files));
+      // Reset file input
+      event.target.value = "";
+    },
+    [uploadFiles],
+  );
+
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current += 1;
+    if (dragCounterRef.current === 1) {
+      setIsDragging(true);
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current -= 1;
+    if (dragCounterRef.current === 0) {
+      setIsDragging(false);
+    }
+  }, []);
+
+  const handleDrop = useCallback(
+    async (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dragCounterRef.current = 0;
+      setIsDragging(false);
+
+      const droppedFiles = e.dataTransfer.files;
+      if (!droppedFiles || droppedFiles.length === 0) return;
+
+      // Filter to image files only
+      const imageFiles = Array.from(droppedFiles).filter((f) =>
+        f.type.startsWith("image/"),
+      );
+      if (imageFiles.length === 0) {
+        toast.error("Please drop image files only.");
+        return;
+      }
+      await uploadFiles(imageFiles);
+    },
+    [uploadFiles],
   );
 
   const openLightbox = useCallback((index: number) => {
@@ -1603,7 +1658,17 @@ export function ModModal({
 
                 {/* Images Tab */}
                 <TabsContent value="images" className="m-0 data-[state=active]:block">
-                    <div className="px-6 py-4">
+                    <div
+                      className={`px-6 py-4 min-h-[400px] transition-all duration-200 ${
+                        isDragging
+                          ? "bg-primary/5 border-2 border-dashed border-primary/50 rounded-xl m-2"
+                          : ""
+                      }`}
+                      onDragEnter={handleDragEnter}
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                    >
                       <div className="flex flex-wrap gap-4">
                         {/* Image thumbnails with 300px fixed height */}
                         {modImages.map((image, index) => (

@@ -27,8 +27,10 @@ from core.db.db import (
     has_character_data,
     clear_character_data,
     insert_characters,
-    insert_skins
+    insert_skins,
+    get_all_characters
 )
+from typing import Dict, Set, Any, List, Optional
 
 
 def extract_character_and_skin_data() -> Dict[str, Any]:
@@ -108,16 +110,33 @@ def _combine_data(character_names: Dict[str, str],
     return combine_extraction_data(character_names, character_skins, skin_names)
 
 
-def ingest_into_database(data: Dict[str, Any]) -> None:
+def ingest_into_database(data: Dict[str, Any]) -> Dict[str, List[Any]]:
     """
     Ingest extracted character and skin data into the database.
     
     Args:
         data: Extracted data from extract_character_and_skin_data()
+        
+    Returns:
+        Dict containing lists of 'new_characters' and 'new_skins' (name strings)
     """
     conn = get_connection()
     
+    changes = {
+        "new_characters": [],
+        "new_skins": []
+    }
+    
     try:
+        # Before clearing, get current state to find what's new
+        existing_chars_data = get_all_characters(conn)
+        existing_char_ids = {c['character_id'] for c in existing_chars_data}
+        existing_skin_ids = set()
+        for c in existing_chars_data:
+            char_id = c['character_id']
+            for s in c['skins']:
+                existing_skin_ids.add(f"{char_id}{s['variant']}")
+
         # Clear existing data
         clear_character_data(conn)
         
@@ -128,9 +147,18 @@ def ingest_into_database(data: Dict[str, Any]) -> None:
         for char_id, char_data in data.items():
             characters.append((char_id, char_data['name']))
             
+            # Check if this character is new
+            if char_id not in existing_char_ids:
+                changes["new_characters"].append(char_data['name'])
+            
             for variant, skin_name in char_data['skins'].items():
                 skin_id = f"{char_id}{variant}"
                 skins.append((skin_id, char_id, variant, skin_name))
+                
+                # Check if this skin is new
+                if skin_id not in existing_skin_ids:
+                    # Format as "Character Name - Skin Name"
+                    changes["new_skins"].append(f"{char_data['name']} - {skin_name}")
         
         # Insert characters and skins
         if characters:
@@ -140,6 +168,12 @@ def ingest_into_database(data: Dict[str, Any]) -> None:
             insert_skins(conn, skins)
         
         print(f"Ingested {len(characters)} characters and {len(skins)} skins into database")
+        if changes["new_characters"]:
+            print(f"New characters: {', '.join(changes['new_characters'])}")
+        if changes["new_skins"]:
+            print(f"New skins: {len(changes['new_skins'])} found")
+            
+        return changes
         
     except Exception as e:
         raise Exception(f"Failed to ingest data: {e}")
@@ -147,7 +181,7 @@ def ingest_into_database(data: Dict[str, Any]) -> None:
         conn.close()
 
 
-def extract_and_ingest() -> None:
+def extract_and_ingest() -> Dict[str, List[Any]]:
     """
     Extract character and skin data from PAK files and ingest into database.
     This is the main entry point for rebuilding the database.
@@ -161,11 +195,13 @@ def extract_and_ingest() -> None:
         data = extract_character_and_skin_data()
         
         # Ingest into database
-        ingest_into_database(data)
+        changes = ingest_into_database(data)
         
         print("="*80)
         print("EXTRACTION AND INGESTION COMPLETE!")
         print("="*80)
+        
+        return changes
         
     except Exception as e:
         print(f"ERROR: Extraction failed - {e}")

@@ -1084,7 +1084,7 @@ fn get_backend_port(config: tauri::State<BackendConfig>) -> u16 {
 // Tauri command to handle NXM protocol URLs
 #[tauri::command]
 async fn handle_nxm_url(url: String, app_handle: AppHandle) -> Result<String, String> {
-    println!("Received NXM URL: {}", url);
+    println!("[NXM] Received URL: {}", url);
     
     // Forward the NXM URL to the backend API
     let client = reqwest::Client::new();
@@ -1095,20 +1095,44 @@ async fn handle_nxm_url(url: String, app_handle: AppHandle) -> Result<String, St
         "nxm": url
     });
     
-    match client.post(backend_url)
-        .json(&payload)
-        .send()
-        .await
-    {
-        Ok(response) => {
-            if response.status().is_success() {
-                Ok(format!("NXM URL forwarded to backend: {}", url))
-            } else {
-                Err(format!("Backend returned error: {}", response.status()))
+    // Retry logic to wait for backend to be ready (up to 15 seconds)
+    let mut retries = 30;
+    let mut last_err = String::new();
+    
+    println!("[NXM] Attempting to forward to backend at {}", backend_url);
+    
+    while retries > 0 {
+        match client.post(&backend_url)
+            .json(&payload)
+            .timeout(std::time::Duration::from_secs(2))
+            .send()
+            .await
+        {
+            Ok(response) => {
+                if response.status().is_success() {
+                    println!("[NXM] Successfully forwarded to backend on try {}", 31 - retries);
+                    return Ok(format!("NXM URL forwarded to backend: {}", url));
+                } else {
+                    let status = response.status();
+                    let err_body = response.text().await.unwrap_or_default();
+                    eprintln!("[NXM] Backend returned error status {}: {}", status, err_body);
+                    return Err(format!("Backend returned error: {} - {}", status, err_body));
+                }
+            }
+            Err(e) => {
+                last_err = e.to_string();
+                // Only log every few retries to avoid spamming
+                if retries % 5 == 0 || retries == 30 {
+                    println!("[NXM] Backend not reachable yet ({} retries left). Error: {}", retries - 1, last_err);
+                }
+                tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+                retries -= 1;
             }
         }
-        Err(e) => Err(format!("Failed to contact backend: {}", e))
     }
+    
+    eprintln!("[NXM] Failed to forward URL after all retries. Last error: {}", last_err);
+    Err(format!("Failed to contact backend after retries: {}", last_err))
 }
 
 async fn launch_backend(app_handle: AppHandle, backend_state: BackendChild) -> Result<(), String> {
@@ -1413,6 +1437,21 @@ fn main() {
                         }
                     }
                 });
+            }
+            
+            // Handle nxm:// URLs from the initial command line arguments
+            // This is critical for when the app is launched via the protocol for the first time
+            for arg in std::env::args().skip(1) {
+                if arg.starts_with("nxm://") {
+                    let url = arg.clone();
+                    let handle_clone = app.handle().clone();
+                    println!("[NXM] Handling URL from initial arguments: {}", url);
+                    tauri::async_runtime::spawn(async move {
+                        if let Err(e) = handle_nxm_url(url, handle_clone).await {
+                            eprintln!("[NXM] Failed to handle NXM URL from initial args: {}", e);
+                        }
+                    });
+                }
             }
             
             let handle = app.handle().clone();

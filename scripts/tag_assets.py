@@ -230,14 +230,9 @@ def tag_asset(path: str, entity_map: Dict[str, str]) -> str:
         if char_id4 and char_id4 in entity_map:
             tags.append(entity_map[char_id4])
         
-        # Add skin name if known, otherwise fallback to variant ID
+        # Add skin name if known
         if skin_id7 in entity_map:
             tags.append(entity_map[skin_id7])
-        else:
-            # Fallback for skins not in DB: "variant XXX" (last 3 digits)
-            # Standard Marvel skin IDs are 1031305 -> variant 305
-            variant_id = skin_id7[4:] if len(skin_id7) >= 7 else skin_id7
-            tags.append(f"variant {variant_id}")
     # Otherwise just add character if found
     elif char_id4 and char_id4 in entity_map:
         tags.append(entity_map[char_id4])

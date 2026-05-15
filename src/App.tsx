@@ -166,6 +166,8 @@ export default function App() {
   const [gameUpdatePhase, setGameUpdatePhase] = useState<GameUpdatePhase>("checking");
   const [gameUpdateSteps, setGameUpdateSteps] = useState<GameUpdateStep[]>([]);
   const [gameUpdateLatestFile, setGameUpdateLatestFile] = useState<string | null>(null);
+  const [gameUpdateNewCharacters, setGameUpdateNewCharacters] = useState<string[]>([]);
+  const [gameUpdateNewSkins, setGameUpdateNewSkins] = useState<string[]>([]);
 
   const backendReady = backendStatus.state === "ready";
 
@@ -538,6 +540,16 @@ export default function App() {
             ),
           );
 
+          if (succeeded && key === "rebuild_character_data" && currentJob.metadata) {
+            const meta = currentJob.metadata as any;
+            if (Array.isArray(meta.new_characters)) {
+              setGameUpdateNewCharacters(meta.new_characters);
+            }
+            if (Array.isArray(meta.new_skins)) {
+              setGameUpdateNewSkins(meta.new_skins);
+            }
+          }
+
           if (!succeeded) {
             allSucceeded = false;
             break;
@@ -680,57 +692,43 @@ export default function App() {
 
   // Event handlers
   async function fetchServerMods(limit = 500): Promise<any[]> {
-    const downloads = await listDownloads(limit);
-
-    // Debug: Check NSFW content in API response
-    const nsfwFromApi = downloads.filter((d) => d.contains_adult_content);
-    console.log(
-      "[fetchServerMods] API response NSFW count:",
-      nsfwFromApi.length,
-      "of",
-      downloads.length,
-    );
-    if (nsfwFromApi.length > 0) {
-      console.log(
-        "[fetchServerMods] NSFW mods from API:",
-        nsfwFromApi.map((d) => ({
-          name: d.mod_name || d.name,
-          contains_adult_content: d.contains_adult_content,
-        })),
-      );
-    }
+    // Start fetching downloads and favourites in parallel
+    const [downloads, favouritedIds] = await Promise.all([
+      listDownloads(limit),
+      fetchFavourites().catch((err) => {
+        console.warn("[fetchServerMods] Failed to fetch favourites:", err);
+        return [] as number[];
+      }),
+    ]);
 
     const grouped = groupDownloadsByMod(downloads);
 
-    // Extract all mod_ids (real and synthetic) to fetch custom images
+    // Extract mod_ids to fetch the newly optimized (downscaled) custom previews
     const modIds: number[] = [];
     for (const d of grouped) {
       if (d.mod_id != null) {
         modIds.push(d.mod_id);
       } else if (d.id != null) {
-        // For local mods without mod_id, use synthetic ID (negative download ID)
         modIds.push(-d.id);
       }
     }
 
-    // Fetch custom images for all mods in bulk
     const customImages =
-      modIds.length > 0 ? await getModCustomImagePreviews(modIds) : {};
+      modIds.length > 0
+        ? await getModCustomImagePreviews(modIds).catch(() => ({}))
+        : {};
 
+    const favSet = new Set(favouritedIds);
     const mapped = grouped.map((d) => toUiMod(d, customImages));
 
     // Restore favourites from backend
-    try {
-      const favouritedIds = await fetchFavourites();
-      const favSet = new Set(favouritedIds);
-      for (const mod of mapped) {
-        if (mod.backendModId != null && favSet.has(mod.backendModId)) {
-          mod.isFavorited = true;
-        }
+    for (const mod of mapped) {
+      if (mod.backendModId != null && favSet.has(mod.backendModId)) {
+        mod.isFavorited = true;
       }
-    } catch (err) {
-      console.warn("[fetchServerMods] Failed to fetch favourites:", err);
     }
+
+
 
     // Debug: Check NSFW content after mapping
     const nsfwMapped = mapped.filter((m) => m.containsAdultContent);
@@ -1318,10 +1316,10 @@ export default function App() {
         await refreshConflicts();
       }
       const deduped = await fetchServerMods();
-      setMods(deduped);
       if (!quiet) {
         toast.success(`Refreshed from DB: ${deduped.length} local downloads`);
       }
+      setMods(deduped);
     } catch (e: any) {
       if (quiet) {
         console.error("Auto refresh failed", e);
@@ -1595,7 +1593,16 @@ export default function App() {
     // Priority: Nexus picture_url > Custom image > Fallback
     let images: string[];
     if (d.picture_url) {
-      images = [d.picture_url];
+      let thumbUrl = d.picture_url;
+      // Nexus staticdelivery supports a /thumbnails/ path which is much smaller (e.g. 385px vs 1920px)
+      if (
+        d.picture_url.includes("staticdelivery.nexusmods.com") &&
+        d.picture_url.includes("/images/") &&
+        !d.picture_url.includes("/thumbnails/")
+      ) {
+        thumbUrl = d.picture_url.replace("/images/", "/images/thumbnails/");
+      }
+      images = [thumbUrl];
     } else {
       // Try to get custom image
       let customImage: string | undefined;
@@ -2134,7 +2141,13 @@ export default function App() {
             phase={gameUpdatePhase}
             steps={gameUpdateSteps}
             latestFile={gameUpdateLatestFile}
-            onDismiss={() => setGameUpdateModalOpen(false)}
+            newCharacters={gameUpdateNewCharacters}
+            newSkins={gameUpdateNewSkins}
+            onDismiss={() => {
+              setGameUpdateModalOpen(false);
+              setGameUpdateNewCharacters([]);
+              setGameUpdateNewSkins([]);
+            }}
           />
           <ServerStartupOverlay
             visible={!backendReady}

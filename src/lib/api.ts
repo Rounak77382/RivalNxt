@@ -232,6 +232,7 @@ export type ApiSettingsTaskResponse = {
   duration_ms: number | null;
   created_at?: string | null;
   updated_at?: string | null;
+  metadata?: any;
 };
 
 export type ApiBootstrapStatus = {
