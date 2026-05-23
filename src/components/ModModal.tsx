@@ -55,6 +55,7 @@ import {
   getPakAssets,
   fetchModImages,
   uploadModImages,
+  uploadModImagesByPath,
   deleteModImage,
   updateModDetails,
   type ApiChangelog,
@@ -435,6 +436,14 @@ export function ModModal({
   const [editDescriptionValue, setEditDescriptionValue] = useState("");
   const [isSavingDescription, setIsSavingDescription] = useState(false);
   const [isBBCodeMode, setIsBBCodeMode] = useState(false);
+
+  const [currentTab, setCurrentTab] = useState<string>(initialTab ?? "overview");
+
+  useEffect(() => {
+    if (isOpen) {
+      setCurrentTab(initialTab ?? "overview");
+    }
+  }, [isOpen, initialTab]);
 
   // Custom preset that includes standard HTML5 tags + size, font, alignment
 
@@ -1061,6 +1070,89 @@ export function ModModal({
     [uploadFiles],
   );
 
+  // Tauri native file drop listener for Images tab
+  useEffect(() => {
+    if (!isOpen || currentTab !== "images") return;
+
+    let unlistenFn: (() => void) | undefined;
+    let isCancelled = false;
+
+    const setupListener = async () => {
+      try {
+        const { getCurrentWebview } = await import("@tauri-apps/api/webview");
+        const webview = getCurrentWebview();
+        const unlisten = await webview.onDragDropEvent(async (event) => {
+          if (isCancelled) return;
+          if (event.payload.type === "enter") {
+            setIsDragging(true);
+          } else if (event.payload.type === "leave") {
+            setIsDragging(false);
+          } else if (event.payload.type === "drop") {
+            setIsDragging(false);
+            const paths = event.payload.paths;
+            if (paths && paths.length > 0) {
+              const imageExtensions = [".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp"];
+              const imagePaths = paths.filter((path) => {
+                const lower = path.toLowerCase();
+                return imageExtensions.some((ext) => lower.endsWith(ext));
+              });
+
+              if (imagePaths.length === 0) {
+                toast.error("Please drop image files only.");
+                return;
+              }
+
+              if (!effectiveModId) return;
+
+              setIsUploadingImages(true);
+              const toastId = toast.loading(`Uploading ${imagePaths.length} image(s)...`);
+
+              try {
+                await uploadModImagesByPath(effectiveModId, imagePaths);
+
+                // Refresh images
+                const updatedImages = await fetchModImages(effectiveModId);
+                setModImages(updatedImages);
+
+                toast.success(`Uploaded ${imagePaths.length} image(s) successfully`, {
+                  id: toastId,
+                  duration: 2000,
+                });
+
+                if (onRefresh) {
+                  onRefresh();
+                }
+              } catch (error) {
+                toast.error((error as any)?.message || "Failed to upload images", {
+                  id: toastId,
+                  duration: 4000,
+                });
+              } finally {
+                setIsUploadingImages(false);
+              }
+            }
+          }
+        });
+
+        if (isCancelled) {
+          unlisten();
+        } else {
+          unlistenFn = unlisten;
+        }
+      } catch (err) {
+        console.error("Failed to setup image file drop listener:", err);
+      }
+    };
+
+    setupListener();
+
+    return () => {
+      isCancelled = true;
+      if (unlistenFn) unlistenFn();
+      setIsDragging(false);
+    };
+  }, [isOpen, currentTab, effectiveModId, onRefresh]);
+
   const openLightbox = useCallback((index: number) => {
     setLightboxIndex(index);
     setLightboxOpen(true);
@@ -1552,7 +1644,8 @@ export function ModModal({
           >
             <Tabs
               key={initialTab ?? "overview"}
-              defaultValue={initialTab ?? "overview"}
+              value={currentTab}
+              onValueChange={setCurrentTab}
               className="flex flex-col"
             >
               <TabsList className="mx-6 mt-4 mb-0 flex-shrink-0">

@@ -4455,6 +4455,99 @@ def upload_mod_images(mod_id: int, payload: UploadImagePayload) -> Dict[str, Any
 			pass
 
 
+class UploadImageByPathPayload(BaseModel):
+	paths: List[str]
+
+
+@app.post("/api/mods/{mod_id}/images/upload-by-path")
+def upload_mod_images_by_path(mod_id: int, payload: UploadImageByPathPayload) -> Dict[str, Any]:
+	"""Upload custom images for a mod by local paths."""
+	import logging
+	import base64
+	import mimetypes
+	from pathlib import Path
+	logger = logging.getLogger("modmanager.api")
+	conn = get_db()
+	try:
+		cur = conn.cursor()
+		real_mod_id = mod_id
+		mod_exists = cur.execute("SELECT 1 FROM mods WHERE mod_id = ?", (real_mod_id,)).fetchone()
+		
+		if not mod_exists:
+			if real_mod_id < 0:
+				local_download_id = -real_mod_id
+				dl_row = cur.execute("SELECT name FROM local_downloads WHERE id = ?", (local_download_id,)).fetchone()
+				if not dl_row:
+					raise HTTPException(status_code=404, detail=f"Local download {local_download_id} not found for synthetic mod ID {real_mod_id}")
+				
+				mod_name = dl_row[0] or f"Local Mod {local_download_id}"
+				upsert_mod_info(
+					conn,
+					game=DEFAULT_GAME,
+					mod_id=real_mod_id,
+					mod_info_status=0,
+					mod_info={
+						"name": mod_name,
+						"summary": "Local mod (auto-generated)",
+						"description": "Auto-generated placeholder for local mod images.",
+						"author": "Local",
+						"status": "plaintext",
+						"category_id": 1,
+					}
+				)
+				logger.info(f"[upload_mod_images_by_path] Created placeholder mod record for synthetic ID {real_mod_id}")
+			else:
+				mod_exists_after = cur.execute("SELECT 1 FROM mods WHERE mod_id = ?", (real_mod_id,)).fetchone()
+				if not mod_exists_after:
+					raise HTTPException(status_code=404, detail=f"Mod {real_mod_id} not found")
+		
+		uploaded_ids = []
+		for path_str in payload.paths:
+			if not path_str:
+				continue
+			p = Path(path_str)
+			if not p.exists() or not p.is_file():
+				logger.warning(f"[upload_mod_images_by_path] Path {path_str} does not exist or is not a file")
+				continue
+			
+			filename = p.name
+			mime_type, _ = mimetypes.guess_type(path_str)
+			if not mime_type:
+				mime_type = "image/png"  # fallback
+			
+			# Read file and encode to base64
+			with open(p, "rb") as f:
+				image_data = base64.b64encode(f.read()).decode("utf-8")
+			
+			cur.execute(
+				"""
+				INSERT INTO mod_custom_images (mod_id, image_data, filename, mime_type)
+				VALUES (?, ?, ?, ?)
+				""",
+				(real_mod_id, image_data, filename, mime_type)
+			)
+			uploaded_ids.append(cur.lastrowid)
+		
+		conn.commit()
+		logger.info(f"[upload_mod_images_by_path] mod_id={real_mod_id}, uploaded {len(uploaded_ids)} images")
+		return {
+			"ok": True,
+			"uploaded_count": len(uploaded_ids),
+			"image_ids": uploaded_ids,
+		}
+	except HTTPException:
+		raise
+	except Exception as e:
+		logger.error(f"[upload_mod_images_by_path] Error: {e}")
+		conn.rollback()
+		raise HTTPException(status_code=500, detail=str(e))
+	finally:
+		try:
+			conn.close()
+		except Exception:
+			pass
+
+
 @app.delete("/api/mods/images/{image_id}")
 def delete_mod_image(image_id: int) -> Dict[str, Any]:
 	"""Delete a custom uploaded image."""
@@ -6643,7 +6736,7 @@ def _fetch_collection_from_nexus(slug: str, revision_num: Optional[int] = None) 
 	return revision
 
 
-def _upsert_collection(conn: sqlite3.Connection, revision: Dict[str, Any], slug: str) -> int:
+def _upsert_collection(conn, revision: Dict[str, Any], slug: str) -> int:
 	"""Insert or replace a collection and its mod files. Returns collection DB id."""
 	import json as _json
 	col = revision.get("collection") or {}
@@ -6716,7 +6809,7 @@ def _upsert_collection(conn: sqlite3.Connection, revision: Dict[str, Any], slug:
 	return cid
 
 
-def _serialize_collection(conn: sqlite3.Connection, cid: int) -> Dict[str, Any]:
+def _serialize_collection(conn, cid: int) -> Dict[str, Any]:
 	"""Return a full collection dict with mod_files list for the API response."""
 	cur = conn.cursor()
 	row = cur.execute(

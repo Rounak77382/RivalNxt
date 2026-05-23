@@ -780,6 +780,16 @@ export async function uploadModImages(
   >(`/api/mods/${modId}/images`, { images });
 }
 
+export async function uploadModImagesByPath(
+  modId: number,
+  paths: string[],
+): Promise<{ ok: boolean; uploaded_count: number; image_ids: number[] }> {
+  return postJson<{ paths: string[] }, { ok: boolean; uploaded_count: number; image_ids: number[] }>(
+    `/api/mods/${modId}/images/upload-by-path`,
+    { paths },
+  );
+}
+
 export async function deleteModImage(
   imageId: number,
 ): Promise<{ ok: boolean; deleted_id: number }> {
