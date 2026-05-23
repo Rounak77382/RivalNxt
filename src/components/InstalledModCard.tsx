@@ -290,8 +290,9 @@ function InstalledModCardInner({
 
   return (
     <>
-      <Card className="group relative overflow-hidden">
+      <Card className="h-full flex flex-col group relative overflow-hidden">
         <LazyLoad
+          className="h-full flex flex-col flex-1"
           placeholder={
             <div className="flex flex-col min-h-[370px]">
               <Skeleton className="aspect-video w-full rounded-b-none" />
@@ -313,7 +314,7 @@ function InstalledModCardInner({
             </div>
           }
         >
-          <CardContent className="p-0 min-h-[370px] flex flex-col flex-1">
+          <CardContent className="p-0 h-full min-h-[370px] flex flex-col flex-1">
             <div
               className="aspect-video bg-muted relative overflow-hidden rounded-t-lg cursor-pointer"
               role="button"

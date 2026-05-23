@@ -89,6 +89,8 @@ type DownloadEntry = {
   latest_version_key?: string | null;
   latest_file_id?: number | null;
   needs_update?: boolean;
+  mod_id?: number | null;
+  source_file_ids?: number[];
 };
 
 type PakGroup = { primary: string; files: string[] };
@@ -563,6 +565,8 @@ export function ModModal({
               latest_version_key: dl.latest_version_key ?? null,
               latest_file_id: dl.latest_file_id ?? null,
               needs_update: dl.needs_update ?? false,
+              mod_id: dl.mod_id ?? null,
+              source_file_ids: dl.source_file_ids ?? (dl.latest_file_id ? [dl.latest_file_id] : []),
             } as DownloadEntry;
           } catch (error) {
             console.warn(
@@ -1816,9 +1820,136 @@ export function ModModal({
                             Pak Files
                           </h3>
                         </div>
-
+                        
                         <div className="space-y-4">
-                          {downloadSections.length === 0 && (
+                          {mod?.collectionVariants && (() => {
+                            const normalizeFilename = (filename: string): string => {
+                              if (!filename) return "";
+                              let base = filename.split(/[/\\]/).pop() || filename;
+                              base = base.toLowerCase().replace(/\.[a-z0-9]+$/i, "").trim();
+                              // Strip trailing duplicate/copy suffixes (e.g., "-7", "_1", " (2)")
+                              base = base.replace(/-[0-9]{1,3}$/g, "");
+                              base = base.replace(/_[0-9]{1,3}$/g, "");
+                              base = base.replace(/\s*\([0-9]{1,3}\)$/g, "");
+                              return base.replace(/[^a-z0-9]/g, "");
+                            };
+
+                            const isVariantDownloaded = (variant: any, entry: DownloadEntry) => {
+                              const fileId = variant.fileId || variant.file_id;
+                              const modId = variant.file?.modId || variant.mod_id;
+                              const version = variant.version;
+                              const fileUri = variant.file?.uri || variant.file_uri;
+
+                              // 1. Exact ID matches
+                              if (entry.latest_file_id === fileId) return true;
+                              if (entry.source_file_ids?.includes(fileId)) return true;
+
+                              // 2. Exact Version & Mod ID matches
+                              if (entry.version === version && modId != null && entry.mod_id === modId) return true;
+
+                              // 3. Filename normalization match
+                              if (entry.path && fileUri && normalizeFilename(entry.path) === normalizeFilename(fileUri)) return true;
+
+                              // 4. Pak Status match
+                              const statusMap = pakStatusByDownload[entry.id];
+                              if (statusMap) {
+                                return Object.values(statusMap).some(status => status.reference_file_id === fileId);
+                              }
+
+                              return false;
+                            };
+
+                            const undownloadedVariants = mod.collectionVariants.filter((variant: any) => {
+                              return !downloadEntries.some(entry => isVariantDownloaded(variant, entry));
+                            });
+                            if (undownloadedVariants.length === 0) return null;
+                            return (
+                              <div className="mb-6 space-y-4">
+                                <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider mb-3">Missing Collection Files</h4>
+                                {undownloadedVariants.map((variant: any) => {
+                                  const fileId = variant.fileId || variant.file_id;
+                                  const fileName = variant.file?.name || variant.file_name || 'Unknown Variant';
+                                  const fileSizeInBytes = variant.file?.sizeInBytes || variant.size_in_bytes;
+                                  const modId = variant.file?.modId || variant.mod_id;
+                                  return (
+                                    <div 
+                                      key={fileId} 
+                                      className="border border-border rounded-xl p-4 bg-secondary/5 space-y-3 transition-colors hover:bg-secondary/10"
+                                    >
+                                      <div className="flex items-center justify-between gap-3 flex-wrap">
+                                        <div className="flex items-center gap-3 min-w-0">
+                                          <div className="bg-primary/10 p-2 rounded-lg">
+                                            <Download className="w-4 h-4 text-primary shrink-0" />
+                                          </div>
+                                          <div className="flex flex-col min-w-0">
+                                            <span className="font-semibold text-base truncate">
+                                              {fileName}
+                                            </span>
+                                            {fileSizeInBytes && (
+                                              <span className="text-xs text-muted-foreground">
+                                                {(Number(fileSizeInBytes) / 1024 / 1024).toFixed(1)} MB
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+                                        <Button
+                                          variant="default"
+                                          size="sm"
+                                          onClick={async () => {
+                                            const game = "marvelrivals";
+                                            const url = `https://www.nexusmods.com/${game}/mods/${modId}?tab=files&file_id=${fileId}&nmm=1`;
+                                            try {
+                                              const { openInBrowser } = await import("../lib/tauri-utils");
+                                              await openInBrowser(url);
+                                            } catch (error) {
+                                              console.error("Failed to open Nexus download path", error);
+                                            }
+                                          }}
+                                          className="shrink-0 font-medium"
+                                        >
+                                          Download Now
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            );
+                          })()}
+
+                          {downloadSections.length > 0 && (
+                            <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider mb-2 mt-4">Downloaded Files</h4>
+                          )}
+                          {downloadSections.length === 0 && (!mod?.collectionVariants || (() => {
+                            const normalizeFilename = (filename: string): string => {
+                              if (!filename) return "";
+                              let base = filename.split(/[/\\]/).pop() || filename;
+                              base = base.toLowerCase().replace(/\.[a-z0-9]+$/i, "").trim();
+                              // Strip trailing duplicate/copy suffixes (e.g., "-7", "_1", " (2)")
+                              base = base.replace(/-[0-9]{1,3}$/g, "");
+                              base = base.replace(/_[0-9]{1,3}$/g, "");
+                              base = base.replace(/\s*\([0-9]{1,3}\)$/g, "");
+                              return base.replace(/[^a-z0-9]/g, "");
+                            };
+                            const isVariantDownloaded = (variant: any, entry: DownloadEntry) => {
+                              const fileId = variant.fileId || variant.file_id;
+                              const modId = variant.file?.modId || variant.mod_id;
+                              const version = variant.version;
+                              const fileUri = variant.file?.uri || variant.file_uri;
+
+                              if (entry.latest_file_id === fileId) return true;
+                              if (entry.source_file_ids?.includes(fileId)) return true;
+                              if (entry.version === version && modId != null && entry.mod_id === modId) return true;
+                              if (entry.path && fileUri && normalizeFilename(entry.path) === normalizeFilename(fileUri)) return true;
+                              
+                              const statusMap = pakStatusByDownload[entry.id];
+                              if (statusMap) {
+                                return Object.values(statusMap).some(status => status.reference_file_id === fileId);
+                              }
+                              return false;
+                            };
+                            return mod.collectionVariants.filter((v: any) => !downloadEntries.some(e => isVariantDownloaded(v, e))).length === 0;
+                          })()) && (
                             <div className="text-sm text-muted-foreground">
                               No local downloads recorded for this mod yet.
                             </div>
@@ -1830,13 +1961,11 @@ export function ModModal({
                               [];
                             const isActive = activeList.length > 0;
                             const lower = (entry.path || "").toLowerCase();
-                            // Allow activation for archives, single .pak files, and folders (extracted mods)
                             const isArchive =
                               lower.endsWith(".zip") ||
                               lower.endsWith(".rar") ||
                               lower.endsWith(".7z");
                             const isSinglePak = lower.endsWith(".pak");
-                            // Assume it's a folder if it doesn't have a recognized file extension
                             const isFolder = !isArchive && !isSinglePak;
                             const canApply =
                               isArchive || isSinglePak || isFolder;
@@ -1961,7 +2090,6 @@ export function ModModal({
                                   )}
                                   {(() => {
                                     const tree = buildFileTree(groups);
-                                    // Check if any group has subfolder structure
                                     const hasSubfolders = groups.some((g) =>
                                       g.primary
                                         .replace(/\\/g, "/")
@@ -1969,7 +2097,6 @@ export function ModModal({
                                     );
 
                                     if (!hasSubfolders) {
-                                      // Simple flat list for mods without subfolders
                                       return groups.map(
                                         ({ primary, files }) => {
                                           const checked = files.some((file) =>
@@ -2012,7 +2139,6 @@ export function ModModal({
                                       );
                                     }
 
-                                    // Hierarchical tree rendering for mods with subfolders
                                     return (
                                       <FileTreeRenderer
                                         nodes={tree.children}
@@ -2031,7 +2157,7 @@ export function ModModal({
                         </div>
                       </div>
                     </div>
-                  </TabsContent>
+                </TabsContent>
 
                 <TabsContent value="assets" className="m-0 data-[state=active]:block">
                     <div className="px-6 py-4">

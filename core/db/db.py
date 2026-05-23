@@ -288,6 +288,66 @@ def init_schema(conn: sqlite3.Connection) -> None:
         );
         """
     )
+    # ── Collections ─────────────────────────────────────────────────────────
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS collections (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            slug          TEXT NOT NULL,
+            nexus_id      INTEGER,
+            revision_id   INTEGER,
+            revision_num  INTEGER,
+            game          TEXT NOT NULL DEFAULT 'marvelrivals',
+            name          TEXT,
+            summary       TEXT,
+            picture_url   TEXT,
+            author        TEXT,
+            total_mods    INTEGER,
+            total_size    INTEGER,
+            status        TEXT,
+            created_at    TEXT,
+            updated_at    TEXT,
+            fetched_at    TEXT NOT NULL DEFAULT (datetime('now')),
+            raw_json      TEXT
+        );
+        """
+    )
+    cur.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_collections_slug_rev ON collections(slug, COALESCE(revision_num, -1));")
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS collection_mod_files (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            collection_id   INTEGER NOT NULL REFERENCES collections(id) ON DELETE CASCADE,
+            entry_id        TEXT,
+            file_id         INTEGER NOT NULL,
+            mod_id          INTEGER,
+            optional        INTEGER NOT NULL DEFAULT 0,
+            version         TEXT,
+            file_name       TEXT,
+            file_uri        TEXT,
+            size_in_bytes   INTEGER,
+            mod_name        TEXT,
+            picture_url     TEXT,
+            download_state  TEXT NOT NULL DEFAULT 'pending'
+        );
+        """
+    )
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_cmf_collection ON collection_mod_files(collection_id);")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_cmf_file_id    ON collection_mod_files(file_id);")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_cmf_mod_id     ON collection_mod_files(mod_id);")
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS handoff_failures (
+            file_id         TEXT PRIMARY KEY,
+            mod_id          INTEGER,
+            error_message   TEXT,
+            retry_count     INTEGER DEFAULT 0,
+            last_attempt_at TEXT,
+            handoff_id      TEXT
+        );
+        """
+    )
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_handoff_failures_handoff_id ON handoff_failures(handoff_id);")
     conn.commit()
     run_migrations(conn)
     _init_views(conn)

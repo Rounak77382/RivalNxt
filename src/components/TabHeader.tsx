@@ -1,18 +1,20 @@
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { Bell, Settings, RefreshCw, Rocket, Play } from "lucide-react";
+import { Bell, Settings, RefreshCw, Rocket, Play, Archive } from "lucide-react";
 import { open } from "@tauri-apps/plugin-shell";
 
 interface TabHeaderProps {
-  activeTab: "downloads" | "active";
-  onTabChange: (tab: "downloads" | "active") => void;
+  activeTab: "downloads" | "active" | "collections";
+  onTabChange: (tab: "downloads" | "active" | "collections") => void;
   downloadsCount: number;
   activeCount: number;
+  collectionsCount?: number;
   updatesCount?: number;
   activeModsCount?: number;
   onRefresh?: () => void;
   onOpenSettings?: () => void;
   onOpenBootstrap?: () => void;
+  onOpenBackup?: () => void;
 }
 
 export function TabHeader({
@@ -20,11 +22,13 @@ export function TabHeader({
   onTabChange,
   downloadsCount,
   activeCount,
+  collectionsCount = 0,
   updatesCount = 0,
   activeModsCount = 0,
   onRefresh,
   onOpenSettings,
   onOpenBootstrap,
+  onOpenBackup,
 }: TabHeaderProps) {
   return (
     <div className="border-b border-border bg-card">
@@ -51,6 +55,17 @@ export function TabHeader({
               {activeCount}
             </Badge>
           </Button>
+
+          <Button
+            variant={activeTab === "collections" ? "secondary" : "ghost"}
+            onClick={() => onTabChange("collections")}
+            className="gap-2"
+          >
+            Collections
+            <Badge variant="secondary" className="text-xs">
+              {collectionsCount}
+            </Badge>
+          </Button>
         </div>
 
         <div className="flex items-center gap-6">
@@ -65,6 +80,17 @@ export function TabHeader({
               >
                 <Rocket className="w-4 h-4" />
                 Setup
+              </Button>
+            )}
+            {onOpenBackup && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onOpenBackup}
+                className="gap-2"
+              >
+                <Archive className="w-4 h-4" />
+                Backup
               </Button>
             )}
             <Button

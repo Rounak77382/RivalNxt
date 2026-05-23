@@ -102,6 +102,47 @@ async fn select_file_dialog(default_path: Option<String>, filter_extensions: Opt
     }
 }
 
+// Tauri command to open a save file dialog and return the chosen path
+#[tauri::command]
+async fn save_file_dialog(default_name: String, filter_extensions: Option<Vec<String>>) -> Result<String, String> {
+    println!("[Dialog] Requested save-file dialog with default_name: {:?}", default_name);
+
+    let mut dialog = AsyncFileDialog::new()
+        .set_title("Save Backup")
+        .set_file_name(&default_name);
+
+    if let Some(extensions) = filter_extensions {
+        let ext_refs: Vec<&str> = extensions.iter().map(|s| s.as_str()).collect();
+        dialog = dialog.add_filter("Backup Files", &ext_refs);
+    }
+
+    match dialog.save_file().await {
+        Some(file) => {
+            let path_string = file.path().to_string_lossy().to_string();
+            println!("[Dialog] Save path chosen: {}", path_string);
+            Ok(path_string)
+        }
+        None => {
+            println!("[Dialog] Save dialog cancelled");
+            Err("Selection cancelled".to_string())
+        }
+    }
+}
+
+// Tauri command to write text content to a file
+#[tauri::command]
+async fn save_text_file(path: String, content: String) -> Result<(), String> {
+    println!("[File] Writing text file: {}", path);
+    fs::write(&path, &content).map_err(|e| format!("Failed to write file '{}': {}", path, e))
+}
+
+// Tauri command to read text content from a file
+#[tauri::command]
+async fn read_text_file(path: String) -> Result<String, String> {
+    println!("[File] Reading text file: {}", path);
+    fs::read_to_string(&path).map_err(|e| format!("Failed to read file '{}': {}", path, e))
+}
+
 #[cfg(target_os = "windows")]
 use std::path::Path;
 #[cfg(target_os = "windows")]
@@ -1391,7 +1432,10 @@ fn main() {
             get_pak_file_info,
             extract_files_from_pak,
             batch_process_ue_files,
-            validate_ue_file
+            validate_ue_file,
+            save_file_dialog,
+            save_text_file,
+            read_text_file
         ])
         .setup(|app| {
             // CRITICAL FIX: Register NXM protocol with proper quoting on Windows

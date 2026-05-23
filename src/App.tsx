@@ -9,6 +9,8 @@ import { TabHeader } from "./components/TabHeader";
 import { DownloadsSidebar } from "./components/DownloadsSidebar";
 import { DownloadsPage } from "./components/DownloadsPage";
 import { ActiveModsView } from "./components/ActiveModsView";
+import { CollectionsPage } from "./components/CollectionsPage";
+import { BackupModal } from "./components/BackupModal";
 import { ServerStartupOverlay } from "./components/ServerStartupOverlay";
 import { NxmBackgroundListener } from "./components/NxmBackgroundListener";
 import { GameUpdateModal, type GameUpdateStep, type GameUpdatePhase } from "./components/GameUpdateModal";
@@ -26,6 +28,7 @@ import {
 import {
   refreshConflicts,
   listDownloads,
+  listCollections,
   deleteLocalDownloads,
   updateMod,
   checkModUpdate,
@@ -33,6 +36,7 @@ import {
   previewNxmHandoff,
   setActivePaks,
   scanActive,
+  getLocalDownload,
   ApiError,
   type ApiDownload,
   type ApiNxmHandoffSummary,
@@ -130,9 +134,9 @@ type BackendStatusState = {
 export default function App() {
   // State management
   const [mods, setMods] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<"downloads" | "active">(
-    "downloads",
-  );
+  const [activeTab, setActiveTab] = useState<
+    "downloads" | "active" | "collections"
+  >("downloads");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedCharacters, setSelectedCharacters] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -168,6 +172,8 @@ export default function App() {
   const [gameUpdateLatestFile, setGameUpdateLatestFile] = useState<string | null>(null);
   const [gameUpdateNewCharacters, setGameUpdateNewCharacters] = useState<string[]>([]);
   const [gameUpdateNewSkins, setGameUpdateNewSkins] = useState<string[]>([]);
+  const [backupOpen, setBackupOpen] = useState(false);
+  const [collectionsCount, setCollectionsCount] = useState(0);
 
   const backendReady = backendStatus.state === "ready";
 
@@ -282,6 +288,15 @@ export default function App() {
     }
   }, []);
 
+  const fetchCollectionsCount = useCallback(async () => {
+    try {
+      const summaries = await listCollections();
+      setCollectionsCount(summaries.length);
+    } catch (err) {
+      console.error("Failed to fetch collections count", err);
+    }
+  }, []);
+
   const fetchBootstrapStatus = useCallback(async () => {
     try {
       const status = await getBootstrapStatus();
@@ -389,7 +404,7 @@ export default function App() {
       nxmEntriesRef.current = next;
       for (const handoff of handoffs) {
         const entry = next[handoff.id];
-        if (!entry || entry.preview || entry.error) {
+        if (!entry || entry.preview || entry.error || handoff.progress?.stage === "failed") {
           continue;
         }
         try {
@@ -418,6 +433,17 @@ export default function App() {
     }, 10000);
     return () => window.clearInterval(interval);
   }, [backendReady, fetchNxmQueue]);
+
+  useEffect(() => {
+    if (!backendReady) {
+      return undefined;
+    }
+    void fetchCollectionsCount();
+    const interval = window.setInterval(() => {
+      void fetchCollectionsCount();
+    }, 5000);
+    return () => window.clearInterval(interval);
+  }, [backendReady, fetchCollectionsCount]);
 
   useEffect(() => {
     if (!backendReady) {
@@ -652,11 +678,34 @@ export default function App() {
   // Get counts for header
   const installedMods = mods.filter((mod) => mod.isInstalled);
   const activeMods = installedMods.filter((mod) => mod.isActive !== false);
+  const formatVersionDisplay = (ver: string | undefined | null): string => {
+    if (!ver) return "";
+    const cleaned = ver.replace(/\.\d{9,11}$/, "");
+    return cleaned.toLowerCase().startsWith("v") ? cleaned : `v${cleaned}`;
+  };
+
+  const normalizeVersionForCheck = (ver: string | undefined | null): string => {
+    if (!ver) return "";
+    let cleaned = ver.replace(/\.\d{9,11}$/, "").toLowerCase();
+    if (!cleaned.startsWith("v")) cleaned = "v" + cleaned;
+    cleaned = cleaned.replace(/^vs/, "v");
+    cleaned = cleaned.replace(/-w\d*$/, "");
+    return cleaned;
+  };
+
   // Compute unique update count: dedupe by backend mod id when present, otherwise by normalized name
   const updatesCount = (() => {
     const seen = new Set<string>();
     for (const mod of installedMods) {
       if (!mod.hasUpdate) continue;
+      
+      if (
+        mod.installedVersion &&
+        mod.latestVersion &&
+        normalizeVersionForCheck(mod.installedVersion) === normalizeVersionForCheck(mod.latestVersion)
+      ) {
+        continue;
+      }
       if (
         typeof mod.backendModId === "number" &&
         Number.isFinite(mod.backendModId)
@@ -1258,53 +1307,119 @@ export default function App() {
     );
   };
 
-  const handleToggleMod = (modId: string) => {
-    setMods((prev) =>
-      prev.map((mod) =>
-        mod.id === modId && mod.isInstalled
-          ? { ...mod, isActive: !mod.isActive }
-          : mod,
-      ),
-    );
-
+  const handleToggleMod = async (modId: string) => {
     const mod = mods.find((m) => m.id === modId);
-    if (mod) {
-      toast.success(
-        mod.isActive
-          ? `${mod.name} has been disabled`
-          : `${mod.name} has been enabled!`,
+    if (!mod || !mod.isInstalled) return;
+
+    const willActivate = !mod.isActive;
+
+    // Optimistically update React state
+    setMods((prev) =>
+      prev.map((m) =>
+        m.id === modId ? { ...m, isActive: willActivate } : m
+      )
+    );
+
+    const toastId = `toggle-${modId}`;
+    toast.loading(willActivate ? `Enabling ${mod.name}...` : `Disabling ${mod.name}...`, { id: toastId });
+
+    try {
+      const downloadIds = mod.sourceDownloadIds || [];
+      if (downloadIds.length > 0) {
+        for (const dlId of downloadIds) {
+          if (willActivate) {
+            const dl = await getLocalDownload(Number(dlId));
+            const paks = (dl.contents || []).filter((f: string) => f.toLowerCase().endsWith(".pak"));
+            await setActivePaks(Number(dlId), paks);
+          } else {
+            await setActivePaks(Number(dlId), []);
+          }
+        }
+      }
+      await scanActive();
+      toast.success(willActivate ? `${mod.name} has been enabled!` : `${mod.name} has been disabled`, { id: toastId });
+    } catch (error: any) {
+      toast.error(error?.message || `Failed to toggle ${mod.name}`, { id: toastId });
+      // Revert React state
+      setMods((prev) =>
+        prev.map((m) =>
+          m.id === modId ? { ...m, isActive: mod.isActive } : m
+        )
       );
+    } finally {
+      void refreshMods({ includeConflicts: true });
     }
-    // Auto-refresh after mod toggle
-    void refreshMods({ includeConflicts: true });
   };
 
-  const handleDisableAll = () => {
-    const activeCount = activeMods.length;
-    setMods((prev) =>
-      prev.map((mod) =>
-        mod.isInstalled && mod.isActive !== false
-          ? { ...mod, isActive: false }
-          : mod,
-      ),
-    );
-    toast.success(`${activeCount} mod${activeCount !== 1 ? "s" : ""} disabled`);
+  const handleDisableAll = async () => {
+    const toastId = "disable-all";
+    toast.loading("Disabling active mods...", { id: toastId });
+
+    try {
+      await scanActive();
+      const allDownloads = await listDownloads(1000);
+      const activeDownloads = allDownloads.filter(
+        (dl) => dl.active_paks && dl.active_paks.length > 0
+      );
+
+      let deactivatedCount = 0;
+      for (const dl of activeDownloads) {
+        await setActivePaks(Number(dl.id), []);
+        deactivatedCount++;
+      }
+
+      // If nothing was deactivated via complete sweep, try falling back to legacy list to be safe
+      if (deactivatedCount === 0) {
+        const activeModsToDisable = installedMods.filter((mod) => mod.isActive !== false);
+        for (const mod of activeModsToDisable) {
+          const downloadIds = mod.sourceDownloadIds || [];
+          for (const dlId of downloadIds) {
+            await setActivePaks(Number(dlId), []);
+            deactivatedCount++;
+          }
+        }
+      }
+
+      await scanActive();
+      if (deactivatedCount === 0) {
+        toast.info("No active mods to disable", { id: toastId });
+      } else {
+        toast.success(`Successfully disabled all active mods (${deactivatedCount} deactivated)`, { id: toastId });
+      }
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to disable mods", { id: toastId });
+    } finally {
+      void refreshMods({ includeConflicts: true });
+    }
   };
 
-  const handleEnableAll = () => {
-    const inactiveCount = installedMods.filter(
-      (mod) => mod.isActive === false,
-    ).length;
-    setMods((prev) =>
-      prev.map((mod) =>
-        mod.isInstalled && mod.isActive === false
-          ? { ...mod, isActive: true }
-          : mod,
-      ),
-    );
-    toast.success(
-      `${inactiveCount} mod${inactiveCount !== 1 ? "s" : ""} enabled`,
-    );
+  const handleEnableAll = async () => {
+    const inactiveModsToEnable = installedMods.filter((mod) => mod.isActive === false);
+    const inactiveCount = inactiveModsToEnable.length;
+    if (inactiveCount === 0) {
+      toast.info("No disabled mods to enable");
+      return;
+    }
+
+    const toastId = "enable-all";
+    toast.loading(`Enabling ${inactiveCount} mod(s)...`, { id: toastId });
+
+    try {
+      for (const mod of inactiveModsToEnable) {
+        const downloadIds = mod.sourceDownloadIds || [];
+        for (const dlId of downloadIds) {
+          const dl = await getLocalDownload(Number(dlId));
+          const paks = (dl.contents || []).filter((f: string) => f.toLowerCase().endsWith(".pak"));
+          await setActivePaks(Number(dlId), paks);
+        }
+      }
+      await scanActive();
+      toast.success(`${inactiveCount} mod${inactiveCount !== 1 ? "s" : ""} enabled`, { id: toastId });
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to enable mods", { id: toastId });
+    } finally {
+      void refreshMods({ includeConflicts: true });
+    }
   };
 
   const refreshMods = async (
@@ -1312,6 +1427,11 @@ export default function App() {
   ) => {
     const { quiet = false, includeConflicts = false } = options;
     try {
+      try {
+        await scanActive();
+      } catch (scanError) {
+        console.warn("[App] scanActive during refresh failed", scanError);
+      }
       if (includeConflicts) {
         await refreshConflicts();
       }
@@ -1320,6 +1440,7 @@ export default function App() {
         toast.success(`Refreshed from DB: ${deduped.length} local downloads`);
       }
       setMods(deduped);
+      void fetchCollectionsCount();
     } catch (e: any) {
       if (quiet) {
         console.error("Auto refresh failed", e);
@@ -1475,6 +1596,7 @@ export default function App() {
 
   const handleRefresh = () => {
     void refreshMods({ includeConflicts: true });
+    void fetchCollectionsCount();
   };
 
   const handleModAdded = () =>
@@ -1629,7 +1751,12 @@ export default function App() {
       d.latest_version || installedVersion || d.version || "";
     // Exclusively rely on needs_update aggregated carefully from groupDownloadsByMod.
     // Since that function accurately calculates the update per-variant, we avoid Mod-wide keys circumvention here.
-    const hasUpdate = Boolean(d.needs_update);
+    let hasUpdate = Boolean(d.needs_update);
+    if (hasUpdate && installedVersion && latestVersion) {
+      if (normalizeVersionForCheck(installedVersion) === normalizeVersionForCheck(latestVersion)) {
+        hasUpdate = false;
+      }
+    }
     const isActive = d.active_paks && d.active_paks.length > 0;
     const releaseDate = d.mod_created_time || null;
     const rawUpdatedAt = d.latest_uploaded_at || d.mod_updated_at || null;
@@ -1646,6 +1773,8 @@ export default function App() {
       id: d.mod_id != null ? String(d.mod_id) : String(d.id),
       backendModId: d.mod_id,
       sourceDownloadIds: d.source_download_ids || [d.id],
+      sourceFileIds: d.source_file_ids || (d.latest_file_id ? [d.latest_file_id] : []),
+      sourcePaths: d.source_paths || (d.path ? [d.path] : []),
       name: d.mod_name || d.name,
       description: d.path || "",
       author: d.mod_author || "",
@@ -1678,6 +1807,7 @@ export default function App() {
       hasUpdateTimestamp,
       isActive,
       defaultActivePaks: d.active_paks || [],
+      contents: d.contents || [],
       performanceImpact: undefined,
       needsUpdate: hasUpdate,
       isUpdating: false,
@@ -1818,6 +1948,8 @@ export default function App() {
           out.push({
             ...d,
             source_download_ids: [d.id],
+            source_file_ids: d.latest_file_id ? [d.latest_file_id] : [],
+            source_paths: d.path ? [d.path] : [],
             contents: [...(d.contents || [])],
             active_paks: [...(d.active_paks || [])],
             tags: [...(d.tags || [])],
@@ -1840,6 +1972,8 @@ export default function App() {
             active_paks: [...(d.active_paks || [])],
             tags: [...(d.tags || [])],
             source_download_ids: [d.id],
+            source_file_ids: d.latest_file_id ? [d.latest_file_id] : [],
+            source_paths: d.path ? [d.path] : [],
             local_version_key: d.local_version_key ?? null,
             latest_version: d.latest_version ?? null,
             latest_version_key: d.latest_version_key ?? null,
@@ -1878,6 +2012,15 @@ export default function App() {
         merged.source_download_ids = [
           ...new Set([...(merged.source_download_ids || []), d.id]),
         ];
+        merged.source_file_ids = [
+          ...new Set([
+            ...(merged.source_file_ids || []),
+            ...(d.latest_file_id ? [d.latest_file_id] : []),
+          ]),
+        ];
+        merged.source_paths = [
+          ...new Set([...(merged.source_paths || []), ...(d.path ? [d.path] : [])]),
+        ];
         if (
           new Date(d.created_at).getTime() >
           new Date(merged.created_at).getTime()
@@ -1901,6 +2044,8 @@ export default function App() {
           active_paks: [...(d.active_paks || [])],
           tags: [...(d.tags || [])],
           source_download_ids: [d.id],
+          source_file_ids: d.latest_file_id ? [d.latest_file_id] : [],
+          source_paths: d.path ? [d.path] : [],
           local_version_key: d.local_version_key ?? null,
           latest_version: d.latest_version ?? null,
           latest_version_key: d.latest_version_key ?? null,
@@ -1935,6 +2080,15 @@ export default function App() {
       merged.tags = Array.from(tset).sort();
       merged.source_download_ids = [
         ...new Set([...(merged.source_download_ids || []), d.id]),
+      ];
+      merged.source_file_ids = [
+        ...new Set([
+          ...(merged.source_file_ids || []),
+          ...(d.latest_file_id ? [d.latest_file_id] : []),
+        ]),
+      ];
+      merged.source_paths = [
+        ...new Set([...(merged.source_paths || []), ...(d.path ? [d.path] : [])]),
       ];
       // latest timestamp wins for date/version
       if (
@@ -2032,6 +2186,7 @@ export default function App() {
               mods={mods}
               conflictsReloadToken={conflictsReloadToken}
               onRefreshMods={handleRefresh}
+              onUpdateMod={handleUpdate}
             />
 
             {/* Main Content Area */}
@@ -2042,11 +2197,13 @@ export default function App() {
                 onTabChange={setActiveTab}
                 downloadsCount={installedMods.length}
                 activeCount={activeMods.length}
+                collectionsCount={collectionsCount}
                 updatesCount={updatesCount}
                 activeModsCount={activeMods.length}
                 onRefresh={handleRefresh}
                 onOpenSettings={handleOpenSettings}
                 onOpenBootstrap={handleOpenBootstrap}
+                onOpenBackup={() => setBackupOpen(true)}
               />
 
               {/* Tab Content */}
@@ -2066,7 +2223,7 @@ export default function App() {
                     onViewModeChange={setViewMode}
                     onRefresh={handleRefresh}
                   />
-                ) : (
+                ) : activeTab === "active" ? (
                   <ActiveModsView
                     mods={mods}
                     onToggleMod={handleToggleMod}
@@ -2082,6 +2239,16 @@ export default function App() {
                     viewMode={viewMode}
                     onViewModeChange={setViewMode}
                     onRefresh={handleRefresh}
+                  />
+                ) : (
+                  <CollectionsPage
+                    installedMods={mods}
+                    onFavorite={handleFavorite}
+                    viewMode={viewMode}
+                    onViewModeChange={setViewMode}
+                    onToggleMod={handleToggleMod}
+                    onRefreshMods={() => refreshMods({ includeConflicts: true })}
+                    onCollectionsCountChange={setCollectionsCount}
                   />
                 )}
               </div>
@@ -2158,6 +2325,12 @@ export default function App() {
             enabled={backendReady}
             onModAdded={handleModAdded}
             isHandoffExcluded={isHandoffManagedByUpdate}
+          />
+          <BackupModal
+            open={backupOpen}
+            onClose={() => setBackupOpen(false)}
+            mods={mods}
+            onToggleMod={handleToggleMod}
           />
         </div>
       </ThemeProvider>

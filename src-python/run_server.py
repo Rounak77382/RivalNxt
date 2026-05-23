@@ -225,8 +225,9 @@ def main() -> None:
                 return False
             return True
             
-    # Add filter to uvicorn access logger
+    # Add filters to suppress spammy polling logs from backend console
     logging.getLogger("uvicorn.access").addFilter(EndpointFilter("GET /api/nxm/handoffs"))
+    logging.getLogger("uvicorn.access").addFilter(EndpointFilter("GET /api/collections"))
     
     uvicorn.run(
         app,

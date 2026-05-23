@@ -64,6 +64,17 @@ export function NxmBackgroundListener({
         let hasWork = false;
 
         for (const handoff of handoffs) {
+          // Skip if the handoff has expired (TTL exceeded) to avoid false-positive auto-process errors on startup
+          const nowSeconds = Date.now() / 1000;
+          if (handoff.expires_at && nowSeconds > handoff.expires_at) {
+            continue;
+          }
+
+          // Skip if the handoff has already failed in a previous session (persistent/synthetic failed record)
+          if (handoff.progress?.stage === "failed") {
+            continue;
+          }
+
           // Skip if already successfully processed
           if (processedHandoffsRef.current.has(handoff.id)) {
             continue;

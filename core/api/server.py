@@ -222,6 +222,28 @@ def _get_current_settings():
 	return CURRENT_SETTINGS
 
 
+def _get_actually_active_filenames(logger) -> Optional[Set[str]]:
+	"""Return a set of lowercase pak filenames actually present in ~mods,
+	or None if the game directory or settings are not configured.
+	"""
+	try:
+		current_settings = _get_current_settings()
+		if current_settings.marvel_rivals_root:
+			mods_dir = current_settings.marvel_rivals_root.expanduser() / "MarvelGame" / "Marvel" / "Content" / "Paks" / "~mods"
+			if mods_dir.is_dir():
+				filenames = set()
+				for file in mods_dir.rglob("*.pak"):
+					if file.is_file():
+						filenames.add(file.name.lower())
+				return filenames
+			else:
+				# mods_dir doesn't exist but root is set -> 0 files are present
+				return set()
+	except Exception as e:
+		logger.warning(f"[active_paks_check] Failed to scan ~mods: {e}")
+	return None
+
+
 def _seed_env_from_settings() -> None:
 	# Import SETTINGS directly from module to get the latest global value
 	current = _get_current_settings()
@@ -2368,6 +2390,9 @@ def submit_nxm_handoff(payload: Optional[Dict[str, Any]] = Body(default=None)) -
 			"has_key": bool(nxm_request.key),
 			"has_expires": bool(nxm_request.expires),
 			"has_user_id": bool(nxm_request.user_id),
+			"is_collection": nxm_request.is_collection,
+			"collection_slug": nxm_request.collection_slug,
+			"collection_revision": nxm_request.collection_revision,
 		}
 		
 		# Detect test URLs and skip handoff creation to prevent background processing
@@ -2382,6 +2407,24 @@ def submit_nxm_handoff(payload: Optional[Dict[str, Any]] = Body(default=None)) -
 				"test_mode": True,
 				"message": "Test URL received and parsed successfully (no handoff created)"
 			}
+
+		if nxm_request.is_collection and nxm_request.collection_slug:
+			logger.info(f"[nxm_handoff] Received collection URL for slug {nxm_request.collection_slug}")
+			revision_data = _fetch_collection_from_nexus(nxm_request.collection_slug, nxm_request.collection_revision)
+			conn = get_db()
+			try:
+				cid = _upsert_collection(conn, revision_data, nxm_request.collection_slug)
+				return {
+					"ok": True,
+					"message": f"Collection {nxm_request.collection_slug} imported successfully",
+					"is_collection": True,
+					"collection_id": cid
+				}
+			finally:
+				try:
+					conn.close()
+				except Exception:
+					pass
 		
 	except NXMParseError as exc:
 		# Even if parsing fails, we still stored the raw URL
@@ -2395,6 +2438,7 @@ def submit_nxm_handoff(payload: Optional[Dict[str, Any]] = Body(default=None)) -
 	# Eagerly resolve the mod name so the frontend can display it in the
 	# download progress toaster instead of just "Mod #XXXX".
 	_eager_resolve_mod_name(record, nxm_request)
+
 
 	logger.info(
 		"[nxm_handoff] received id=%s game=%s mod_id=%s file_id=%s query_params=%s",
@@ -4496,6 +4540,9 @@ def list_downloads(limit: int = 500) -> List[Dict[str, Any]]:
 	
 	logger.info(f"[list_downloads] Query returned {len(rows)} rows (limit={limit})")
 	
+	actual_active_filenames = _get_actually_active_filenames(logger)
+	db_updates = []
+	
 	out: List[Dict[str, Any]] = []
 	for (
 		dl_id,
@@ -4536,6 +4583,17 @@ def list_downloads(limit: int = 500) -> List[Dict[str, Any]]:
 				active_paks = []
 		except Exception:
 			active_paks = []
+
+		if actual_active_filenames is not None:
+			filtered_active_paks = []
+			for p in active_paks:
+				basename = os.path.basename(p).lower()
+				if basename in actual_active_filenames:
+					filtered_active_paks.append(p)
+			if len(filtered_active_paks) != len(active_paks):
+				logger.info(f"[list_downloads] download_id={dl_id} active_paks changed from {active_paks} to {filtered_active_paks} (files not found in ~mods)")
+				db_updates.append((dl_id, filtered_active_paks))
+				active_paks = filtered_active_paks
 
 		# Tags strictly from the view; no heuristics
 		tags_list: List[str] = []
@@ -4613,6 +4671,16 @@ def list_downloads(limit: int = 500) -> List[Dict[str, Any]]:
 	# Debug: Log NSFW content status for troubleshooting
 	nsfw_count = sum(1 for item in out if item.get("contains_adult_content"))
 	logger.info(f"[list_downloads] NSFW mods count: {nsfw_count} out of {len(out)} entries")
+	
+	if db_updates:
+		try:
+			from core.db.db import update_local_download_active_paks
+			for dl_id, filtered_paks in db_updates:
+				update_local_download_active_paks(conn, dl_id, filtered_paks)
+			logger.info(f"[list_downloads] Auto-updated {len(db_updates)} out-of-sync local_downloads rows in DB")
+		except Exception as update_err:
+			logger.warning(f"[list_downloads] Failed to run batch database updates: {update_err}")
+
 	try:
 		return out
 	finally:
@@ -6300,6 +6368,24 @@ def get_local_download(download_id: int) -> Dict[str, Any]:
 		except Exception:
 			active_paks = []
 
+		import logging
+		logger = logging.getLogger("modmanager.api.downloads")
+		actual_active_filenames = _get_actually_active_filenames(logger)
+		if actual_active_filenames is not None:
+			filtered_active_paks = []
+			for p in active_paks:
+				basename = os.path.basename(p).lower()
+				if basename in actual_active_filenames:
+					filtered_active_paks.append(p)
+			if len(filtered_active_paks) != len(active_paks):
+				logger.info(f"[get_local_download] download_id={download_id} active_paks changed from {active_paks} to {filtered_active_paks} (files not found in ~mods)")
+				try:
+					from core.db.db import update_local_download_active_paks
+					update_local_download_active_paks(conn, download_id, filtered_active_paks)
+				except Exception as update_err:
+					logger.warning(f"[get_local_download] Failed to update out-of-sync active_paks: {update_err}")
+				active_paks = filtered_active_paks
+
 		local_version_key = make_version_key(version)[0]
 		needs_update = False
 		if versions_equivalent(version, latest_version):
@@ -6463,6 +6549,339 @@ def delete_mod_endpoint(mod_id: int) -> Dict[str, Any]:
 			"source_paths": source_paths,
 			"message": f"Successfully deleted mod {mod_id} and its associated downloads"
 		}
+	finally:
+		try:
+			conn.close()
+		except Exception:
+			pass
+
+
+# ─── Collections API ──────────────────────────────────────────────────────────
+
+_NEXUS_COLLECTIONS_GRAPHQL = "https://api.nexusmods.com/v2/graphql"
+
+_COLLECTION_QUERY = """
+query CollectionRevision($slug: String!, $revision: Int) {
+  collectionRevision(slug: $slug, revision: $revision) {
+    id
+    revisionNumber
+    status
+    modCount
+    createdAt
+    updatedAt
+    totalSize
+    collection {
+      id
+      slug
+      name
+      summary
+      tileImage { url }
+      user { name }
+      game { domainName }
+    }
+    modFiles {
+      id
+      fileId
+      optional
+      version
+      file {
+        fileId
+        modId
+        name
+        sizeInBytes
+        version
+        uri
+        mod {
+          name
+          pictureUrl
+        }
+      }
+    }
+  }
+}
+"""
+
+
+def _parse_collection_nxm(nxm_url: str) -> tuple[str, Optional[int]]:
+	"""Extract (slug, revision_num) from an nxm://game/collections/{slug}/revisions/{N} URL."""
+	import re
+	m = re.search(r"collections/([^/\s?]+)(?:/revisions/(\d+))?", nxm_url, re.IGNORECASE)
+	if not m:
+		raise HTTPException(status_code=400, detail=f"Cannot parse collection slug from: {nxm_url!r}")
+	slug = m.group(1)
+	revision = int(m.group(2)) if m.group(2) else None
+	return slug, revision
+
+
+def _fetch_collection_from_nexus(slug: str, revision_num: Optional[int] = None) -> Dict[str, Any]:
+	"""Fetch collection data from Nexus GraphQL API."""
+	import requests as _req
+	api_key = get_api_key()
+	headers: Dict[str, str] = {"Content-Type": "application/json"}
+	if api_key:
+		headers["apikey"] = api_key
+	variables: Dict[str, Any] = {"slug": slug}
+	if revision_num is not None:
+		variables["revision"] = revision_num
+	try:
+		resp = _req.post(
+			_NEXUS_COLLECTIONS_GRAPHQL,
+			json={"query": _COLLECTION_QUERY, "variables": variables},
+			headers=headers,
+			timeout=30,
+		)
+		resp.raise_for_status()
+		data = resp.json()
+	except Exception as exc:
+		raise HTTPException(status_code=502, detail=f"Nexus Collections API request failed: {exc}")
+	if "errors" in data and data["errors"]:
+		msgs = "; ".join(e.get("message", str(e)) for e in data["errors"])
+		raise HTTPException(status_code=502, detail=f"Nexus GraphQL error: {msgs}")
+	revision = (data.get("data") or {}).get("collectionRevision")
+	if not revision:
+		raise HTTPException(status_code=404, detail=f"Collection '{slug}' rev {revision_num} not found on Nexus")
+	return revision
+
+
+def _upsert_collection(conn: sqlite3.Connection, revision: Dict[str, Any], slug: str) -> int:
+	"""Insert or replace a collection and its mod files. Returns collection DB id."""
+	import json as _json
+	col = revision.get("collection") or {}
+	cur = conn.cursor()
+	existing = cur.execute(
+		"SELECT id FROM collections WHERE slug = ? AND COALESCE(revision_num, -1) = COALESCE(?, -1)",
+		(slug, revision.get("revisionNumber")),
+	).fetchone()
+	if existing:
+		cid = existing[0]
+		cur.execute(
+			"""UPDATE collections SET
+				nexus_id=?, revision_id=?, revision_num=?, name=?, summary=?,
+				picture_url=?, author=?, total_mods=?, total_size=?,
+				status=?, created_at=?, updated_at=?, fetched_at=datetime('now'), raw_json=?
+			WHERE id=?""",
+			(
+				col.get("id"), revision.get("id"), revision.get("revisionNumber"),
+				col.get("name"), col.get("summary"), (col.get("tileImage") or {}).get("url"),
+				(col.get("user") or {}).get("name"),
+				revision.get("modCount"), int(revision.get("totalSize") or 0),
+				revision.get("status"), revision.get("createdAt"), revision.get("updatedAt"),
+				_json.dumps(revision), cid,
+			),
+		)
+		# Delete old mod files to re-insert fresh
+		cur.execute("DELETE FROM collection_mod_files WHERE collection_id = ?", (cid,))
+	else:
+		cur.execute(
+			"""INSERT INTO collections
+				(slug, nexus_id, revision_id, revision_num, game, name, summary,
+				 picture_url, author, total_mods, total_size, status, created_at, updated_at, raw_json)
+			VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+			(
+				slug, col.get("id"), revision.get("id"), revision.get("revisionNumber"),
+				(col.get("game") or {}).get("domainName") or "marvelrivals",
+				col.get("name"), col.get("summary"), (col.get("tileImage") or {}).get("url"),
+				(col.get("user") or {}).get("name"),
+				revision.get("modCount"), int(revision.get("totalSize") or 0),
+				revision.get("status"), revision.get("createdAt"), revision.get("updatedAt"),
+				_json.dumps(revision),
+			),
+		)
+		cid = cur.lastrowid
+
+	# Insert mod files
+	for mf in revision.get("modFiles") or []:
+		f = mf.get("file") or {}
+		mod = f.get("mod") or {}
+		cur.execute(
+			"""INSERT INTO collection_mod_files
+				(collection_id, entry_id, file_id, mod_id, optional, version,
+				 file_name, file_uri, size_in_bytes, mod_name, picture_url)
+			VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+			(
+				cid,
+				str(mf.get("id") or ""),
+				int(f.get("fileId") or mf.get("fileId") or 0),
+				int(f.get("modId") or 0) or None,
+				1 if mf.get("optional") else 0,
+				str(mf.get("version") or f.get("version") or ""),
+				f.get("name") or "",
+				f.get("uri") or "",
+				int(f.get("sizeInBytes") or 0) or None,
+				mod.get("name") or f.get("name") or "",
+				mod.get("pictureUrl") or "",
+			),
+		)
+	conn.commit()
+	return cid
+
+
+def _serialize_collection(conn: sqlite3.Connection, cid: int) -> Dict[str, Any]:
+	"""Return a full collection dict with mod_files list for the API response."""
+	cur = conn.cursor()
+	row = cur.execute(
+		"SELECT id, slug, nexus_id, revision_id, revision_num, game, name, summary, "
+		"picture_url, author, total_mods, total_size, status, created_at, updated_at, fetched_at "
+		"FROM collections WHERE id = ?", (cid,)
+	).fetchone()
+	if not row:
+		raise HTTPException(status_code=404, detail="Collection not found")
+	keys = ["id","slug","nexus_id","revision_id","revision_num","game","name","summary",
+			"picture_url","author","total_mods","total_size","status","created_at","updated_at","fetched_at"]
+	result = dict(zip(keys, row))
+
+	files = cur.execute(
+		"SELECT id, entry_id, file_id, mod_id, optional, version, file_name, file_uri, "
+		"size_in_bytes, mod_name, picture_url, download_state "
+		"FROM collection_mod_files WHERE collection_id = ? ORDER BY id",
+		(cid,)
+	).fetchall()
+	fkeys = ["id","entry_id","file_id","mod_id","optional","version","file_name","file_uri",
+			 "size_in_bytes","mod_name","picture_url","download_state"]
+	result["mod_files"] = [dict(zip(fkeys, r)) for r in files]
+	return result
+
+
+@app.post("/api/collections/import")
+def import_collection(body: Dict[str, Any]) -> Dict[str, Any]:
+	"""Import a Nexus collection by NXM URL or slug+revision. Fetches from Nexus API and stores in DB."""
+	nxm_url: Optional[str] = body.get("nxm_url")
+	slug: Optional[str] = body.get("slug")
+	revision_num: Optional[int] = body.get("revision")
+
+	if nxm_url:
+		slug, revision_num = _parse_collection_nxm(nxm_url)
+	elif not slug:
+		raise HTTPException(status_code=400, detail="Provide 'nxm_url' or 'slug'")
+
+	revision = _fetch_collection_from_nexus(slug, revision_num)
+	conn = get_db()
+	try:
+		cid = _upsert_collection(conn, revision, slug)
+		return {"ok": True, "collection": _serialize_collection(conn, cid)}
+	finally:
+		try:
+			conn.close()
+		except Exception:
+			pass
+
+
+@app.post("/api/collections/import-raw")
+def import_collection_raw(body: Dict[str, Any]) -> Dict[str, Any]:
+	"""Import a collection from a raw GraphQL response payload (for seeding from JSON)."""
+	import json as _json
+	revision = body.get("revision")
+	slug = body.get("slug")
+	if not revision or not slug:
+		raise HTTPException(status_code=400, detail="Provide 'revision' and 'slug'")
+	conn = get_db()
+	try:
+		cid = _upsert_collection(conn, revision, slug)
+		return {"ok": True, "collection": _serialize_collection(conn, cid)}
+	finally:
+		try:
+			conn.close()
+		except Exception:
+			pass
+
+
+@app.get("/api/collections")
+def list_collections() -> Dict[str, Any]:
+	"""List all stored collections (summary, no mod_files)."""
+	conn = get_db()
+	try:
+		cur = conn.cursor()
+		rows = cur.execute(
+			"SELECT id, slug, nexus_id, revision_num, game, name, summary, picture_url, "
+			"author, total_mods, total_size, status, updated_at, fetched_at "
+			"FROM collections ORDER BY fetched_at DESC"
+		).fetchall()
+		keys = ["id","slug","nexus_id","revision_num","game","name","summary","picture_url",
+				"author","total_mods","total_size","status","updated_at","fetched_at"]
+		return {"ok": True, "collections": [dict(zip(keys, r)) for r in rows]}
+	finally:
+		try:
+			conn.close()
+		except Exception:
+			pass
+
+
+@app.get("/api/collections/{collection_id}")
+def get_collection(collection_id: int) -> Dict[str, Any]:
+	"""Get a full collection with its mod_files list."""
+	conn = get_db()
+	try:
+		return {"ok": True, "collection": _serialize_collection(conn, collection_id)}
+	finally:
+		try:
+			conn.close()
+		except Exception:
+			pass
+
+
+@app.delete("/api/collections/{collection_id}")
+def delete_collection(collection_id: int) -> Dict[str, Any]:
+	"""Remove a collection (and its mod_files via CASCADE)."""
+	conn = get_db()
+	try:
+		cur = conn.cursor()
+		cur.execute("DELETE FROM collections WHERE id = ?", (collection_id,))
+		conn.commit()
+		return {"ok": True}
+	finally:
+		try:
+			conn.close()
+		except Exception:
+			pass
+
+
+@app.post("/api/collections/{collection_id}/refresh")
+def refresh_collection(collection_id: int) -> Dict[str, Any]:
+	"""Re-fetch collection data from Nexus and update the DB."""
+	conn = get_db()
+	try:
+		cur = conn.cursor()
+		row = cur.execute(
+			"SELECT slug, revision_num FROM collections WHERE id = ?", (collection_id,)
+		).fetchone()
+		if not row:
+			raise HTTPException(status_code=404, detail="Collection not found")
+		slug, revision_num = row
+	finally:
+		try:
+			conn.close()
+		except Exception:
+			pass
+
+	revision = _fetch_collection_from_nexus(slug, revision_num)
+	conn2 = get_db()
+	try:
+		cid = _upsert_collection(conn2, revision, slug)
+		return {"ok": True, "collection": _serialize_collection(conn2, cid)}
+	finally:
+		try:
+			conn2.close()
+		except Exception:
+			pass
+
+
+@app.patch("/api/collections/{collection_id}/mod-files/{file_id}/state")
+def update_mod_file_state(collection_id: int, file_id: int, body: Dict[str, Any]) -> Dict[str, Any]:
+	"""Update the download_state of a collection mod file (pending|downloading|downloaded|failed)."""
+	state: str = body.get("state", "pending")
+	valid = {"pending", "downloading", "downloaded", "failed"}
+	if state not in valid:
+		raise HTTPException(status_code=400, detail=f"state must be one of {valid}")
+	conn = get_db()
+	try:
+		cur = conn.cursor()
+		cur.execute(
+			"UPDATE collection_mod_files SET download_state = ? "
+			"WHERE collection_id = ? AND file_id = ?",
+			(state, collection_id, file_id),
+		)
+		conn.commit()
+		return {"ok": True}
 	finally:
 		try:
 			conn.close()

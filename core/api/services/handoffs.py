@@ -66,6 +66,24 @@ def register_handoff(nxm: NXMRequest, *, metadata: Dict[str, Any]) -> Dict[str, 
             "metadata": metadata,
         }
         _HANDOFFS[identifier] = record
+
+    # Clear any previous persistent failure record for this file_id when a new handoff is registered
+    if nxm.file_id is not None:
+        fid_str = str(nxm.file_id).strip()
+        from core.api.dependencies import get_db
+        conn = get_db()
+        try:
+            cur = conn.cursor()
+            cur.execute("DELETE FROM handoff_failures WHERE file_id = ?", (fid_str,))
+            conn.commit()
+        except Exception as db_err:
+            import sys
+            print(f"[HANDOFF REGISTER DB CLEAR ERROR] {db_err}", file=sys.stderr)
+        finally:
+            try:
+                conn.close()
+            except Exception:
+                pass
         return record
 
 
@@ -90,7 +108,75 @@ def get_handoff_or_404(handoff_id: str) -> Dict[str, Any]:
 def list_handoffs() -> List[Dict[str, Any]]:
     with _HANDOFF_LOCK:
         _purge_expired_locked()
-        return list(_HANDOFFS.values())
+        in_memory = list(_HANDOFFS.values())
+
+    in_memory_file_ids = set()
+    for rec in in_memory:
+        req = rec.get("request") or {}
+        fid = req.get("file_id")
+        if fid is not None:
+            in_memory_file_ids.add(str(fid).strip())
+
+    # Load persistent failures from SQLite
+    db_failures = []
+    from core.api.dependencies import get_db
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        rows = cur.execute(
+            "SELECT file_id, mod_id, error_message, retry_count, last_attempt_at, handoff_id FROM handoff_failures"
+        ).fetchall()
+        for file_id_str, mod_id, error_message, retry_count, last_attempt_at, handoff_id in rows:
+            db_failures.append({
+                "file_id": file_id_str,
+                "mod_id": mod_id,
+                "error_message": error_message,
+                "retry_count": retry_count,
+                "last_attempt_at": last_attempt_at,
+                "handoff_id": handoff_id
+            })
+    except Exception as db_err:
+        import sys
+        print(f"[LIST HANDOFFS DB ERROR] {db_err}", file=sys.stderr)
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+    # Merge persistent failures as synthetic failed handoffs if not already in-memory
+    for fail in db_failures:
+        fid_str = fail["file_id"].strip()
+        if fid_str in in_memory_file_ids:
+            continue
+
+        synthetic_id = fail["handoff_id"] or f"failed-{fid_str}"
+        import dateutil.parser
+        try:
+            parsed_time = dateutil.parser.parse(fail["last_attempt_at"])
+            created_at = parsed_time.timestamp()
+        except Exception:
+            created_at = time.time()
+
+        synthetic_record = {
+            "id": synthetic_id,
+            "created_at": created_at,
+            "expires_at": created_at + NXM_HANDOFF_TTL_SECONDS,
+            "request": {
+                "file_id": int(fid_str) if fid_str.isdigit() else fid_str,
+                "mod_id": fail["mod_id"],
+            },
+            "progress": {
+                "stage": "failed",
+                "error": fail["error_message"],
+                "message": fail["error_message"],
+                "retry_count": fail["retry_count"],
+                "permanently_failed": fail["retry_count"] >= MAX_HANDOFF_RETRIES,
+            }
+        }
+        in_memory.append(synthetic_record)
+
+    return in_memory
 
 
 def delete_handoff(handoff_id: str) -> Dict[str, Any]:
@@ -104,6 +190,22 @@ def delete_handoff(handoff_id: str) -> Dict[str, Any]:
     # Clear failure record when handoff is deleted
     with _FAILURE_LOCK:
         _HANDOFF_FAILURES.pop(handoff_id, None)
+
+    # Also clear from SQLite database
+    from core.api.dependencies import get_db
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        cur.execute("DELETE FROM handoff_failures WHERE handoff_id = ?", (handoff_id,))
+        conn.commit()
+    except Exception as db_err:
+        import sys
+        print(f"[HANDOFF DELETE DB ERROR] {db_err}", file=sys.stderr)
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
     
     return record
 
@@ -192,6 +294,55 @@ def register_handoff_failure(handoff_id: str, error: str) -> None:
         
         _HANDOFF_FAILURES[handoff_id] = failure
 
+    # Also persist failure in SQLite database
+    file_id = None
+    mod_id = None
+    with _HANDOFF_LOCK:
+        record = _HANDOFFS.get(handoff_id)
+        if record:
+            req = record.get("request") or {}
+            file_id = req.get("file_id")
+            mod_id = req.get("mod_id")
+
+    if file_id is not None:
+        file_id_str = str(file_id).strip()
+        from core.api.dependencies import get_db
+        conn = get_db()
+        existing = None
+        try:
+            cur = conn.cursor()
+            existing = cur.execute(
+                "SELECT retry_count FROM handoff_failures WHERE file_id = ?",
+                (file_id_str,)
+            ).fetchone()
+            
+            # Update in-memory count to match persistent state
+            if existing and existing[0] >= failure["count"]:
+                failure["count"] = existing[0] + 1
+            
+            new_count = failure["count"]
+            cur.execute(
+                """
+                INSERT INTO handoff_failures (file_id, mod_id, error_message, retry_count, last_attempt_at, handoff_id)
+                VALUES (?, ?, ?, ?, datetime('now'), ?)
+                ON CONFLICT(file_id) DO UPDATE SET
+                    error_message = excluded.error_message,
+                    retry_count = excluded.retry_count,
+                    last_attempt_at = excluded.last_attempt_at,
+                    handoff_id = excluded.handoff_id
+                """,
+                (file_id_str, mod_id, error, new_count, handoff_id)
+            )
+            conn.commit()
+        except Exception as db_err:
+            import sys
+            print(f"[HANDOFF FAILURE DB ERROR] {db_err}", file=sys.stderr)
+        finally:
+            try:
+                conn.close()
+            except Exception:
+                pass
+
 
 def get_handoff_failure_count(handoff_id: str) -> int:
     """Get the number of failures for a handoff."""
@@ -206,6 +357,22 @@ def clear_handoff_failure(handoff_id: str) -> None:
     with _FAILURE_LOCK:
         _HANDOFF_FAILURES.pop(handoff_id, None)
 
+    # Also clear from SQLite database
+    from core.api.dependencies import get_db
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        cur.execute("DELETE FROM handoff_failures WHERE handoff_id = ?", (handoff_id,))
+        conn.commit()
+    except Exception as db_err:
+        import sys
+        print(f"[HANDOFF CLEAR DB ERROR] {db_err}", file=sys.stderr)
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
 
 def should_skip_handoff(handoff_id: str) -> Tuple[bool, Optional[str]]:
     """
@@ -215,6 +382,48 @@ def should_skip_handoff(handoff_id: str) -> Tuple[bool, Optional[str]]:
         Tuple of (should_skip, reason)
     """
     _purge_expired_failures()
+
+    # 1. Check persistent failures in SQLite
+    file_id_str = None
+    with _HANDOFF_LOCK:
+        record = _HANDOFFS.get(handoff_id)
+        if record:
+            req = record.get("request") or {}
+            fid = req.get("file_id")
+            if fid is not None:
+                file_id_str = str(fid).strip()
+
+    from core.api.dependencies import get_db
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        row = None
+        if file_id_str:
+            row = cur.execute(
+                "SELECT retry_count, error_message FROM handoff_failures WHERE file_id = ? OR handoff_id = ?",
+                (file_id_str, handoff_id)
+            ).fetchone()
+        else:
+            row = cur.execute(
+                "SELECT retry_count, error_message FROM handoff_failures WHERE handoff_id = ?",
+                (handoff_id,)
+            ).fetchone()
+
+        if row:
+            retry_count, error_message = row
+            if retry_count >= MAX_HANDOFF_RETRIES:
+                reason = f"Handoff has failed {retry_count} times (max {MAX_HANDOFF_RETRIES}). Last error: {error_message}"
+                return True, reason
+    except Exception as db_err:
+        import sys
+        print(f"[SHOULD SKIP DB ERROR] {db_err}", file=sys.stderr)
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+    # 2. Fallback to in-memory check
     with _FAILURE_LOCK:
         failure = _HANDOFF_FAILURES.get(handoff_id)
         if not failure:

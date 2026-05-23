@@ -1,6 +1,7 @@
 import { Button } from "./ui/button";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ModConflictModal } from "./ModConflictModal";
+import { CheckForUpdatesModal, type ModStatus } from "./CheckForUpdatesModal";
 // import { mockConflicts } from "./mockConflicts";
 import { Badge } from "./ui/badge";
 import { Separator } from "./ui/separator";
@@ -22,16 +23,6 @@ import {
   Heart,
 } from "lucide-react";
 
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "./ui/alert-dialog";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 
@@ -39,8 +30,6 @@ import type { Mod } from "./ModCard";
 import {
   listConflicts,
   refreshConflicts,
-  checkModUpdate,
-  getPakVersionStatus,
   type ApiConflict,
   getDownloadsSummary,
   type ApiDownloadsSummary,
@@ -66,6 +55,7 @@ interface DownloadsSidebarProps {
   mods: Mod[];
   conflictsReloadToken?: number;
   onRefreshMods?: () => void;
+  onUpdateMod?: (modId: string, targetFileId?: number) => void;
 }
 
 const categories = [
@@ -81,10 +71,10 @@ const calculateTotalSize = (mods: Mod[]): string => {
   // Assuming each mod might have a size property or we estimate from version/download data
   // For now, return "Calculating..." if no data or sum available sizes
   let totalBytes = 0;
-  for (const mod of mods) {
+  for (const _mod of mods) {
     // If mod has a size property, use it; otherwise estimate
     // This can be extended when the Mod interface includes a size field
-    // totalBytes += mod.size || 0;
+    // totalBytes += _mod.size || 0;
   }
 
   if (totalBytes === 0) {
@@ -109,6 +99,7 @@ export function DownloadsSidebar({
   mods,
   conflictsReloadToken = 0,
   onRefreshMods,
+  onUpdateMod,
 }: DownloadsSidebarProps) {
   const { theme } = useTheme();
   const isLightMode = theme === "light";
@@ -119,7 +110,7 @@ export function DownloadsSidebar({
 
   // Load character/skin map from database for proper tag identification
   const [tagLookupMap, setTagLookupMap] = useState<TagLookupResponse>({});
-  const [isLoadingTagMap, setIsLoadingTagMap] = useState(true);
+  const [_isLoadingTagMap, setIsLoadingTagMap] = useState(true);
 
   // Calculate a stable signature of all tags to prevent unnecessary re-fetches
   // when other mod properties (like download progress) change
@@ -284,9 +275,12 @@ export function DownloadsSidebar({
   const [loadingConflicts, setLoadingConflicts] = useState(false);
   const [conflictCount, setConflictCount] = useState<number>(0);
   const showActiveOnly = true;
-  const [updateConfirmOpen, setUpdateConfirmOpen] = useState(false);
+  const [checkUpdatesModalOpen, setCheckUpdatesModalOpen] = useState(false);
   const [upiModalOpen, setUpiModalOpen] = useState(false);
-  const [isCheckingUpdates, setIsCheckingUpdates] = useState(false);
+  // Lifted update-check state so results persist when the modal is closed/reopened
+  const [updateStatuses, setUpdateStatuses] = useState<Record<string, ModStatus>>({});
+  const [updateChecked, setUpdateChecked] = useState(false);
+  const [updateIsCheckingAll, setUpdateIsCheckingAll] = useState(false);
 
   // Track which characters are expanded to show their skins (default: all collapsed)
   const [expandedCharacters, setExpandedCharacters] = useState<Set<string>>(
@@ -315,122 +309,6 @@ export function DownloadsSidebar({
     return Array.from(ids);
   }, [installedMods]);
 
-  const handleStartUpdateCheck = useCallback(async () => {
-    if (isCheckingUpdates) {
-      return;
-    }
-    setUpdateConfirmOpen(false);
-    if (uniqueModIds.length === 0) {
-      toast.info("No installed mods are linked to Nexus IDs to check.");
-      return;
-    }
-    const toastId = "check-updates-progress";
-    // Mark the check start time so the UI shows "Just now" immediately
-    const nowIso = new Date().toISOString();
-    setDownloadsSummary((prev: ApiDownloadsSummary | null) => {
-      if (prev) return { ...prev, last_check: nowIso };
-      return {
-        ok: true,
-        total_size_bytes: 0,
-        total_size_human: "0 B",
-        download_count: 0,
-        missing_paths: [],
-        last_check: nowIso,
-      };
-    });
-    setIsCheckingUpdates(true);
-    let checked = 0;
-    let failed = 0;
-    let flaggedForUpdate = 0;
-    const metadataWarnings = new Set<string>();
-    toast.loading(`(0/${uniqueModIds.length}) mods checked ...`, {
-      id: toastId,
-    });
-    try {
-      for (const modId of uniqueModIds) {
-        try {
-          const result = await checkModUpdate(modId);
-          if (result?.metadata_warning) {
-            metadataWarnings.add(result.metadata_warning);
-          }
-          if (result?.needs_update) {
-            // verify pak-level rows to avoid false positives
-            try {
-              const pakRows = await getPakVersionStatus({
-                modId,
-                onlyNeedsUpdate: true,
-              });
-              if (Array.isArray(pakRows) && pakRows.length > 0) {
-                flaggedForUpdate += 1;
-              } else {
-                console.debug(
-                  "[downloads-sidebar] mod reported needs_update but no pak rows",
-                  { modId },
-                );
-              }
-            } catch (e) {
-              // conservative: count it if verification fails
-              flaggedForUpdate += 1;
-              console.warn(
-                "[downloads-sidebar] failed to verify pak level status",
-                { modId, error: e },
-              );
-            }
-          }
-        } catch (error) {
-          failed += 1;
-          console.error("[downloads-sidebar] update check failed", {
-            modId,
-            error,
-          });
-        } finally {
-          checked += 1;
-          toast.loading(
-            `(${checked}/${uniqueModIds.length}) mods checked ...`,
-            {
-              id: toastId,
-            },
-          );
-        }
-      }
-      const details: string[] = [];
-      if (flaggedForUpdate > 0) {
-        details.push(`${flaggedForUpdate} need updates`);
-      }
-      if (failed > 0) {
-        details.push(`${failed} failed`);
-      }
-      const suffix = details.length > 0 ? ` (${details.join(", ")})` : "";
-      const warningDescription =
-        metadataWarnings.size > 0
-          ? Array.from(metadataWarnings).join("\n")
-          : undefined;
-      toast.success(
-        `Finished checking ${checked} mod${checked === 1 ? "" : "s"}${suffix}.`,
-        { id: toastId, description: warningDescription, duration: 4000 },
-      );
-      // Refresh authoritative downloads summary after checks complete
-      try {
-        setLoadingSummary(true);
-        const s = await getDownloadsSummary();
-        // Preserve the check timestamp (nowIso) so UI shows the actual check time
-        setDownloadsSummary({ ...s, last_check: nowIso });
-      } catch (err) {
-        console.error(
-          "Failed to refresh downloads summary after update check",
-          err,
-        );
-      } finally {
-        setLoadingSummary(false);
-      }
-      // Refresh mods list to reflect updated status for all mods
-      if (onRefreshMods) {
-        onRefreshMods();
-      }
-    } finally {
-      setIsCheckingUpdates(false);
-    }
-  }, [isCheckingUpdates, uniqueModIds, onRefreshMods]);
 
   const fetchConflicts = useCallback(async () => {
     let cancelled = false;
@@ -440,9 +318,7 @@ export function DownloadsSidebar({
         await refreshConflicts();
       } catch (err) {
         if (!cancelled) {
-          const message =
-            err instanceof Error ? err.message : "Failed to refresh conflicts";
-          // toast.error(message); // optional: suppress noise
+          // toast.error(err instanceof Error ? err.message : "Failed to refresh conflicts"); // optional: suppress noise
         }
       }
       const data = await listConflicts(50, showActiveOnly);
@@ -748,8 +624,8 @@ export function DownloadsSidebar({
           <Button
             variant="outline"
             className="w-full justify-start gap-3"
-            disabled={isCheckingUpdates || uniqueModIds.length === 0}
-            onClick={() => setUpdateConfirmOpen(true)}
+            disabled={uniqueModIds.length === 0}
+            onClick={() => setCheckUpdatesModalOpen(true)}
           >
             <RefreshCw className="w-4 h-4" />
             <span className="flex-1 text-left">Check for Updates</span>
@@ -759,11 +635,20 @@ export function DownloadsSidebar({
               </Badge>
             )}
           </Button>
-          {isCheckingUpdates && (
-            <p className="text-xs text-muted-foreground">
-              Checking updates in the background…
-            </p>
-          )}
+          {/* CheckForUpdatesModal */}
+          <CheckForUpdatesModal
+            open={checkUpdatesModalOpen}
+            onOpenChange={setCheckUpdatesModalOpen}
+            mods={mods}
+            onUpdateMod={onUpdateMod}
+            onRefreshMods={onRefreshMods}
+            statuses={updateStatuses}
+            onStatusesChange={setUpdateStatuses}
+            checked={updateChecked}
+            onCheckedChange={setUpdateChecked}
+            isCheckingAll={updateIsCheckingAll}
+            onIsCheckingAllChange={setUpdateIsCheckingAll}
+          />
 
           <Button
             variant="outline"
@@ -797,36 +682,7 @@ export function DownloadsSidebar({
           )}
         </div>
 
-        <AlertDialog
-          open={updateConfirmOpen}
-          onOpenChange={setUpdateConfirmOpen}
-        >
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Check for updates?</AlertDialogTitle>
-              <AlertDialogDescription>
-                {uniqueModIds.length > 0
-                  ? `This will contact the API for ${
-                      uniqueModIds.length
-                    } installed mod${
-                      uniqueModIds.length === 1 ? "" : "s"
-                    } to refresh their update status.`
-                  : "No installed mods have Nexus metadata to check."}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={isCheckingUpdates}>
-                Cancel
-              </AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleStartUpdateCheck}
-                disabled={isCheckingUpdates || uniqueModIds.length === 0}
-              >
-                Start Check
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+
       </div>
 
       <Separator />

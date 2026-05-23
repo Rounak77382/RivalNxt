@@ -93,6 +93,8 @@ export type ApiNxmDownloadProgress = {
   percent?: number | null;
   error?: string | null;
   updated_at?: number | null;
+  retry_count?: number;
+  permanently_failed?: boolean;
 };
 
 export type ApiNxmHandoffSummary = {
@@ -817,6 +819,10 @@ export type ApiDownload = {
   // Client-side aggregation helper: when grouping multiple local_downloads for the same mod,
   // keep track of which download rows were merged.
   source_download_ids?: number[];
+  // Client-side aggregation helper: track all latest_file_ids across merged downloads
+  source_file_ids?: number[];
+  // Client-side aggregation helper: track all source paths across merged downloads
+  source_paths?: string[];
   created_at: string;
   mod_name: string | null;
   mod_author: string | null;
@@ -1170,4 +1176,100 @@ export type GameVersionCheckResponse = {
 
 export async function getGameVersionCheck(): Promise<GameVersionCheckResponse> {
   return getJson<GameVersionCheckResponse>("/api/game-version/check");
+}
+
+// ─── Collections API ──────────────────────────────────────────────────────────
+
+export type ApiCollectionModFile = {
+  id: number;
+  entry_id: string;
+  file_id: number;
+  mod_id: number | null;
+  optional: number; // 0 = required, 1 = optional
+  version: string;
+  file_name: string;
+  file_uri: string;
+  size_in_bytes: number | null;
+  mod_name: string;
+  picture_url: string;
+  download_state: "pending" | "downloading" | "downloaded" | "failed";
+};
+
+export type ApiCollectionSummary = {
+  id: number;
+  slug: string;
+  nexus_id: number | null;
+  revision_num: number | null;
+  game: string;
+  name: string | null;
+  summary: string | null;
+  picture_url: string | null;
+  author: string | null;
+  total_mods: number | null;
+  total_size: number | null;
+  status: string | null;
+  updated_at: string | null;
+  fetched_at: string;
+};
+
+export type ApiCollection = ApiCollectionSummary & {
+  revision_id: number | null;
+  created_at: string | null;
+  mod_files: ApiCollectionModFile[];
+};
+
+export async function listCollections(): Promise<ApiCollectionSummary[]> {
+  const r = await getJson<{ ok: boolean; collections: ApiCollectionSummary[] }>("/api/collections");
+  return r.collections ?? [];
+}
+
+export async function getCollection(id: number): Promise<ApiCollection> {
+  const r = await getJson<{ ok: boolean; collection: ApiCollection }>(`/api/collections/${id}`);
+  return r.collection;
+}
+
+export async function importCollection(payload: {
+  nxm_url?: string;
+  slug?: string;
+  revision?: number;
+}): Promise<ApiCollection> {
+  const r = await postJson<typeof payload, { ok: boolean; collection: ApiCollection }>(
+    "/api/collections/import",
+    payload,
+  );
+  return r.collection;
+}
+
+export async function importCollectionRaw(payload: {
+  slug: string;
+  revision: Record<string, unknown>;
+}): Promise<ApiCollection> {
+  const r = await postJson<typeof payload, { ok: boolean; collection: ApiCollection }>(
+    "/api/collections/import-raw",
+    payload,
+  );
+  return r.collection;
+}
+
+export async function deleteCollection(id: number): Promise<{ ok: boolean }> {
+  return deleteJson<{ ok: boolean }>(`/api/collections/${id}`);
+}
+
+export async function refreshCollection(id: number): Promise<ApiCollection> {
+  const r = await postJson<Record<string, never>, { ok: boolean; collection: ApiCollection }>(
+    `/api/collections/${id}/refresh`,
+    {},
+  );
+  return r.collection;
+}
+
+export async function updateCollectionModFileState(
+  collectionId: number,
+  fileId: number,
+  state: "pending" | "downloading" | "downloaded" | "failed",
+): Promise<{ ok: boolean }> {
+  return postJson<{ state: string }, { ok: boolean }>(
+    `/api/collections/${collectionId}/mod-files/${fileId}/state`,
+    { state },
+  );
 }
