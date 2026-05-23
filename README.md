@@ -61,7 +61,7 @@ _One desktop app to manage, activate, and validate Marvel Rivals mods with confl
 
 - Go to the **Releases** page.
 - Download the latest setup file, for example:
-  **`RivalNxt_0.5.6_x64-setup.exe`** (or any newer version).
+  **`RivalNxt_0.7.0_x64-setup.exe`** (or any newer version).
 
 ### 2. Install & Launch
 
@@ -472,8 +472,8 @@ See [`.github/workflows/release.yml`](file:///c:/Users/rouna/OneDrive/Documents/
 
 ```bash
 # 1. Tag your commit
-git tag v0.5.6
-git push origin v0.5.6
+git tag v0.7.0
+git push origin v0.7.0
 
 # 2. Create GitHub Release from tag
 # The workflow will automatically build and attach the installer
