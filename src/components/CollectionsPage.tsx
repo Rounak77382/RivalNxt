@@ -104,6 +104,7 @@ interface CollectionsPageProps {
   viewMode: "grid" | "list";
   onViewModeChange: (mode: "grid" | "list") => void;
   onCollectionsCountChange?: (count: number) => void;
+  backupsRefreshTrigger?: number;
 }
 
 export function CollectionsPage({
@@ -114,6 +115,7 @@ export function CollectionsPage({
   viewMode,
   onViewModeChange,
   onCollectionsCountChange,
+  backupsRefreshTrigger,
 }: CollectionsPageProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"name" | "date">("name");
@@ -322,6 +324,13 @@ export function CollectionsPage({
       onCollectionsCountChange(collectionsData.length);
     }
   }, [collectionsData, onCollectionsCountChange]);
+
+  useEffect(() => {
+    if (backupsRefreshTrigger !== undefined) {
+      setBackupMetas(loadBackupMetas());
+      fetchCollections(true);
+    }
+  }, [backupsRefreshTrigger]);
 
   useEffect(() => {
     fetchCollections(false);

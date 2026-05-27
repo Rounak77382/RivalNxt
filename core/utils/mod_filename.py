@@ -12,6 +12,10 @@ def parse_mod_filename(filename: str) -> Tuple[str, Optional[int], str]:
     
     Prioritizes the official Nexus Mods naming convention:
     <name>-<mod_id>-<version>-<timestamp>.<ext>
+
+    Also handles the space-separated NMM/browser style:
+    <name words> <mod_id> <version tokens> <timestamp> [optional extra]
+    e.g. "Azure Shade Up 4985 1 0 1763999096 8"
     """
     if not filename:
         return "", None, ""
@@ -20,7 +24,7 @@ def parse_mod_filename(filename: str) -> Tuple[str, Optional[int], str]:
     base = p.stem
     ext = p.suffix
     
-    # 1. Check for official Nexus naming convention
+    # 1. Check for official Nexus naming convention (dash-separated)
     # Pattern: <Name>-<ModID>-<Version>-<Timestamp>[optional suffix]
     #
     # The key to parsing this correctly is anchoring on the TIMESTAMP, which is
@@ -36,9 +40,9 @@ def parse_mod_filename(filename: str) -> Tuple[str, Optional[int], str]:
     nexus_pattern = re.compile(
         r"^(.+?)"           # Name (non-greedy)
         r"-(\d{1,7})"       # -ModID (1-7 digits, currently Nexus IDs are 1-6 digits)
-        r"-([\d][\d-]*\d|[\d])"  # -Version (digit-led, digits and dashes)
+        r"-([\w][\w\.-]*\w|[\w])"  # -Version (alphanumeric led, alphanumeric, dots, and dashes)
         r"-(\d{9,11})"      # -Timestamp (9-11 digit Unix epoch)
-        r"(?:\s\(\d+\))?"   # Optional browser duplicate suffix like " (1)"
+        r"(?:[\s\-_]+(?:\(\d+\)|\d+))?"   # Optional browser duplicate suffix like " (1)", "-1", "_1"
         r"$"
     )
     nexus_match = nexus_pattern.match(base)
@@ -51,6 +55,43 @@ def parse_mod_filename(filename: str) -> Tuple[str, Optional[int], str]:
         name = name_raw.replace("_", " ").strip()
         name = re.sub(r"\s+", " ", name)
         return name, mod_id, version
+
+    # 1b. Space-separated Nexus convention (NMM / browser download-manager style).
+    #     Format: <Name words> <ModID> <version tokens> <Timestamp> [optional extra number]
+    #     Examples:
+    #       "Azure Shade Up 4985 1 0 1763999096 8"
+    #       "Thicc Scarlet Witch 5704 1 3 1774422798 1"
+    #       "Chaos Radiance User Interface Overhaul 4804 4 5 1762687295 5"
+    #
+    # Strategy: anchor on the timestamp (9-11 digit epoch), then read backwards:
+    #   - optional trailing extra number after timestamp
+    #   - version segments (one or more space-separated digit groups before timestamp)
+    #   - ModID (single 1-7 digit number just before version)
+    #   - name = everything before the ModID
+    #
+    # We use a non-greedy version group so the ModID is correctly separated.
+    nexus_space_pattern = re.compile(
+        r"^(.+?)"                   # Name (non-greedy)
+        r"\s+(\d{1,7})"             # space + ModID (1-7 digits)
+        r"\s+([\w\.]+(?:\s+[\w\.]+)*?)"  # space + Version tokens (non-greedy, 1+ alphanumeric groups)
+        r"\s+(\d{9,11})"            # space + Timestamp (9-11 digit epoch)
+        r"(?:\s+\d+)?"              # optional trailing extra number (e.g. "8", "5", "1")
+        r"$"
+    )
+    nexus_space_match = nexus_space_pattern.match(base)
+
+    if nexus_space_match:
+        name_raw = nexus_space_match.group(1)
+        mod_id_candidate = int(nexus_space_match.group(2))
+        version_raw = nexus_space_match.group(3)
+
+        # Sanity check: the "name" part must contain at least one non-digit character
+        # to avoid misidentifying a pure-numeric string as a name.
+        if re.search(r"[^\d\s]", name_raw):
+            version = version_raw.replace(" ", ".")
+            name = name_raw.replace("_", " ").strip()
+            name = re.sub(r"\s+", " ", name)
+            return name, mod_id_candidate, version
 
     # 2. Heuristic parsing for non-Nexus files
     # Strip Unreal Engine .pak suffixes like _9999999_P, _P, _p

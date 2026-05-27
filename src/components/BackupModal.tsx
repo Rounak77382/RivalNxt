@@ -41,6 +41,7 @@ interface BackupModalProps {
   onClose: () => void;
   mods: any[];
   onToggleMod: (modId: string) => void;
+  onBackupCreated?: () => void;
 }
 
 type ModalView = "home" | "creating" | "created" | "restoring" | "restored";
@@ -58,6 +59,7 @@ export function BackupModal({
   onClose,
   mods,
   onToggleMod,
+  onBackupCreated,
 }: BackupModalProps) {
   const [view, setView] = useState<ModalView>("home");
   const [isWorking, setIsWorking] = useState(false);
@@ -112,6 +114,9 @@ export function BackupModal({
       toast.success(`Backup saved: ${name}`, {
         description: `${backup.totalMods} mods snapshotted (${backup.activeMods} active)`,
       });
+      if (onBackupCreated) {
+        onBackupCreated();
+      }
     } catch (err: any) {
       toast.error(`Failed to save backup: ${err?.message ?? String(err)}`);
       setView("home");

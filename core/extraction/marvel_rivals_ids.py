@@ -316,10 +316,97 @@ def extract_skin_names_from_locres(paks_dir):
         return {}
 
 
+def fetch_wiki_skin_names():
+    """Fetch skin names from Marvel Rivals Fandom Wiki Category:Costumes as a fallback dictionary."""
+    wiki_skins = {}
+    try:
+        import urllib.request
+        import urllib.parse
+        import json
+        import re
+        
+        base_url = "https://marvelrivals.fandom.com/api.php"
+        
+        # 1. Fetch category members
+        params = {
+            "action": "query",
+            "list": "categorymembers",
+            "cmtitle": "Category:Costumes",
+            "cmlimit": "500",
+            "format": "json"
+        }
+        url = f"{base_url}?{urllib.parse.urlencode(params)}"
+        req = urllib.request.Request(
+            url, 
+            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+        )
+        
+        # Timeout quickly to avoid blocking extraction if offline
+        with urllib.request.urlopen(req, timeout=3) as response:
+            data = json.loads(response.read().decode())
+            members = data.get("query", {}).get("categorymembers", [])
+            
+        if not members:
+            return {}
+            
+        titles = [m["title"] for m in members]
+        
+        # 2. Fetch page contents in batches of 50
+        batch_size = 50
+        for i in range(0, len(titles), batch_size):
+            batch = titles[i:i+batch_size]
+            titles_str = "|".join(batch)
+            
+            params = {
+                "action": "query",
+                "prop": "revisions",
+                "titles": titles_str,
+                "rvprop": "content",
+                "format": "json"
+            }
+            url = f"{base_url}?{urllib.parse.urlencode(params)}"
+            req = urllib.request.Request(
+                url, 
+                headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+            )
+            
+            with urllib.request.urlopen(req, timeout=3) as response:
+                data = json.loads(response.read().decode())
+                pages = data.get("query", {}).get("pages", {})
+                for page_id, page_data in pages.items():
+                    title = page_data.get("title")
+                    revisions = page_data.get("revisions", [])
+                    if revisions:
+                        wikitext = revisions[0].get("*", "")
+                        id_match = re.search(r'\|\s*id\s*=\s*(\d+)', wikitext)
+                        if id_match:
+                            skin_id = id_match.group(1)
+                            # Get costumes name or page title
+                            name_match = re.search(r'\|\s*costumes name\s*=\s*([^\n|]+)', wikitext)
+                            if name_match:
+                                skin_name = name_match.group(1).strip().lower()
+                            else:
+                                skin_name = title.strip().lower()
+                                
+                            # Filter out template strings
+                            if not skin_name.startswith("{{"):
+                                wiki_skins[skin_id] = skin_name
+    except Exception as e:
+        print(f"Note: Could not fetch fallback skin names from Fandom Wiki (offline or timeout): {e}")
+        
+    return wiki_skins
+
+
 def combine_extraction_data(character_names, character_skins, skin_names):
     """Combine extracted data into final structure."""
     final_data = {}
     all_char_ids = set(character_skins.keys()) | set(character_names.keys())
+    
+    # Try fetching fallback skin names from Fandom Wiki
+    print("\n[Optional] Fetching fallback skin names from Fandom Wiki...")
+    wiki_skin_names = fetch_wiki_skin_names()
+    if wiki_skin_names:
+        print(f"Successfully retrieved {len(wiki_skin_names)} fallback skin names from Wiki")
     
     for char_id in sorted(all_char_ids):
         char_name = character_names.get(char_id, f"Character {char_id}")
@@ -340,13 +427,17 @@ def combine_extraction_data(character_names, character_skins, skin_names):
                     skin_name = "default"
                 elif skin_id in skin_names:
                     skin_name = skin_names[skin_id]
+                elif skin_id in wiki_skin_names:
+                    # Use wiki-sourced name as high-quality fallback
+                    skin_name = wiki_skin_names[skin_id]
                 else:
-                    # Use fallback name for skins without locres entry
+                    # Use fallback name for skins without locres or wiki entry
                     skin_name = f"variant {variant}"
                 
                 final_data[char_id]["skins"][variant] = skin_name
     
     return final_data
+
 
 
 def main():

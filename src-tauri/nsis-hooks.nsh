@@ -9,7 +9,7 @@
   ; Force close the backend process before uninstall
   nsExec::Exec 'taskkill /F /IM rivalnxt_backend.exe'
   
-  ; Only delete user data during full uninstall
-  RMDir /r "$APPDATA\com.rivalnxt.modmanager"
-  RMDir /r "$LOCALAPPDATA\com.rivalnxt.modmanager"
+  ; User data is explicitly preserved during uninstall, as requested.
+  ; Deleting user data is only done when triggered manually via the app UI.
 !macroend
+

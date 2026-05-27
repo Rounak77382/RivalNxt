@@ -174,6 +174,7 @@ export default function App() {
   const [gameUpdateNewSkins, setGameUpdateNewSkins] = useState<string[]>([]);
   const [backupOpen, setBackupOpen] = useState(false);
   const [collectionsCount, setCollectionsCount] = useState(0);
+  const [backupsRefreshTrigger, setBackupsRefreshTrigger] = useState(0);
 
   const backendReady = backendStatus.state === "ready";
 
@@ -2249,6 +2250,7 @@ export default function App() {
                     onToggleMod={handleToggleMod}
                     onRefreshMods={() => refreshMods({ includeConflicts: true })}
                     onCollectionsCountChange={setCollectionsCount}
+                    backupsRefreshTrigger={backupsRefreshTrigger}
                   />
                 )}
               </div>
@@ -2331,6 +2333,7 @@ export default function App() {
             onClose={() => setBackupOpen(false)}
             mods={mods}
             onToggleMod={handleToggleMod}
+            onBackupCreated={() => setBackupsRefreshTrigger((t) => t + 1)}
           />
         </div>
       </ThemeProvider>

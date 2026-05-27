@@ -1247,13 +1247,11 @@ def _resolve_mod_metadata(
 	"""
 	# 1. If provided_name looks like a filename, parse it to extract the clean name
 	if provided_name:
-		lower_name = provided_name.lower()
-		if lower_name.endswith(('.zip', '.7z', '.rar', '.pak')) or '-' in provided_name:
-			p_name, p_mod_id, p_version = parse_mod_filename(provided_name)
-			if p_name:
-				provided_name = p_name
-				provided_mod_id = provided_mod_id or p_mod_id
-				provided_version = provided_version or p_version
+		p_name, p_mod_id, p_version = parse_mod_filename(provided_name)
+		if p_name:
+			provided_name = p_name
+			provided_mod_id = provided_mod_id or p_mod_id
+			provided_version = provided_version or p_version
 
 	# 2. Start with filename parsing of the actual path on disk as fallback
 	filename_name, filename_mod_id, filename_version = parse_mod_filename(path.name)

@@ -236,18 +236,26 @@ export function CheckForUpdatesModal({
       );
     if (s === "has-update")
       return (
-        <Badge
-          className="text-[10px] px-2.5 py-0.5 flex items-center gap-1 font-semibold border-none"
-          style={{
-            background: "linear-gradient(135deg, rgba(239,68,68,0.15), rgba(249,115,22,0.15))",
-            color: "#f87171",
-            border: "1px solid rgba(239,68,68,0.25)",
-            boxShadow: "0 2px 8px rgba(239,68,68,0.1)",
-          }}
-        >
-          <ArrowUpCircle className="w-3 h-3 text-red-400" />
-          Update Avail.
-        </Badge>
+        <div className="text-xs flex items-center gap-1.5 font-medium pr-2">
+          {mod.installedVersion ? (
+            <>
+              {mod.latestVersion && (
+                <>
+                  <span className="text-muted-foreground/60">→</span>
+                  <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold animate-pulse">
+                    {formatVersionDisplay(mod.latestVersion)}
+                  </span>
+                </>
+              )}
+            </>
+          ) : (
+            mod.latestVersion && (
+              <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold animate-pulse">
+                {formatVersionDisplay(mod.latestVersion)}
+              </span>
+            )
+          )}
+        </div>
       );
     if (s === "up-to-date")
       return (
@@ -495,24 +503,16 @@ export function CheckForUpdatesModal({
                     </div>
 
                     {/* Version info */}
-                    {mod.installedVersion && (
+                    {mod.installedVersion && !hasUpdate && (
                       <div className="text-xs hidden sm:flex items-center gap-1.5 flex-shrink-0 font-medium">
                         <span className="px-2 py-0.5 rounded bg-muted/60 text-muted-foreground border border-border/40">
                           {formatVersionDisplay(mod.installedVersion)}
                         </span>
-                        {hasUpdate && mod.latestVersion && (
-                          <>
-                            <span className="text-muted-foreground/60">→</span>
-                            <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold animate-pulse">
-                              {formatVersionDisplay(mod.latestVersion)}
-                            </span>
-                          </>
-                        )}
                       </div>
                     )}
 
                     {/* Status badge */}
-                    <div className="flex items-center justify-end w-28 flex-shrink-0">
+                    <div className={`flex items-center justify-end flex-shrink-0 ${hasUpdate ? "w-32" : "w-28"}`}>
                       {getStatusBadge(mod)}
                     </div>
 
