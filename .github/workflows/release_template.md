@@ -6,6 +6,7 @@
 * 💾 **Backup & Restore Framework**: Implemented comprehensive backup and restore capabilities, allowing users to safeguard their configurations. This includes native Tauri file dialog integrations and distinct visual indicators.
 * 📥 **Drag-and-Drop Image Uploads**: Introduced native Tauri webview listeners to seamlessly handle drag-and-drop actions for mod images. Supports multi-image HTML5 drops directly onto the application UI.
 * 🔄 **Persistent Handoff Tracking**: Downloads and mod handoffs are now persistently tracked using SQLite. The system automatically handles failed downloads, incorporating retry limits and background checking logic to ensure reliability.
+* 🌐 **Dynamic Fandom Wiki Skin Resolver**: Integrated an automated fallback crawler that queries the Marvel Rivals Fandom Wiki API to dynamically resolve unlocalized new skin names (e.g. Hela's "Savage Monarch") at extraction time. This runs entirely offline-safe with automatic timeouts, completely eliminating generic "variant XXX" naming fallbacks.
 
 ### 🐛 Bug Fixes & Under the Hood
 
