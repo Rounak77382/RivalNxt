@@ -45,6 +45,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type SyntheticEvent,
 } from "react";
@@ -58,10 +59,15 @@ import {
   uploadModImagesByPath,
   deleteModImage,
   updateModDetails,
+  getModCustomTags,
+  addModCustomTag,
+  removeModCustomTag,
+  getAllCustomTags,
   type ApiChangelog,
   type ApiModDetails,
   type ApiPakAsset,
   type ModImage,
+  type CustomTag,
 } from "../lib/api";
 import { Switch } from "./ui/switch";
 import {
@@ -437,6 +443,14 @@ export function ModModal({
   const [isSavingDescription, setIsSavingDescription] = useState(false);
   const [isBBCodeMode, setIsBBCodeMode] = useState(false);
 
+  // Custom tag state
+  const [customTags, setCustomTags] = useState<CustomTag[]>([]);
+  const [allTagSuggestions, setAllTagSuggestions] = useState<string[]>([]);
+  const [isTagDropdownOpen, setIsTagDropdownOpen] = useState(false);
+  const [tagSearchValue, setTagSearchValue] = useState("");
+  const [isAddingTag, setIsAddingTag] = useState(false);
+  const tagDropdownRef = useRef<HTMLDivElement>(null);
+
   const [currentTab, setCurrentTab] = useState<string>(initialTab ?? "overview");
 
   useEffect(() => {
@@ -539,6 +553,47 @@ export function ModModal({
       cancelled = true;
     };
   }, [serverModId, effectiveModId, isOpen]);
+
+  // Load custom tags for this mod and all-tag suggestions when modal opens
+  useEffect(() => {
+    let cancelled = false;
+    async function loadCustomTags() {
+      if (!isOpen || !effectiveModId) {
+        setCustomTags([]);
+        return;
+      }
+      try {
+        const [tags, allTags] = await Promise.all([
+          getModCustomTags(effectiveModId),
+          getAllCustomTags(),
+        ]);
+        if (!cancelled) {
+          setCustomTags(tags);
+          setAllTagSuggestions(allTags);
+        }
+      } catch (err) {
+        console.warn("[ModModal] Failed to load custom tags", err);
+      }
+    }
+    loadCustomTags();
+    return () => { cancelled = true; };
+  }, [isOpen, effectiveModId]);
+
+  // Close tag dropdown on outside click
+  useEffect(() => {
+    if (!isTagDropdownOpen) return;
+    function handleOutsideClick(e: MouseEvent) {
+      if (
+        tagDropdownRef.current &&
+        !tagDropdownRef.current.contains(e.target as Node)
+      ) {
+        setIsTagDropdownOpen(false);
+        setTagSearchValue("");
+      }
+    }
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, [isTagDropdownOpen]);
 
   const hydrateDownloads = useCallback(
     async (options?: { skipScan?: boolean }) => {
@@ -1265,6 +1320,58 @@ export function ModModal({
     setEditDescriptionValue("");
   }, []);
 
+  const handleAddCustomTag = useCallback(
+    async (tag: string) => {
+      if (!effectiveModId || isAddingTag) return;
+      const trimmed = tag.trim();
+      if (!trimmed) return;
+      // Prevent adding a tag that already exists on this mod (case-insensitive)
+      const alreadyExists = customTags.some(
+        (ct) => ct.tag.toLowerCase() === trimmed.toLowerCase(),
+      );
+      if (alreadyExists) {
+        setIsTagDropdownOpen(false);
+        setTagSearchValue("");
+        return;
+      }
+      setIsAddingTag(true);
+      try {
+        const created = await addModCustomTag(effectiveModId, trimmed);
+        setCustomTags((prev) => [...prev, created]);
+        // Update suggestions list with the new tag if it's not already there
+        setAllTagSuggestions((prev) =>
+          prev.some((t) => t.toLowerCase() === trimmed.toLowerCase())
+            ? prev
+            : [...prev, trimmed].sort((a, b) =>
+                a.toLowerCase().localeCompare(b.toLowerCase()),
+              ),
+        );
+        setIsTagDropdownOpen(false);
+        setTagSearchValue("");
+        toast.success(`Tag "${trimmed}" added`);
+      } catch (err) {
+        toast.error((err as any)?.message || "Failed to add tag");
+      } finally {
+        setIsAddingTag(false);
+      }
+    },
+    [effectiveModId, customTags, isAddingTag],
+  );
+
+  const handleRemoveCustomTag = useCallback(
+    async (tagId: number, tagName: string) => {
+      if (!effectiveModId) return;
+      try {
+        await removeModCustomTag(effectiveModId, tagId);
+        setCustomTags((prev) => prev.filter((ct) => ct.id !== tagId));
+        toast.success(`Tag "${tagName}" removed`);
+      } catch (err) {
+        toast.error((err as any)?.message || "Failed to remove tag");
+      }
+    },
+    [effectiveModId],
+  );
+
   if (!mod) return null;
 
   const formatNumber = (num: number) => {
@@ -1662,23 +1769,176 @@ export function ModModal({
                       <div className="space-y-6">
                         <div>
                           <h3 className="font-medium mb-3">Tags</h3>
-                          {overviewTags.length > 0 ? (
-                            <div className="flex flex-wrap gap-2">
-                              {overviewTags.map((tag) => (
-                                <Badge
-                                  key={`overview-tag-${tag}`}
-                                  variant="secondary"
-                                  className="text-xs"
+                          <div className="flex flex-wrap gap-2 items-center">
+                            {/* Auto-detected tags from Nexus/extraction */}
+                            {overviewTags.map((tag) => (
+                              <Badge
+                                key={`overview-tag-${tag}`}
+                                variant="secondary"
+                                className="text-xs"
+                              >
+                                {tag}
+                              </Badge>
+                            ))}
+
+                            {/* User-created custom tags */}
+                            {customTags.map((ct) => (
+                              <Badge
+                                key={`custom-tag-${ct.id}`}
+                                variant="outline"
+                                className="text-xs gap-1 pr-1 border-primary/40 text-primary bg-primary/5 hover:bg-primary/10"
+                              >
+                                {ct.tag}
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleRemoveCustomTag(ct.id, ct.tag)
+                                  }
+                                  className="ml-0.5 rounded-full hover:bg-primary/20 p-0.5 transition-colors"
+                                  title={`Remove tag "${ct.tag}"`}
                                 >
-                                  {tag}
-                                </Badge>
-                              ))}
-                            </div>
-                          ) : (
-                            <p className="text-sm text-muted-foreground italic">
-                              No tags available for this mod.
-                            </p>
-                          )}
+                                  <X className="w-2.5 h-2.5" />
+                                </button>
+                              </Badge>
+                            ))}
+
+                            {/* + Add tag button with dropdown */}
+                            {effectiveModId && (
+                              <div className="relative" ref={tagDropdownRef}>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setIsTagDropdownOpen((v) => !v);
+                                    setTagSearchValue("");
+                                  }}
+                                  className="inline-flex items-center justify-center w-6 h-6 rounded-full border border-dashed border-muted-foreground/40 text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5 transition-all duration-150"
+                                  title="Add custom tag"
+                                >
+                                  <Plus className="w-3 h-3" />
+                                </button>
+
+                                {isTagDropdownOpen && (
+                                  <div
+                                    className="absolute z-50 mt-1 w-56 rounded-lg border bg-popover shadow-lg overflow-hidden"
+                                    style={{ top: "100%", left: 0 }}
+                                  >
+                                    {/* Search input */}
+                                    <div className="p-2 border-b">
+                                      <input
+                                        autoFocus
+                                        type="text"
+                                        value={tagSearchValue}
+                                        onChange={(e) =>
+                                          setTagSearchValue(e.target.value)
+                                        }
+                                        onKeyDown={(e) => {
+                                          if (e.key === "Escape") {
+                                            setIsTagDropdownOpen(false);
+                                            setTagSearchValue("");
+                                          }
+                                          if (e.key === "Enter" && tagSearchValue.trim()) {
+                                            handleAddCustomTag(tagSearchValue.trim());
+                                          }
+                                        }}
+                                        placeholder="Search or create tag..."
+                                        className="w-full text-xs px-2 py-1.5 rounded-md border bg-background outline-none focus:ring-1 focus:ring-primary"
+                                      />
+                                    </div>
+
+                                    {/* Tag list */}
+                                    <div className="max-h-48 overflow-y-auto custom-scrollbar py-1">
+                                      {/* "Create new" option */}
+                                      {tagSearchValue.trim() &&
+                                        !allTagSuggestions.some(
+                                          (t) =>
+                                            t.toLowerCase() ===
+                                            tagSearchValue.trim().toLowerCase(),
+                                        ) && (
+                                          <button
+                                            type="button"
+                                            disabled={isAddingTag}
+                                            onClick={() =>
+                                              handleAddCustomTag(
+                                                tagSearchValue.trim(),
+                                              )
+                                            }
+                                            className="w-full text-left px-3 py-2 text-xs flex items-center gap-2 hover:bg-accent transition-colors text-primary"
+                                          >
+                                            <Plus className="w-3 h-3 shrink-0" />
+                                            Create&nbsp;
+                                            <span className="font-semibold truncate">
+                                              "{tagSearchValue.trim()}"
+                                            </span>
+                                          </button>
+                                        )}
+
+                                      {/* Filtered existing suggestions */}
+                                      {allTagSuggestions
+                                        .filter((t) =>
+                                          t
+                                            .toLowerCase()
+                                            .includes(
+                                              tagSearchValue.toLowerCase(),
+                                            ),
+                                        )
+                                        .map((suggestion) => {
+                                          const alreadyAdded = customTags.some(
+                                            (ct) =>
+                                              ct.tag.toLowerCase() ===
+                                              suggestion.toLowerCase(),
+                                          );
+                                          return (
+                                            <button
+                                              key={`suggestion-${suggestion}`}
+                                              type="button"
+                                              disabled={
+                                                alreadyAdded || isAddingTag
+                                              }
+                                              onClick={() =>
+                                                handleAddCustomTag(suggestion)
+                                              }
+                                              className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between gap-2 transition-colors ${
+                                                alreadyAdded
+                                                  ? "opacity-40 cursor-not-allowed"
+                                                  : "hover:bg-accent cursor-pointer"
+                                              }`}
+                                            >
+                                              <span className="truncate">
+                                                {suggestion}
+                                              </span>
+                                              {alreadyAdded && (
+                                                <Check className="w-3 h-3 text-primary shrink-0" />
+                                              )}
+                                            </button>
+                                          );
+                                        })}
+
+                                      {/* Empty state */}
+                                      {allTagSuggestions.filter((t) =>
+                                        t
+                                          .toLowerCase()
+                                          .includes(tagSearchValue.toLowerCase()),
+                                      ).length === 0 &&
+                                        !tagSearchValue.trim() && (
+                                          <p className="text-xs text-muted-foreground text-center py-3 px-3">
+                                            Type to create your first tag
+                                          </p>
+                                        )}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Fallback: no tags at all */}
+                            {overviewTags.length === 0 &&
+                              customTags.length === 0 &&
+                              !effectiveModId && (
+                                <p className="text-sm text-muted-foreground italic">
+                                  No tags available for this mod.
+                                </p>
+                              )}
+                          </div>
                         </div>
 
                         {/* Description */}

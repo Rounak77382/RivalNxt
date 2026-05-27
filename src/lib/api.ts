@@ -1283,3 +1283,60 @@ export async function updateCollectionModFileState(
     { state },
   );
 }
+
+// ---------------------------------------------------------------------------
+// Custom tag API helpers
+// ---------------------------------------------------------------------------
+
+export type CustomTag = {
+  id: number;
+  tag: string;
+  added_at?: string | null;
+};
+
+/** Fetch all custom tags for a specific mod. */
+export async function getModCustomTags(modId: number): Promise<CustomTag[]> {
+  return getJson<CustomTag[]>(`/api/mods/${modId}/custom-tags`);
+}
+
+/** Add a custom tag to a mod. Returns the created (or existing) tag row. */
+export async function addModCustomTag(
+  modId: number,
+  tag: string,
+): Promise<CustomTag> {
+  const baseUrl = await getBaseUrl();
+  const res = await fetch(`${baseUrl}/api/mods/${modId}/custom-tags`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ tag }),
+  });
+  if (!res.ok) {
+    await handleError(res, "POST", `/api/mods/${modId}/custom-tags`);
+  }
+  return res.json();
+}
+
+/** Remove a custom tag from a mod by its row ID. */
+export async function removeModCustomTag(
+  modId: number,
+  tagId: number,
+): Promise<{ ok: boolean; deleted_id: number }> {
+  const baseUrl = await getBaseUrl();
+  const res = await fetch(
+    `${baseUrl}/api/mods/${modId}/custom-tags/${tagId}`,
+    { method: "DELETE" },
+  );
+  if (!res.ok) {
+    await handleError(
+      res,
+      "DELETE",
+      `/api/mods/${modId}/custom-tags/${tagId}`,
+    );
+  }
+  return res.json();
+}
+
+/** Return all distinct custom tags across all mods (for the suggestion dropdown). */
+export async function getAllCustomTags(): Promise<string[]> {
+  return getJson<string[]>(`/api/mods/all-custom-tags`);
+}

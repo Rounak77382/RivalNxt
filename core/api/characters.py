@@ -2,7 +2,7 @@
 API endpoints for Marvel Rivals character and skin data.
 """
 
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
@@ -179,3 +179,110 @@ async def rebuild_character_data():
             status_code=500,
             detail=f"Failed to rebuild character data: {str(e)}"
         )
+
+
+# ---------------------------------------------------------------------------
+# Custom tag endpoints
+# ---------------------------------------------------------------------------
+
+class CustomTagItem(BaseModel):
+    id: int
+    tag: str
+    added_at: Optional[str] = None
+
+
+class AddCustomTagRequest(BaseModel):
+    tag: str
+
+
+@router.get("/mods/all-custom-tags", response_model=List[str])
+async def get_all_custom_tags():
+    """
+    Return a distinct list of all custom tags used across all mods.
+    Used to populate the tag suggestion dropdown in the frontend.
+    """
+    conn = get_connection()
+    try:
+        rows = conn.execute(
+            "SELECT DISTINCT tag FROM mod_custom_tags ORDER BY tag COLLATE NOCASE"
+        ).fetchall()
+        return [row[0] for row in rows]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch custom tags: {str(e)}")
+    finally:
+        conn.close()
+
+
+@router.get("/mods/{mod_id}/custom-tags", response_model=List[CustomTagItem])
+async def get_mod_custom_tags(mod_id: int):
+    """
+    Return all custom tags attached to a specific mod.
+    """
+    conn = get_connection()
+    try:
+        rows = conn.execute(
+            "SELECT id, tag, added_at FROM mod_custom_tags WHERE mod_id = ? ORDER BY added_at",
+            (mod_id,)
+        ).fetchall()
+        return [{"id": row[0], "tag": row[1], "added_at": row[2]} for row in rows]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch custom tags: {str(e)}")
+    finally:
+        conn.close()
+
+
+@router.post("/mods/{mod_id}/custom-tags", response_model=CustomTagItem, status_code=201)
+async def add_mod_custom_tag(mod_id: int, request: AddCustomTagRequest):
+    """
+    Add a custom tag to a mod. If the tag already exists for this mod, returns the existing one.
+    """
+    tag = request.tag.strip()
+    if not tag:
+        raise HTTPException(status_code=400, detail="Tag cannot be empty")
+    if len(tag) > 100:
+        raise HTTPException(status_code=400, detail="Tag must be 100 characters or fewer")
+
+    conn = get_connection()
+    try:
+        # INSERT OR IGNORE lets us safely handle duplicates
+        conn.execute(
+            "INSERT OR IGNORE INTO mod_custom_tags (mod_id, tag) VALUES (?, ?)",
+            (mod_id, tag)
+        )
+        conn.commit()
+        row = conn.execute(
+            "SELECT id, tag, added_at FROM mod_custom_tags WHERE mod_id = ? AND tag = ? COLLATE NOCASE",
+            (mod_id, tag)
+        ).fetchone()
+        if not row:
+            raise HTTPException(status_code=500, detail="Failed to insert or retrieve tag")
+        return {"id": row[0], "tag": row[1], "added_at": row[2]}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to add custom tag: {str(e)}")
+    finally:
+        conn.close()
+
+
+@router.delete("/mods/{mod_id}/custom-tags/{tag_id}", response_model=dict)
+async def remove_mod_custom_tag(mod_id: int, tag_id: int):
+    """
+    Remove a specific custom tag from a mod by its row ID.
+    """
+    conn = get_connection()
+    try:
+        result = conn.execute(
+            "DELETE FROM mod_custom_tags WHERE id = ? AND mod_id = ?",
+            (tag_id, mod_id)
+        )
+        conn.commit()
+        if result.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Custom tag not found")
+        return {"ok": True, "deleted_id": tag_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to remove custom tag: {str(e)}")
+    finally:
+        conn.close()
