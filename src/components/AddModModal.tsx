@@ -407,56 +407,50 @@ export function AddModModal({
               // Guard: prevent React onDrop from also processing this drop
               if (isDragProcessingRef.current) return;
               isDragProcessingRef.current = true;
-              const filePath = paths[0];
-
-              // First copy the file to the downloads folder, then add it
+              
               setUploading(true);
+              let addedCount = 0;
+              toast.loading(`Processing ${paths.length} file(s)...`, {
+                id: "drag-drop-copy",
+              });
+              
               try {
-                // Copy the dropped file to the downloads folder
-                toast.loading("Copying file to downloads...", {
-                  id: "drag-drop-copy",
-                });
-                const copyResult = await copyToDownloads(filePath);
-                toast.dismiss("drag-drop-copy");
-
-                // Now add the mod using the copied file path
-                const res = await addMod({ localPath: copyResult.path });
-                if (res.ok) {
-                  toast.success(
-                    `Added: ${res.name} ${
-                      res.ingested_paks
-                        ? `(${res.ingested_paks} pak${
-                            res.ingested_paks !== 1 ? "s" : ""
-                          })`
-                        : ""
-                    }`,
-                  );
-                  if (res.ingest_warning) {
-                    toast.warning(res.ingest_warning);
+                for (const filePath of paths) {
+                  try {
+                    const copyResult = await copyToDownloads(filePath);
+                    const res = await addMod({ localPath: copyResult.path });
+                    if (res.ok) {
+                      addedCount++;
+                      toast.success(
+                        `Added: ${res.name} ${
+                          res.ingested_paks
+                            ? `(${res.ingested_paks} pak${
+                                res.ingested_paks !== 1 ? "s" : ""
+                              })`
+                            : ""
+                        }`
+                      );
+                      if (res.ingest_warning) toast.warning(res.ingest_warning);
+                      if (res.metadata_warning) toast.warning(res.metadata_warning);
+                    } else {
+                      toast.error(`Failed to add mod from ${filePath}`);
+                    }
+                  } catch (err: any) {
+                    if (err?.status === 409) {
+                      toast.info(err.message || "Mod already exists", {
+                        description: "This version is already in your library.",
+                      });
+                    } else {
+                      console.error(`Failed to process dropped file ${filePath}:`, err);
+                      toast.error(
+                        err instanceof Error ? err.message : `Failed to add ${filePath}`
+                      );
+                    }
                   }
-                  if (res.metadata_warning) {
-                    toast.warning(res.metadata_warning);
-                  } else if (res.synced_mod_id) {
-                    toast.success(
-                      `Synced Nexus metadata for mod #${res.synced_mod_id}`,
-                    );
-                  }
-                  setModLink("");
-                  setLocalPath("");
-                  setUploadInfo(null);
-                  onOpenChange(false);
-                  if (onSuccess) {
-                    await onSuccess();
-                  }
-                } else {
-                  toast.error("Failed to add mod");
                 }
-              } catch (err: any) {
+                
                 toast.dismiss("drag-drop-copy");
-                if (err?.status === 409) {
-                  toast.info(err.message || "Mod already exists", {
-                    description: "This version is already in your library.",
-                  });
+                if (addedCount > 0) {
                   setModLink("");
                   setLocalPath("");
                   setUploadInfo(null);
@@ -464,15 +458,9 @@ export function AddModModal({
                   if (onSuccess) {
                     await onSuccess();
                   }
-                } else {
-                  console.error("Failed to process dropped file:", err);
-                  toast.error(
-                    err instanceof Error
-                      ? err.message
-                      : "Failed to add dropped file",
-                  );
                 }
               } finally {
+                toast.dismiss("drag-drop-copy");
                 setUploading(false);
                 isDragProcessingRef.current = false;
               }
@@ -492,22 +480,44 @@ export function AddModModal({
     };
   }, [open, onOpenChange, onSuccess]);
 
-  const handleBrowse = async (file?: File) => {
-    if (!file) return;
+  const handleBrowse = async (files?: FileList | File[] | null) => {
+    if (!files || files.length === 0) return;
     setUploading(true);
+    let addedCount = 0;
+    toast.loading(`Uploading ${files.length} file(s)...`, { id: "upload-batch" });
     try {
-      const uploaded = await uploadModFile(file);
-      setLocalPath(uploaded.path);
-      setUploadInfo(uploaded);
-      setModLink("");
-      toast.success(
-        `Uploaded ${file.name} (${formatBytes(uploaded.size)}) to downloads`,
-      );
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to upload mod file";
-      toast.error(message);
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        try {
+          const uploaded = await uploadModFile(file);
+          const res = await addMod({ localPath: uploaded.path });
+          if (res.ok) {
+            addedCount++;
+            toast.success(`Added: ${res.name}`);
+            if (res.ingest_warning) toast.warning(res.ingest_warning);
+          } else {
+            toast.error(`Failed to add: ${file.name}`);
+          }
+        } catch (err: any) {
+          if (err?.status === 409) {
+            toast.info(err.message || "Mod already exists", {
+              description: `${file.name} is already in your library.`,
+            });
+          } else {
+            toast.error(err instanceof Error ? err.message : `Failed to upload ${file.name}`);
+          }
+        }
+      }
+      toast.dismiss("upload-batch");
+      if (addedCount > 0) {
+        setModLink("");
+        setLocalPath("");
+        setUploadInfo(null);
+        onOpenChange(false);
+        if (onSuccess) await onSuccess();
+      }
     } finally {
+      toast.dismiss("upload-batch");
       setUploading(false);
     }
   };
@@ -645,13 +655,13 @@ export function AddModModal({
               if (isDragProcessingRef.current) return;
               const files = e.dataTransfer.files;
               if (files && files.length > 0) {
-                handleBrowse(files[0]);
+                handleBrowse(files);
               }
             }}
           >
             <div className="text-2xl mb-3">📁</div>
             <span className="text-base font-medium mb-1">
-              Drag & Drop Mod File Here
+              Drag & Drop Mod Files Here
             </span>
             <span className="text-xs">
               {uploading
@@ -662,9 +672,10 @@ export function AddModModal({
             </span>
             <input
               type="file"
+              multiple
               className="absolute opacity-0 w-full h-full cursor-pointer"
               style={{ left: 0, top: 0 }}
-              onChange={(e) => handleBrowse(e.target.files?.[0])}
+              onChange={(e) => handleBrowse(e.target.files)}
             />
           </div>
           {localPath && (

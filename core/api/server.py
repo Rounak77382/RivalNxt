@@ -24,6 +24,11 @@ import urllib.parse
 import urllib.parse
 import urllib.request
 import uuid
+import ssl
+import certifi
+
+# Ensure urllib uses certifi certificates to avoid SSL errors on outdated Windows systems
+ssl._create_default_https_context = lambda: ssl.create_default_context(cafile=certifi.where())
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Literal, Optional, Set, Tuple, Union
@@ -2820,20 +2825,30 @@ def ingest_nxm_handoff(handoff_id: str, payload: Optional[Dict[str, Any]] = Body
 		req_file_id = _coerce_int(req.get("file_id"))
 		requested_file_id = req_file_id
 	selected_entry = _select_file_entry(files_summary, requested_file_id)
-	if not selected_entry:
-		error_msg = "Unable to resolve target file from Nexus metadata"
-		if handoff_identifier:
-			update_handoff_progress(
-				handoff_identifier,
-				stage="failed",
-				error=error_msg,
-				message=error_msg,
-			)
-			register_handoff_failure(handoff_identifier, error_msg)
-		raise HTTPException(status_code=404, detail=error_msg)
-	file_id = selected_entry["file_id"]
 	req_data = record.get("request", {})
 	mod_id = req_data.get("mod_id")
+
+	if not selected_entry:
+		if requested_file_id and mod_id:
+			logger.warning("[nxm_handoff] requested_file_id %s not in files.json, assuming CDN cache delay", requested_file_id)
+			selected_entry = {
+				"file_id": requested_file_id,
+				"name": f"Unknown File {requested_file_id}",
+				"version": "unknown",
+				"file_name": f"mod_{mod_id}_file_{requested_file_id}.zip"
+			}
+		else:
+			error_msg = "Unable to resolve target file from Nexus metadata"
+			if handoff_identifier:
+				update_handoff_progress(
+					handoff_identifier,
+					stage="failed",
+					error=error_msg,
+					message=error_msg,
+				)
+				register_handoff_failure(handoff_identifier, error_msg)
+			raise HTTPException(status_code=404, detail=error_msg)
+	file_id = selected_entry["file_id"]
 	if not isinstance(mod_id, int):
 		error_msg = "nxm handoff missing mod id"
 		if handoff_identifier:
@@ -4979,7 +4994,8 @@ def _search_mod_id_remote(name: str, api_key: str, game: str = DEFAULT_GAME) -> 
 	}
 	req = urllib.request.Request(url, headers=headers, method="GET")
 	try:
-		with urllib.request.urlopen(req, timeout=30) as resp:
+		ctx = ssl.create_default_context(cafile=certifi.where())
+		with urllib.request.urlopen(req, timeout=30, context=ctx) as resp:
 			data = json.loads(resp.read().decode("utf-8"))
 	except Exception:
 		return None
@@ -5167,8 +5183,9 @@ def _download_remote_archive(
 		except Exception:
 			pass
 
+	ctx = ssl.create_default_context(cafile=certifi.where())
 	try:
-		with urllib.request.urlopen(req, timeout=120) as response, dest.open("wb") as out:
+		with urllib.request.urlopen(req, timeout=120, context=ctx) as response, dest.open("wb") as out:
 			total_bytes: Optional[int] = getattr(response, "length", None)
 			if total_bytes is None:
 				try:
@@ -5256,8 +5273,9 @@ def _resolve_nexus_download_candidates(
 		headers["Application-Name"] = "MarvelRivalsModManager"
 		headers["Application-Version"] = "0.7.0"
 	req = urllib.request.Request(api_url, headers=headers, method="GET")
+	ctx = ssl.create_default_context(cafile=certifi.where())
 	try:
-		with urllib.request.urlopen(req, timeout=30) as resp:
+		with urllib.request.urlopen(req, timeout=30, context=ctx) as resp:
 			status = resp.getcode() or 0
 			raw = resp.read()
 	except urllib.error.HTTPError as exc:
