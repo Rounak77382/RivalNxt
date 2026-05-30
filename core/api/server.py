@@ -1541,12 +1541,11 @@ def _ingest_resolved_download(
 		for raw_pak_name, assets in pak_map.items():
 			# Normalize extension: .utoc/.ucas -> .pak
 			lower_pak = raw_pak_name.lower()
-			if lower_pak.endswith(".utoc"):
-				normalized_name = raw_pak_name[:-5] + ".pak"
-			elif lower_pak.endswith(".ucas"):
-				normalized_name = raw_pak_name[:-5] + ".pak"
-			else:
-				normalized_name = raw_pak_name
+			match Path(lower_pak).suffix:
+				case ".utoc" | ".ucas":
+					normalized_name = raw_pak_name[:-5] + ".pak"
+				case _:
+					normalized_name = raw_pak_name
 				
 			# Track if this bundle involves IoStore (if any part is .utoc)
 			is_utoc = lower_pak.endswith(".utoc")
@@ -1612,12 +1611,11 @@ def _ingest_resolved_download(
 					for raw_pak_name, assets in pak_map.items():
 						# Normalize extension: .utoc/.ucas -> .pak
 						lower_pak = raw_pak_name.lower()
-						if lower_pak.endswith(".utoc"):
-							normalized_name = raw_pak_name[:-5] + ".pak"
-						elif lower_pak.endswith(".ucas"):
-							normalized_name = raw_pak_name[:-5] + ".pak"
-						else:
-							normalized_name = raw_pak_name
+						match Path(lower_pak).suffix:
+							case ".utoc" | ".ucas":
+								normalized_name = raw_pak_name[:-5] + ".pak"
+							case _:
+								normalized_name = raw_pak_name
 							
 						# Track if this bundle involves IoStore
 						is_utoc = lower_pak.endswith(".utoc")
@@ -2808,15 +2806,15 @@ def ingest_nxm_handoff(handoff_id: str, payload: Optional[Dict[str, Any]] = Body
 		requested_file_id = _coerce_int(requested_file_id)
 	if options.get("desired_paks") is not None and not isinstance(options.get("desired_paks"), list):
 		raise HTTPException(status_code=400, detail="desired_paks must be an array of strings when provided")
-	deactivate_existing_opt = options.get("deactivate_existing")
-	if deactivate_existing_opt is None:
-		deactivate_existing = True
-	elif isinstance(deactivate_existing_opt, bool):
-		deactivate_existing = deactivate_existing_opt
-	elif isinstance(deactivate_existing_opt, (int, float)):
-		deactivate_existing = bool(deactivate_existing_opt)
-	else:
-		raise HTTPException(status_code=400, detail="deactivate_existing must be a boolean when provided")
+	match options.get("deactivate_existing"):
+		case None:
+			deactivate_existing = True
+		case bool() as b:
+			deactivate_existing = b
+		case int() | float() as n:
+			deactivate_existing = bool(n)
+		case _:
+			raise HTTPException(status_code=400, detail="deactivate_existing must be a boolean when provided")
 	auto_activate = bool(options.get("activate", True))
 	game_domain, raw_metadata, filtered_metadata = _collect_nexus_metadata_for_record(record)
 	files_summary = _summarize_mod_files(raw_metadata.get("files"))
@@ -4683,6 +4681,14 @@ def list_downloads(limit: int = 500) -> List[Dict[str, Any]]:
 				contents = []
 		except Exception:
 			contents = []
+			
+		total_contents = len(contents)
+		if total_contents > 100:
+			paks = [f for f in contents if f.lower().endswith(".pak")]
+			others = [f for f in contents if not f.lower().endswith(".pak")]
+			sample_others = others[:100 - len(paks)] if len(paks) < 100 else []
+			contents = paks + sample_others
+			contents.append(f"...and {total_contents - len(contents)} more files")
 		try:
 			active_paks = json.loads(active_json) if active_json else []
 			if not isinstance(active_paks, list):
@@ -6596,6 +6602,11 @@ def get_pak_assets(download_ids: Optional[str] = None) -> List[Dict[str, Any]]:
 					assets = []
 			except Exception:
 				assets = []
+				
+			total_assets = len(assets)
+			if total_assets > 100:
+				assets = assets[:100]
+				assets.append(f"...and {total_assets - 100} more assets")
 				
 			result.append({
 				"pak_name": pak_name,

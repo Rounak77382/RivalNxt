@@ -881,7 +881,17 @@ export interface ApiPakAsset {
 }
 
 export async function listDownloads(limit = 500): Promise<ApiDownload[]> {
-  return getJson<ApiDownload[]>(`/api/downloads?limit=${limit}`);
+  const downloads = await getJson<ApiDownload[]>(`/api/downloads?limit=${limit}`);
+  // Truncate massive contents arrays in frontend to prevent memory leaks if backend wasn't updated
+  for (const dl of downloads) {
+    if (dl.contents && dl.contents.length > 100) {
+      const paks = dl.contents.filter((f) => f.toLowerCase().endsWith(".pak"));
+      const others = dl.contents.filter((f) => !f.toLowerCase().endsWith(".pak"));
+      const sampleOthers = paks.length < 100 ? others.slice(0, 100 - paks.length) : [];
+      dl.contents = [...paks, ...sampleOthers, `...and ${dl.contents.length - (paks.length + sampleOthers.length)} more files`];
+    }
+  }
+  return downloads;
 }
 
 export type ApiDownloadsSummary = {
@@ -911,7 +921,14 @@ export async function scanActive(): Promise<{ ok: boolean }> {
 export async function getLocalDownload(
   downloadId: number,
 ): Promise<ApiDownload> {
-  return getJson<ApiDownload>(`/api/local_downloads/${downloadId}`);
+  const dl = await getJson<ApiDownload>(`/api/local_downloads/${downloadId}`);
+  if (dl.contents && dl.contents.length > 100) {
+    const paks = dl.contents.filter((f) => f.toLowerCase().endsWith(".pak"));
+    const others = dl.contents.filter((f) => !f.toLowerCase().endsWith(".pak"));
+    const sampleOthers = paks.length < 100 ? others.slice(0, 100 - paks.length) : [];
+    dl.contents = [...paks, ...sampleOthers, `...and ${dl.contents.length - (paks.length + sampleOthers.length)} more files`];
+  }
+  return dl;
 }
 
 export async function getPakVersionStatus(
@@ -965,7 +982,17 @@ export async function getPakAssets(
   }
   const search = new URLSearchParams();
   search.set("download_ids", downloadIds.join(","));
-  return getJson<ApiPakAsset[]>(`/api/pak-assets?${search.toString()}`);
+  const data = await getJson<ApiPakAsset[]>(`/api/pak-assets?${search.toString()}`);
+  // Truncate massive arrays in frontend to prevent memory leaks if backend wasn't updated
+  for (const pak of data) {
+    if (pak.assets && pak.assets.length > 100) {
+      pak.assets = [
+        ...pak.assets.slice(0, 100),
+        `...and ${pak.assets.length - 100} more assets`,
+      ];
+    }
+  }
+  return data;
 }
 
 export type ApiCheckModUpdateResponse = {

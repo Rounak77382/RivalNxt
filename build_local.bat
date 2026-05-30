@@ -81,7 +81,7 @@ if exist "repak-rivals" (
 
 REM Build using Maturin
 echo Building wheel with --release --features pyo3...
-maturin build --release --features pyo3
+python -m maturin build --release --features pyo3
 if %ERRORLEVEL% NEQ 0 (
     echo ❌ Maturin build failed
     cd ..\..\..
@@ -143,11 +143,27 @@ dir extracted_wheel\rust_ue_tools.
 
 REM ============================================================================
 echo.
+echo [3.5/6] Building C++ optimizations...
+echo ============================================================================
+if not exist src-cpp mkdir src-cpp
+echo Compiling fast_locres.cpp...
+g++ -O3 src-cpp\fast_locres.cpp -o src-cpp\fast_locres.exe
+if %ERRORLEVEL% NEQ 0 (
+    echo WARNING: g++ compilation failed. Make sure g++ is in PATH.
+) else (
+    echo ✓ C++ optimizations built successfully
+)
+
+REM ============================================================================
+echo.
 echo [4/6] Building Python backend with PyInstaller...
 echo ============================================================================
 echo Cleaning previous builds...
 if exist dist rmdir /s /q dist
 if exist build rmdir /s /q build
+
+echo Downloading 7za.exe if needed...
+python scripts\download_7za.py
 
 echo Building backend executable using spec file...
 python -m PyInstaller --noconfirm --clean rivalnxt_backend_merged.spec

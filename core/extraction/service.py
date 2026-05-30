@@ -59,19 +59,24 @@ def extract_character_and_skin_data() -> Dict[str, Any]:
     
     paks_dir = current_settings.marvel_rivals_root / "MarvelGame" / "Marvel" / "Content" / "Paks"
     
-    # Step 1: Extract character names
-    print("[1/4] Extracting character names from locres...")
-    character_names = _extract_character_names(paks_dir)
+    # Step 1: Extract all strings from locres
+    print("[1/4] Extracting locres strings...")
+    from core.extraction.marvel_rivals_ids import get_all_locres_strings, extract_character_names_from_locres, extract_skin_names_from_locres, extract_skin_ids_from_pak
+    all_strings = get_all_locres_strings(paks_dir)
+    
+    # Step 2: Extract character names
+    print("[2/4] Extracting character names...")
+    character_names = extract_character_names_from_locres(paks_dir, all_strings=all_strings)
     print(f"Extracted {len(character_names)} character names")
     
-    # Step 2: Extract skin IDs
-    print("[2/4] Extracting skin IDs from pakchunkCharacter...")
-    character_skins = _extract_skin_ids(paks_dir)
+    # Step 3: Extract skin IDs
+    print("[3/4] Extracting skin IDs from pakchunkCharacter...")
+    character_skins = extract_skin_ids_from_pak(paks_dir)
     print(f"Extracted {sum(len(s) for s in character_skins.values())} skin IDs")
     
-    # Step 3: Extract skin names
-    print("[3/4] Extracting skin names from pakchunkLocres...")
-    skin_names = _extract_skin_names(paks_dir)
+    # Step 4: Extract skin names
+    print("[4/4] Extracting skin names from locres strings...")
+    skin_names = extract_skin_names_from_locres(paks_dir, all_strings=all_strings)
     print(f"Extracted {len(skin_names)} skin names")
     
     # Step 4: Combine data

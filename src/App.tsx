@@ -1423,7 +1423,7 @@ export default function App() {
     }
   };
 
-  const refreshMods = async (
+  const refreshMods = useCallback(async (
     options: { quiet?: boolean; includeConflicts?: boolean } = {},
   ) => {
     const { quiet = false, includeConflicts = false } = options;
@@ -1449,7 +1449,7 @@ export default function App() {
         toast.error(`Refresh failed: ${e?.message || e}`);
       }
     }
-  };
+  }, [fetchCollectionsCount]);
 
   const handleBootstrapTask = useCallback(async (): Promise<boolean> => {
     const sleep = (ms: number) =>

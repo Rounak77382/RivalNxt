@@ -244,7 +244,7 @@ export function CollectionsPage({
         
         return changed ? nextMap : prevMap;
       });
-    }, 2000);
+    }, 5000);
 
     return () => clearInterval(interval);
   }, [installedModsIndex]);
@@ -261,7 +261,7 @@ export function CollectionsPage({
     };
 
     fetchHandoffs();
-    timer = setInterval(fetchHandoffs, 1000);
+    timer = setInterval(fetchHandoffs, 5000);
 
     return () => {
       if (timer) clearInterval(timer);
