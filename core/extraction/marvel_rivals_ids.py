@@ -79,15 +79,48 @@ def get_all_locres_strings(paks_dir):
             en_files = [lf for lf in locres_files if 'en' in lf.parent.name.lower()]
             locres_file_to_read = en_files[0] if en_files else locres_files[0]
             
-            lf = LocresFile()
-            lf.read(str(locres_file_to_read))
+            fast_locres = None
+            if getattr(sys, 'frozen', False):
+                exe_path = Path(sys._MEIPASS) / "src-cpp" / "fast_locres.exe"
+            else:
+                exe_path = Path(__file__).parent.parent.parent.parent / "src-cpp" / "fast_locres.exe"
             
-            for ns_name, namespace in lf.namespaces.items():
-                if ns_name not in all_strings:
-                    all_strings[ns_name] = {}
-                for entry_key, entry in namespace.entrys.items():
-                    # Later paks (patches/mods) overwrite earlier ones
-                    all_strings[ns_name][entry_key] = entry.translation
+            if exe_path.exists():
+                fast_locres = str(exe_path)
+                
+            if fast_locres:
+                import subprocess
+                result = subprocess.run([fast_locres, str(locres_file_to_read)], capture_output=True, text=True, encoding='utf-8')
+                if result.returncode == 0:
+                    for line in result.stdout.splitlines():
+                        if not line:
+                            continue
+                        parts = line.split('|', 2)
+                        if len(parts) == 3:
+                            ns_name, key, translation = parts
+                            translation = translation.replace('\\n', '\n').replace('\\r', '\r')
+                            if ns_name not in all_strings:
+                                all_strings[ns_name] = {}
+                            all_strings[ns_name][key] = translation
+                else:
+                    print(f"Warning: fast_locres failed: {result.stderr}")
+                    lf = LocresFile()
+                    lf.read(str(locres_file_to_read))
+                    for ns_name, namespace in lf.namespaces.items():
+                        if ns_name not in all_strings:
+                            all_strings[ns_name] = {}
+                        for entry_key, entry in namespace.entrys.items():
+                            all_strings[ns_name][entry_key] = entry.translation
+            else:
+                lf = LocresFile()
+                lf.read(str(locres_file_to_read))
+                
+                for ns_name, namespace in lf.namespaces.items():
+                    if ns_name not in all_strings:
+                        all_strings[ns_name] = {}
+                    for entry_key, entry in namespace.entrys.items():
+                        # Later paks (patches/mods) overwrite earlier ones
+                        all_strings[ns_name][entry_key] = entry.translation
                     
         except Exception as e:
             # Skip problematic paks but keep going
@@ -101,45 +134,44 @@ def get_all_locres_strings(paks_dir):
     return all_strings
 
 
-def extract_character_names_from_locres(paks_dir):
+def extract_character_names_from_locres(paks_dir, all_strings=None):
     """Extract character names from locres files using discovered patterns."""
     try:
-        all_strings = get_all_locres_strings(paks_dir)
+        if all_strings is None:
+            all_strings = get_all_locres_strings(paks_dir)
         if not all_strings:
             return {}
             
         character_names = {}
+        fallback_names = {}
         
-        # Pattern 1: MarvelItemTable_{CHAR_ID}_ItemName
+        # O(N) Single-Pass over all strings
         for ns_name, entries in all_strings.items():
-            if not ns_name.startswith("123_Customize_"):
-                continue
-            
-            char_id_match = re.search(r'123_Customize_(\d{4})_ST', ns_name)
-            if not char_id_match:
-                continue
-            
-            char_id = char_id_match.group(1)
-            key_to_find = f'MarvelItemTable_{char_id}_ItemName'
-            if key_to_find in entries:
-                value = entries[key_to_find].strip().lower()
-                if len(value) < 30:
-                    character_names[char_id] = value
-        
-        # Pattern 2: UIHeroTable_{CHAR_ID}0_HeroBasic_TName (fallback for NPCs)
-        for ns_name, entries in all_strings.items():
-            for key, value in entries.items():
-                hero_match = re.search(r'UIHeroTable_(\d{4})0_HeroBasic_TName', key)
-                if hero_match:
-                    char_id = hero_match.group(1)
-                    if char_id not in character_names:
-                        clean_name = value.strip().replace('Lobby NPC - ', '').lower()
-                        if len(clean_name) < 30:
-                            character_names[char_id] = clean_name
-        
-        # Filter out garbage/internal names
-        filtered_character_names = {k: v for k, v in character_names.items() if not is_internal_name(v)}
-        return filtered_character_names
+            if ns_name.startswith("123_Customize_") and ns_name.endswith("_ST"):
+                # Pattern 1: MarvelItemTable_{CHAR_ID}_ItemName
+                for key, value in entries.items():
+                    if key.startswith("MarvelItemTable_") and key.endswith("_ItemName"):
+                        char_id = key[16:20]
+                        if char_id.isdigit():
+                            cleaned = value.strip().lower()
+                            if len(cleaned) < 30 and not is_internal_name(cleaned):
+                                character_names[char_id] = cleaned
+            else:
+                # Pattern 2: UIHeroTable_{CHAR_ID}0_HeroBasic_TName (fallback)
+                for key, value in entries.items():
+                    if key.startswith("UIHeroTable_") and key.endswith("0_HeroBasic_TName"):
+                        char_id = key[12:16]
+                        if char_id.isdigit():
+                            clean_name = value.strip().replace('Lobby NPC - ', '').lower()
+                            if len(clean_name) < 30 and not is_internal_name(clean_name):
+                                fallback_names[char_id] = clean_name
+                                
+        # Merge fallbacks where primary names are missing
+        for char_id, name in fallback_names.items():
+            if char_id not in character_names:
+                character_names[char_id] = name
+                
+        return character_names
         
     except Exception as e:
         print(f"Error extracting character names: {e}")
@@ -233,83 +265,61 @@ def extract_skin_ids_from_pak(paks_dir):
     return character_skins
 
 
-def extract_skin_names_from_locres(paks_dir):
+def extract_skin_names_from_locres(paks_dir, all_strings=None):
     """Extract skin names from locres files using discovered patterns."""
     try:
-        all_strings = get_all_locres_strings(paks_dir)
+        if all_strings is None:
+            all_strings = get_all_locres_strings(paks_dir)
         if not all_strings:
             return {}
             
         skin_names = {}
+        fallback_skin_names = {}
+        ps_names = {}
         
-        # Pattern 1: HeroUIAsset namespaces
+        # O(N) Single-Pass over all strings
         for ns_name, entries in all_strings.items():
-            if not ns_name.startswith("601_HeroUIAsset_"):
-                continue
-            for key, value in entries.items():
-                match = re.search(r'(UISkinTable|HeroUIAssetBPTable)_(\d{7,8})0?_\w+_SkinName', key)
-                if match:
-                    full_id = match.group(2)
-                    skin_id = full_id if len(full_id) == 7 else full_id[:-1]
-                    skin_names[skin_id] = value.strip().lower()
-        
-        # Pattern 2: UISkinTable in Customize namespaces
-        for ns_name, entries in all_strings.items():
-            if not ns_name.startswith("123_Customize_"):
-                continue
-            for key, value in entries.items():
-                match = re.search(r'UISkinTable_(\d{7})0_SkinBasic_SkinName', key)
-                if match:
-                    skin_id = match.group(1)
-                    if skin_id not in skin_names:
-                        skin_names[skin_id] = value.strip().lower()
-        
-        # Pattern 4 (run BEFORE Pattern 3): Color variants with ps prefix — these are
-        # the clean RETAIL names (e.g. "PINE OPPOSITION" vs the internal "[SG]..." name).
-        # By running first, we claim the slot so Pattern 3 won't overwrite with garbage.
-        for ns_name, entries in all_strings.items():
-            if ns_name != "123_Customize_ST":
-                continue
-            for key, value in entries.items():
-                match = re.search(r'MarvelItemTable_ps(\d{7})_ItemName', key)
-                if match:
-                    skin_id = match.group(1)
-                    cleaned = value.strip().lower()
-                    if not is_internal_name(cleaned):
-                        # Overwrite anything already set — ps names are highest priority
-                        skin_names[skin_id] = cleaned
-        
-        # Pattern 3: MarvelItemTable in Customize namespaces (fills remaining gaps)
-        # This can also return internal [SG] names, so it only runs if not already set.
-        for ns_name, entries in all_strings.items():
-            if not ns_name.startswith("123_Customize_"):
-                continue
-            for key, value in entries.items():
-                match = re.search(r'MarvelItemTable_(\d{7})_ItemName', key)
-                if match:
-                    skin_id = match.group(1)
-                    if skin_id not in skin_names:
-                        skin_names[skin_id] = value.strip().lower()
-        
-        # Pattern 5: Extended 10-digit IDs like MarvelItemTable_1017300206_ItemName
-        # These are color sub-variants of a skin (7-digit base + 3-digit color suffix).
-        # Extract the first 7 digits as the skin ID and use the name if not already set.
-        for ns_name, entries in all_strings.items():
-            if not ns_name.startswith("123_Customize_"):
-                continue
-            for key, value in entries.items():
-                match = re.search(r'MarvelItemTable_(\d{7})\d{3}_ItemName', key)
-                if match:
-                    skin_id = match.group(1)
-                    if skin_id not in skin_names:
-                        cleaned = value.strip().lower()
-                        if not is_internal_name(cleaned):
-                            skin_names[skin_id] = cleaned
-                        
-        # Final filter: remove any remaining garbage/internal names that slipped through
-        # (Pattern 3 leftovers with no corresponding ps entry)
-        filtered_skin_names = {k: v for k, v in skin_names.items() if not is_internal_name(v)}
-        return filtered_skin_names
+            if ns_name.startswith("601_HeroUIAsset_"):
+                # Pattern 1: HeroUIAsset namespaces
+                for key, value in entries.items():
+                    if key.endswith("_SkinName") and (key.startswith("UISkinTable_") or key.startswith("HeroUIAssetBPTable_")):
+                        # Use regex only when we know it's a match to extract precisely, or just string split
+                        # e.g., UISkinTable_10110010_SkinBasic_SkinName -> split by _ -> [1] is ID
+                        parts = key.split('_')
+                        if len(parts) >= 3:
+                            full_id = parts[1]
+                            if full_id.isdigit():
+                                skin_id = full_id if len(full_id) == 7 else full_id[:-1]
+                                skin_names[skin_id] = value.strip().lower()
+            elif ns_name.startswith("123_Customize_"):
+                for key, value in entries.items():
+                    # Pattern 4: ps variant (highest priority)
+                    if key.startswith("MarvelItemTable_ps") and key.endswith("_ItemName"):
+                        skin_id = key[18:-9]
+                        if skin_id.isdigit():
+                            cleaned = value.strip().lower()
+                            if not is_internal_name(cleaned):
+                                ps_names[skin_id] = cleaned
+                    # Pattern 2: UISkinTable
+                    elif key.startswith("UISkinTable_") and key.endswith("0_SkinBasic_SkinName"):
+                        skin_id = key[12:19]
+                        if skin_id.isdigit():
+                            fallback_skin_names[skin_id] = value.strip().lower()
+                    # Pattern 3 & 5: MarvelItemTable
+                    elif key.startswith("MarvelItemTable_") and key.endswith("_ItemName"):
+                        id_part = key[16:-9]
+                        if id_part.isdigit():
+                            skin_id = id_part[:7]
+                            fallback_skin_names[skin_id] = value.strip().lower()
+                            
+        # Merge dictionaries following priority: ps_names > skin_names > fallback_skin_names
+        final_names = {}
+        for d in (fallback_skin_names, skin_names, ps_names):
+            for k, v in d.items():
+                if not is_internal_name(v):
+                    final_names[k] = v
+                    
+        return final_names
         
     except Exception as e:
         print(f"Error extracting skin names: {e}")

@@ -16,6 +16,16 @@ backend_icon_path = os.path.join('.', 'src-tauri', 'icons', 'backendicon.ico')
 if os.path.exists(backend_icon_path):
     datas.append((backend_icon_path, 'src-tauri/icons'))
 
+# Include C++ optimizations
+fast_locres_path = os.path.join('.', 'src-cpp', 'fast_locres.exe')
+if os.path.exists(fast_locres_path):
+    datas.append((fast_locres_path, 'src-cpp'))
+
+# Include bundled 7za
+bin_dir = Path('bin')
+if bin_dir.exists():
+    datas.append((str(bin_dir), 'bin'))
+
 # Add the entire core directory as data so it's available at runtime
 core_dir = Path('core')
 if core_dir.exists():

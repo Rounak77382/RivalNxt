@@ -1216,12 +1216,11 @@ def _remove_in_mods_by_names(mods_dir: Path, names: List[str]) -> List[str]:
     if not mods_dir.exists():
         return removed
     
-    names_lower = [n.lower() for n in names]
+    names_lower = {n.lower() for n in names}
     try:
         for file_path in mods_dir.rglob("*"):
             if file_path.is_file():
-                file_name = file_path.name.lower()
-                if file_name in names_lower:
+                if file_path.name.lower() in names_lower:
                     try:
                         file_path.unlink()
                         removed.append(str(file_path))
@@ -1238,13 +1237,12 @@ def _remove_in_mods_by_stems(mods_dir: Path, stems: List[str]) -> List[str]:
     if not mods_dir.exists():
         return removed
     
-    stems_lower = [s.lower() for s in stems]
-    extensions = ['.pak', '.utoc', '.ucas', '.sig']
+    stems_lower = {s.lower() for s in stems}
+    extensions = {'.pak', '.utoc', '.ucas', '.sig'}
     try:
         for file_path in mods_dir.rglob("*"):
             if file_path.is_file():
-                stem = file_path.stem.lower()
-                if stem in stems_lower and file_path.suffix.lower() in extensions:
+                if file_path.stem.lower() in stems_lower and file_path.suffix.lower() in extensions:
                     try:
                         file_path.unlink()
                         removed.append(str(file_path))

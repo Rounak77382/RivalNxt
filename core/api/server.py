@@ -24,6 +24,11 @@ import urllib.parse
 import urllib.parse
 import urllib.request
 import uuid
+import ssl
+import certifi
+
+# Ensure urllib uses certifi certificates to avoid SSL errors on outdated Windows systems
+ssl._create_default_https_context = lambda: ssl.create_default_context(cafile=certifi.where())
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Literal, Optional, Set, Tuple, Union
@@ -1536,12 +1541,11 @@ def _ingest_resolved_download(
 		for raw_pak_name, assets in pak_map.items():
 			# Normalize extension: .utoc/.ucas -> .pak
 			lower_pak = raw_pak_name.lower()
-			if lower_pak.endswith(".utoc"):
-				normalized_name = raw_pak_name[:-5] + ".pak"
-			elif lower_pak.endswith(".ucas"):
-				normalized_name = raw_pak_name[:-5] + ".pak"
-			else:
-				normalized_name = raw_pak_name
+			match Path(lower_pak).suffix:
+				case ".utoc" | ".ucas":
+					normalized_name = raw_pak_name[:-5] + ".pak"
+				case _:
+					normalized_name = raw_pak_name
 				
 			# Track if this bundle involves IoStore (if any part is .utoc)
 			is_utoc = lower_pak.endswith(".utoc")
@@ -1607,12 +1611,11 @@ def _ingest_resolved_download(
 					for raw_pak_name, assets in pak_map.items():
 						# Normalize extension: .utoc/.ucas -> .pak
 						lower_pak = raw_pak_name.lower()
-						if lower_pak.endswith(".utoc"):
-							normalized_name = raw_pak_name[:-5] + ".pak"
-						elif lower_pak.endswith(".ucas"):
-							normalized_name = raw_pak_name[:-5] + ".pak"
-						else:
-							normalized_name = raw_pak_name
+						match Path(lower_pak).suffix:
+							case ".utoc" | ".ucas":
+								normalized_name = raw_pak_name[:-5] + ".pak"
+							case _:
+								normalized_name = raw_pak_name
 							
 						# Track if this bundle involves IoStore
 						is_utoc = lower_pak.endswith(".utoc")
@@ -2803,15 +2806,15 @@ def ingest_nxm_handoff(handoff_id: str, payload: Optional[Dict[str, Any]] = Body
 		requested_file_id = _coerce_int(requested_file_id)
 	if options.get("desired_paks") is not None and not isinstance(options.get("desired_paks"), list):
 		raise HTTPException(status_code=400, detail="desired_paks must be an array of strings when provided")
-	deactivate_existing_opt = options.get("deactivate_existing")
-	if deactivate_existing_opt is None:
-		deactivate_existing = True
-	elif isinstance(deactivate_existing_opt, bool):
-		deactivate_existing = deactivate_existing_opt
-	elif isinstance(deactivate_existing_opt, (int, float)):
-		deactivate_existing = bool(deactivate_existing_opt)
-	else:
-		raise HTTPException(status_code=400, detail="deactivate_existing must be a boolean when provided")
+	match options.get("deactivate_existing"):
+		case None:
+			deactivate_existing = True
+		case bool() as b:
+			deactivate_existing = b
+		case int() | float() as n:
+			deactivate_existing = bool(n)
+		case _:
+			raise HTTPException(status_code=400, detail="deactivate_existing must be a boolean when provided")
 	auto_activate = bool(options.get("activate", True))
 	game_domain, raw_metadata, filtered_metadata = _collect_nexus_metadata_for_record(record)
 	files_summary = _summarize_mod_files(raw_metadata.get("files"))
@@ -2820,20 +2823,30 @@ def ingest_nxm_handoff(handoff_id: str, payload: Optional[Dict[str, Any]] = Body
 		req_file_id = _coerce_int(req.get("file_id"))
 		requested_file_id = req_file_id
 	selected_entry = _select_file_entry(files_summary, requested_file_id)
-	if not selected_entry:
-		error_msg = "Unable to resolve target file from Nexus metadata"
-		if handoff_identifier:
-			update_handoff_progress(
-				handoff_identifier,
-				stage="failed",
-				error=error_msg,
-				message=error_msg,
-			)
-			register_handoff_failure(handoff_identifier, error_msg)
-		raise HTTPException(status_code=404, detail=error_msg)
-	file_id = selected_entry["file_id"]
 	req_data = record.get("request", {})
 	mod_id = req_data.get("mod_id")
+
+	if not selected_entry:
+		if requested_file_id and mod_id:
+			logger.warning("[nxm_handoff] requested_file_id %s not in files.json, assuming CDN cache delay", requested_file_id)
+			selected_entry = {
+				"file_id": requested_file_id,
+				"name": f"Unknown File {requested_file_id}",
+				"version": "unknown",
+				"file_name": f"mod_{mod_id}_file_{requested_file_id}.zip"
+			}
+		else:
+			error_msg = "Unable to resolve target file from Nexus metadata"
+			if handoff_identifier:
+				update_handoff_progress(
+					handoff_identifier,
+					stage="failed",
+					error=error_msg,
+					message=error_msg,
+				)
+				register_handoff_failure(handoff_identifier, error_msg)
+			raise HTTPException(status_code=404, detail=error_msg)
+	file_id = selected_entry["file_id"]
 	if not isinstance(mod_id, int):
 		error_msg = "nxm handoff missing mod id"
 		if handoff_identifier:
@@ -4668,6 +4681,14 @@ def list_downloads(limit: int = 500) -> List[Dict[str, Any]]:
 				contents = []
 		except Exception:
 			contents = []
+			
+		total_contents = len(contents)
+		if total_contents > 100:
+			paks = [f for f in contents if f.lower().endswith(".pak")]
+			others = [f for f in contents if not f.lower().endswith(".pak")]
+			sample_others = others[:100 - len(paks)] if len(paks) < 100 else []
+			contents = paks + sample_others
+			contents.append(f"...and {total_contents - len(contents)} more files")
 		try:
 			active_paks = json.loads(active_json) if active_json else []
 			if not isinstance(active_paks, list):
@@ -4979,7 +5000,8 @@ def _search_mod_id_remote(name: str, api_key: str, game: str = DEFAULT_GAME) -> 
 	}
 	req = urllib.request.Request(url, headers=headers, method="GET")
 	try:
-		with urllib.request.urlopen(req, timeout=30) as resp:
+		ctx = ssl.create_default_context(cafile=certifi.where())
+		with urllib.request.urlopen(req, timeout=30, context=ctx) as resp:
 			data = json.loads(resp.read().decode("utf-8"))
 	except Exception:
 		return None
@@ -5167,8 +5189,9 @@ def _download_remote_archive(
 		except Exception:
 			pass
 
+	ctx = ssl.create_default_context(cafile=certifi.where())
 	try:
-		with urllib.request.urlopen(req, timeout=120) as response, dest.open("wb") as out:
+		with urllib.request.urlopen(req, timeout=120, context=ctx) as response, dest.open("wb") as out:
 			total_bytes: Optional[int] = getattr(response, "length", None)
 			if total_bytes is None:
 				try:
@@ -5256,8 +5279,9 @@ def _resolve_nexus_download_candidates(
 		headers["Application-Name"] = "MarvelRivalsModManager"
 		headers["Application-Version"] = "0.7.0"
 	req = urllib.request.Request(api_url, headers=headers, method="GET")
+	ctx = ssl.create_default_context(cafile=certifi.where())
 	try:
-		with urllib.request.urlopen(req, timeout=30) as resp:
+		with urllib.request.urlopen(req, timeout=30, context=ctx) as resp:
 			status = resp.getcode() or 0
 			raw = resp.read()
 	except urllib.error.HTTPError as exc:
@@ -6578,6 +6602,11 @@ def get_pak_assets(download_ids: Optional[str] = None) -> List[Dict[str, Any]]:
 					assets = []
 			except Exception:
 				assets = []
+				
+			total_assets = len(assets)
+			if total_assets > 100:
+				assets = assets[:100]
+				assets.append(f"...and {total_assets - 100} more assets")
 				
 			result.append({
 				"pak_name": pak_name,

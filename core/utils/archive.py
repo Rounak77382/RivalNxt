@@ -86,6 +86,28 @@ def _archive_type(archive_path: str) -> str:
     return "unknown"
 
 
+def get_7z_executable() -> Optional[str]:
+    import sys
+    if getattr(sys, 'frozen', False):
+        bundled = Path(sys._MEIPASS) / "bin" / "7za.exe"
+    else:
+        bundled = Path(__file__).parent.parent.parent / "bin" / "7za.exe"
+        
+    if bundled.exists():
+        return str(bundled)
+
+    paths = [
+        r"C:\Program Files\7-Zip\7z.exe",
+        r"C:\Program Files\7-Zip\7za.exe",
+        r"C:\Program Files (x86)\7-Zip\7z.exe",
+        r"C:\Program Files (x86)\7-Zip\7za.exe"
+    ]
+    for p in paths:
+        if os.path.exists(p):
+            return p
+    return shutil.which("7z.exe") or shutil.which("7za.exe")
+
+
 def list_entries(archive_path: str) -> List[str]:
     typ = _archive_type(archive_path)
     if typ == "zip":
@@ -95,6 +117,26 @@ def list_entries(archive_path: str) -> List[str]:
         except Exception as e:
             raise RuntimeError(f"zip list failed: {e}")
     elif typ == "7z":
+        exe = get_7z_executable()
+        if exe:
+            import subprocess
+            try:
+                res = subprocess.run([exe, "l", "-slt", archive_path], capture_output=True, text=True, check=True)
+                entries = []
+                current_path = None
+                for line in res.stdout.splitlines():
+                    if line.startswith("Path = "):
+                        current_path = line[7:]
+                    elif line.startswith("Attributes = "):
+                        is_dir = "D" in line
+                        if current_path and not is_dir and current_path != str(Path(archive_path).name):
+                            entries.append(current_path)
+                            current_path = None
+                if entries:
+                    return entries
+            except Exception as e:
+                print(f"7z.exe listing failed, falling back to py7zr. Error: {e}")
+                
         try:
             with py7zr.SevenZipFile(archive_path, mode="r") as zf:
                 # Filter out directory entries to match zip/rar behavior
@@ -138,6 +180,21 @@ def extract_archive(archive_path: str, dest_dir: str) -> List[str]:
         except Exception as e:
             raise RuntimeError(f"zip extract failed: {e}")
     elif typ == "7z":
+        exe = get_7z_executable()
+        if exe:
+            import subprocess
+            try:
+                subprocess.run([exe, "x", "-y", f"-o{dest_dir}", archive_path], capture_output=True, check=True)
+                dest = Path(dest_dir)
+                for root, _, files in os.walk(dest_dir):
+                    for f in files:
+                        p = Path(root) / f
+                        extracted.append(str(p.relative_to(dest)).replace('\\', '/'))
+                if extracted:
+                    return extracted
+            except Exception as e:
+                print(f"7z.exe extract failed, falling back to py7zr. Error: {e}")
+                
         try:
             with py7zr.SevenZipFile(archive_path, mode="r") as zf:
                 zf.extractall(path=dest_dir)

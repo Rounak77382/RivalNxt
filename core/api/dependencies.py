@@ -48,13 +48,6 @@ def get_db():
     """Return a SQLite connection with schema guaranteed to exist."""
     _ensure_schema_initialised()
     conn = get_connection()
-    # Force checkpoint to ensure we see latest data after bootstrap or any writes
-    # Using RESTART mode which is more aggressive than PASSIVE but less than TRUNCATE
-    # This ensures we see fresh data without causing too much I/O overhead
-    try:
-        conn.execute("PRAGMA wal_checkpoint(RESTART);")
-    except Exception as e:
-        logger.debug(f"WAL checkpoint in get_db failed (non-critical): {e}")
     return conn
 
 
