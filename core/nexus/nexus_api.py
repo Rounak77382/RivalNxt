@@ -15,7 +15,7 @@ except AttributeError:
 BASE_URL = "https://api.nexusmods.com/v1"
 DEFAULT_GAME = "marvelrivals"
 APP_NAME = "Project_ModManager_Rivals"
-APP_VERSION = "0.7.0"
+APP_VERSION = "0.7.2"
 
 def _coerce_key(raw: str | None) -> str:
     return raw.strip() if raw else ""

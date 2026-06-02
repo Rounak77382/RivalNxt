@@ -1,6 +1,6 @@
 {
   "name": "rivalnxt",
-  "version": "0.7.0",
+  "version": "0.7.2",
   "private": true,
   "dependencies": {
     "@bbob/preset": "^4.3.1",
