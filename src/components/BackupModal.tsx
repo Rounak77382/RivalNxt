@@ -276,7 +276,7 @@ export function BackupModal({
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent
-        className="max-w-lg"
+        className="w-full max-w-lg"
         style={{
           border: "1px solid hsl(var(--border))",
           borderRadius: "16px",

@@ -618,6 +618,7 @@ function installedModPropsAreEqual(
     if (a[k] !== b[k]) return false;
   }
   if (a.images?.[0] !== b.images?.[0]) return false;
+  if ((a.tags || []).join(",") !== (b.tags || []).join(",")) return false;
   if (prev.viewMode !== next.viewMode) return false;
   return true;
 }

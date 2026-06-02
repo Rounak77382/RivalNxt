@@ -213,7 +213,8 @@ export type SettingsTask =
   | "rebuild_tags"
   | "rebuild_conflicts"
   | "bootstrap_rebuild"
-  | "rebuild_character_data";
+  | "rebuild_character_data"
+  | "delete_outdated_versions";
 
 export type ApiSettingsTaskStatus =
   | "pending"

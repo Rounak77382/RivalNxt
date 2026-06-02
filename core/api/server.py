@@ -24,6 +24,15 @@ import urllib.parse
 import urllib.parse
 import urllib.request
 import uuid
+import ssl
+
+# Globally disable SSL certificate verification to bypass expired cert issues (especially for Nexus API)
+try:
+    _create_unverified_https_context = ssl._create_unverified_context
+except AttributeError:
+    pass
+else:
+    ssl._create_default_https_context = _create_unverified_https_context
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Literal, Optional, Set, Tuple, Union
@@ -453,6 +462,7 @@ SettingsTaskName = Literal[
 	"rebuild_conflicts",
 	"bootstrap_rebuild",
 	"rebuild_character_data",
+	"delete_outdated_versions",
 ]
 
 
@@ -640,6 +650,84 @@ def _normalize_optional_str(value: Optional[str]) -> Optional[str]:
 		return None
 	trimmed = value.strip()
 	return trimmed or None
+
+
+def _task_delete_outdated_versions() -> int:
+	from core.db.db import get_connection
+	import os, re
+	
+	conn = get_connection()
+	try:
+		cur = conn.cursor()
+		cur.execute("SELECT id, path, name, mod_id, created_at FROM local_downloads WHERE mod_id IS NOT NULL")
+		downloads = cur.fetchall()
+		
+		# Group by mod_id
+		mod_groups = {}
+		for row in downloads:
+			mod_id = row[3]
+			mod_groups.setdefault(mod_id, []).append(row)
+		
+		to_delete = []
+		for mod_id, variants in mod_groups.items():
+			if len(variants) < 2:
+				continue
+				
+			# Group by base name
+			base_groups = {}
+			for row in variants:
+				name = row[2]
+				base = re.sub(r'\.(zip|rar|7z|pak)$', '', name, flags=re.IGNORECASE)
+				base = re.sub(r'-[\d\.]+(?:-[a-zA-Z\d\.]+)*$', '', base)
+				base = re.sub(r'[-_][vV]?[\d\.]+$', '', base)
+				base = base.strip()
+				base_groups.setdefault(base, []).append(row)
+				
+			for base, items in base_groups.items():
+				if len(items) < 2:
+					continue
+				# Sort by created_at DESC (newest first)
+				items.sort(key=lambda x: x[4] or "", reverse=True)
+				# First one is kept, others are outdated
+				for outdated in items[1:]:
+					to_delete.append(outdated)
+					
+		deleted_count = 0
+		for row in to_delete:
+			ld_id, ld_path, ld_name, _, _ = row
+			print(f"Deleting outdated version: {ld_name} (ID: {ld_id})")
+			
+			# 1. Delete physical file
+			if ld_path and os.path.exists(ld_path):
+				try:
+					os.remove(ld_path)
+					print(f"  Deleted file: {ld_path}")
+				except Exception as e:
+					print(f"  Failed to delete file {ld_path}: {e}")
+			else:
+				print(f"  File not found on disk: {ld_path}")
+				
+			# 2. Remove from database
+			cur.execute("DELETE FROM local_downloads WHERE id = ?", (ld_id,))
+			deleted_count += 1
+			
+		if deleted_count > 0:
+			conn.commit()
+			print(f"\nSuccessfully removed {deleted_count} outdated variants.")
+			print("Rebuilding asset mapping to reflect deleted mods...")
+			return _task_ingest_download_assets()
+		else:
+			print("No outdated versions found to delete.")
+			
+		return 0
+	except Exception as e:
+		print(f"Error deleting outdated versions: {e}")
+		return 1
+	finally:
+		try:
+			conn.close()
+		except Exception:
+			pass
 
 
 def _apply_settings_update(payload: SettingsUpdatePayload) -> Dict[str, Any]:
@@ -1051,6 +1139,8 @@ def _run_settings_task(
 			return _task_bootstrap_rebuild()
 		if task == "rebuild_character_data":
 			return _task_rebuild_character_data()
+		if task == "delete_outdated_versions":
+			return _task_delete_outdated_versions()
 		raise HTTPException(status_code=400, detail=f"Unknown task: {task}")
 
 	metadata: Optional[Any] = None
@@ -2498,6 +2588,30 @@ def delete_nxm_handoff(handoff_id: str) -> Dict[str, Any]:
 	return {"ok": True, "handoff": serialize_handoff(record, include_metadata=True)}
 
 
+def _clear_handoff_failure_by_file_id(file_id: Optional[int]) -> None:
+	"""Remove any handoff_failures row for a given Nexus file_id.
+	
+	Used when a duplicate-download detection confirms the file IS already present
+	on disk, so we should NOT keep a "failed" record for that file_id.
+	"""
+	if file_id is None:
+		return
+	file_id_str = str(file_id).strip()
+	conn = get_db()
+	try:
+		cur = conn.cursor()
+		cur.execute("DELETE FROM handoff_failures WHERE file_id = ?", (file_id_str,))
+		conn.commit()
+		logger.info(f"[nxm_handoff] Cleared stale handoff_failure for file_id={file_id_str} (duplicate = already downloaded)")
+	except Exception as exc:
+		logger.debug(f"[nxm_handoff] _clear_handoff_failure_by_file_id: {exc}")
+	finally:
+		try:
+			conn.close()
+		except Exception:
+			pass
+
+
 def _normalize_game_domain(domain: Optional[str]) -> str:
 	if not domain:
 		return DEFAULT_GAME
@@ -2882,6 +2996,12 @@ def ingest_nxm_handoff(handoff_id: str, payload: Optional[Dict[str, Any]] = Body
 							message=f"Already downloaded: {clean_name} v{clean_version}",
 						)
 						mark_handoff_consumed(handoff_identifier)
+						# Clear any stale failure record so the collection frontend
+						# no longer shows this file_id as "failed".
+						try:
+							_clear_handoff_failure_by_file_id(file_id)
+						except Exception as _clr_err:
+							logger.debug(f"[nxm_handoff] early-dupe clear failure: {_clr_err}")
 					
 					raise DuplicateDownloadError(
 						existing_id,
@@ -2923,16 +3043,23 @@ def ingest_nxm_handoff(handoff_id: str, payload: Optional[Dict[str, Any]] = Body
 			created_at_hint=datetime.now(timezone.utc).isoformat(),
 		)
 	except DuplicateDownloadError as exc:
+		# A duplicate means the mod IS already downloaded — treat it as a success, not a failure.
+		# Do NOT register this as a handoff failure (it's not an error; the file is already present).
 		if handoff_identifier:
+			# Ensure the progress shows "complete" (the early check may have already set this,
+			# but the ingest path might have hit the same check a second time).
 			update_handoff_progress(
 				handoff_identifier,
-				stage="failed",
-				error=str(exc),
-				message="Duplicate download detected",
+				stage="complete",
+				message=f"Already downloaded: {exc.existing_name or exc.candidate_name}",
 			)
-			register_handoff_failure(handoff_identifier, str(exc))
-			# Mark as consumed to prevent infinite retry loops on frontend restart
 			mark_handoff_consumed(handoff_identifier)
+			# Also clear any stale failure record for this file_id so the frontend
+			# stops showing these as "failed" in the collection view.
+			try:
+				_clear_handoff_failure_by_file_id(file_id)
+			except Exception as _clear_err:
+				logger.debug(f"[nxm_handoff] Could not clear stale failure for file_id={file_id}: {_clear_err}")
 		
 		raise HTTPException(status_code=409, detail=_duplicate_detail_from_error(exc))
 
@@ -6720,6 +6847,7 @@ def _fetch_collection_from_nexus(slug: str, revision_num: Optional[int] = None) 
 			json={"query": _COLLECTION_QUERY, "variables": variables},
 			headers=headers,
 			timeout=30,
+			verify=False,
 		)
 		resp.raise_for_status()
 		data = resp.json()

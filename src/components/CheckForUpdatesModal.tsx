@@ -127,6 +127,7 @@ export function CheckForUpdatesModal({
     onIsCheckingAllChange(true);
     onCheckedChange(false);
     // Reset all to idle first
+    statusesRef.current = {};
     onStatusesChange({});
 
     const toastId = "check-updates-modal";
@@ -152,45 +153,38 @@ export function CheckForUpdatesModal({
   }, [isCheckingAll, installedMods, checkSingleMod, onRefreshMods, onIsCheckingAllChange, onCheckedChange, onStatusesChange]);
 
   const getDerivedStatus = useCallback((mod: Mod): ModUpdateStatus => {
+    // If a real check-all status exists for this mod, trust it unconditionally.
     if (statuses[mod.id]) {
       return statuses[mod.id].status;
     }
-    return mod.hasUpdate ? "has-update" : "idle";
+    // Before a check has been run, only surface "has-update" when the backend
+    // says so AND the displayed versions genuinely differ.  This filters out
+    // false-positives where list_downloads marks needs_update=true because it
+    // compared the installed file against a DIFFERENT file's version from Nexus.
+    if (mod.hasUpdate) {
+      // If versions are identical (after normalisation), suppress the badge.
+      if (
+        mod.installedVersion &&
+        mod.latestVersion &&
+        normalizeVersionForCheck(mod.installedVersion) === normalizeVersionForCheck(mod.latestVersion)
+      ) {
+        return "idle";
+      }
+      return "has-update";
+    }
+    return "idle";
   }, [statuses]);
 
+  // Mods that are confirmed to have updates (either from a manual check or initial load with genuinely different versions)
   const modsWithUpdates = useMemo(
-    () =>
-      installedMods.filter((m) => {
-        const s = getDerivedStatus(m) === "has-update";
-        if (s) {
-          if (
-            m.installedVersion &&
-            m.latestVersion &&
-            normalizeVersionForCheck(m.installedVersion) === normalizeVersionForCheck(m.latestVersion)
-          ) {
-            return false;
-          }
-          return true;
-        }
-        return false;
-      }),
+    () => installedMods.filter((m) => getDerivedStatus(m) === "has-update"),
     [installedMods, getDerivedStatus],
   );
 
   const visibleMods = useMemo(() => {
     return installedMods.filter((mod) => {
       const s = getDerivedStatus(mod);
-      if (s === "has-update") {
-        if (
-          mod.installedVersion &&
-          mod.latestVersion &&
-          normalizeVersionForCheck(mod.installedVersion) === normalizeVersionForCheck(mod.latestVersion)
-        ) {
-          return false;
-        }
-        return true;
-      }
-      return s === "checking" || s === "error";
+      return s === "has-update" || s === "checking" || s === "error";
     });
   }, [installedMods, getDerivedStatus]);
 
@@ -239,6 +233,9 @@ export function CheckForUpdatesModal({
         <div className="text-xs flex items-center gap-1.5 font-medium pr-2">
           {mod.installedVersion ? (
             <>
+              <span className="px-2 py-0.5 rounded bg-muted text-muted-foreground border border-border/40 font-semibold">
+                {formatVersionDisplay(mod.installedVersion)}
+              </span>
               {mod.latestVersion && (
                 <>
                   <span className="text-muted-foreground/60">→</span>
@@ -464,7 +461,7 @@ export function CheckForUpdatesModal({
           ) : (
             <div className="grid gap-2">
               {visibleMods.map((mod) => {
-                const s = statuses[mod.id]?.status ?? "idle";
+                const s = getDerivedStatus(mod);
                 const hasUpdate = s === "has-update";
 
                 return (
@@ -490,16 +487,37 @@ export function CheckForUpdatesModal({
                       />
                     </div>
 
-                    {/* Name + author */}
+                    {/* Name + author + variant */}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold truncate leading-tight">
                         {mod.name}
                       </p>
-                      {mod.author && (
-                        <p className="text-xs text-muted-foreground truncate mt-0.5">
-                          by {mod.author}
-                        </p>
-                      )}
+                      <div className="flex items-center gap-2 mt-0.5 min-w-0 text-xs text-muted-foreground">
+                        {mod.author && (
+                          <p className="truncate flex-shrink-0">
+                            by {mod.author}
+                          </p>
+                        )}
+                        {/* Variant file name — shown when it differs meaningfully from the mod name */}
+                        {(() => {
+                          const raw = mod.latestFileName;
+                          if (!raw) return null;
+                          // Strip common file extensions and trim
+                          const clean = raw.replace(/\.(zip|7z|rar|pak|utoc|ucas)$/i, "").trim();
+                          // Only show if it looks different from the mod name
+                          const modNameLower = mod.name.toLowerCase().replace(/\s+/g, "");
+                          const cleanLower = clean.toLowerCase().replace(/\s+/g, "");
+                          if (cleanLower === modNameLower) return null;
+                          // Truncate to 32 chars with ellipsis
+                          const label = clean.length > 32 ? clean.slice(0, 30) + "…" : clean;
+                          return (
+                            <div className="flex items-center gap-2 truncate opacity-80">
+                              <span className="flex-shrink-0">•</span>
+                              <span className="truncate italic" title={clean}>{label}</span>
+                            </div>
+                          );
+                        })()}
+                      </div>
                     </div>
 
                     {/* Version info */}

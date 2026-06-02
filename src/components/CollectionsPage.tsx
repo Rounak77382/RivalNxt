@@ -280,10 +280,21 @@ export function CollectionsPage({
           const isFailed = h.progress?.stage === "failed" || h.progress?.error != null;
           
           if (isFailed) {
-            const errorMsg = h.progress?.error || h.progress?.message || "Download failed";
-            if (next.get(fileIdStr) !== errorMsg) {
-              next.set(fileIdStr, errorMsg);
-              changed = true;
+            // Don't mark as failed if the mod is already recognized as downloaded.
+            // A "duplicate download detected" failure means the file IS present — treat
+            // it as downloaded rather than as a real failure.
+            if (installedModsIndex.sourceFileIdsSet.has(fileIdStr)) {
+              // Auto-remove stale failure for this file_id
+              if (next.has(fileIdStr)) {
+                next.delete(fileIdStr);
+                changed = true;
+              }
+            } else {
+              const errorMsg = h.progress?.error || h.progress?.message || "Download failed";
+              if (next.get(fileIdStr) !== errorMsg) {
+                next.set(fileIdStr, errorMsg);
+                changed = true;
+              }
             }
           } else {
             if (next.has(fileIdStr)) {
@@ -296,7 +307,8 @@ export function CollectionsPage({
 
       return changed ? next : prev;
     });
-  }, [activeHandoffs]);
+  }, [activeHandoffs, installedModsIndex]);
+
 
   useEffect(() => {
     setFailedFileIds(prev => {

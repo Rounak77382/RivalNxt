@@ -325,21 +325,23 @@ function ModCardInner({
                 <div className="flex items-center gap-2 ml-4">
                   <TagList tags={mod.tags} />
 
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onFavorite(mod.id);
-                    }}
-                    className={mod.isFavorited ? "text-red-500" : ""}
-                  >
-                    <Heart
-                      className={`w-4 h-4 ${
-                        mod.isFavorited ? "fill-current" : ""
-                      }`}
-                    />
-                  </Button>
+                  {!mod.hideMetrics && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onFavorite(mod.id);
+                      }}
+                      className={mod.isFavorited ? "text-red-500" : ""}
+                    >
+                      <Heart
+                        className={`w-4 h-4 ${
+                          mod.isFavorited ? "fill-current" : ""
+                        }`}
+                      />
+                    </Button>
+                  )}
 
                   <Button
                     variant={actionVariant}
@@ -447,21 +449,23 @@ function ModCardInner({
                   </Button>
                 </div>
               )}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onFavorite(mod.id);
-                }}
-                className={`absolute top-2 right-2 z-40 pointer-events-auto ${
-                  mod.isFavorited ? "text-red-500" : "text-white/80 hover:text-white"
-                }`}
-              >
-                <Heart
-                  className={`w-4 h-4 ${mod.isFavorited ? "fill-current" : ""}`}
-                />
-              </Button>
+              {!mod.hideMetrics && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onFavorite(mod.id);
+                  }}
+                  className={`absolute top-2 right-2 z-40 pointer-events-auto ${
+                    mod.isFavorited ? "text-red-500" : "text-white/80 hover:text-white"
+                  }`}
+                >
+                  <Heart
+                    className={`w-4 h-4 ${mod.isFavorited ? "fill-current" : ""}`}
+                  />
+                </Button>
+              )}
             </div>
 
             <div className="flex-1 flex flex-col" style={{ minWidth: 0, padding: "12px 16px" }}>
@@ -620,6 +624,7 @@ function modPropsAreEqual(prev: ModCardProps, next: ModCardProps) {
     if (a[k] !== b[k]) return false;
   }
   if (a.images?.[0] !== b.images?.[0]) return false;
+  if ((a.tags || []).join(",") !== (b.tags || []).join(",")) return false;
   // viewMode affects layout
   if (prev.viewMode !== next.viewMode) return false;
   return true;

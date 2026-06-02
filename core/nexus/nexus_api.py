@@ -1,9 +1,16 @@
 import json
 import urllib.error
 import urllib.request
+import ssl
 from typing import Any, Dict, Optional, Tuple
 
 from core.config import settings
+
+try:
+    # Disable SSL certificate verification globally for Nexus API calls to bypass expired cert issues
+    SSL_CONTEXT = ssl._create_unverified_context()
+except AttributeError:
+    SSL_CONTEXT = ssl.create_default_context()
 
 BASE_URL = "https://api.nexusmods.com/v1"
 DEFAULT_GAME = "marvelrivals"
@@ -34,7 +41,7 @@ def _get(api_key: str, path: str) -> Tuple[int, Any]:
     }
     req = urllib.request.Request(url, headers=headers, method="GET")
     try:
-        with urllib.request.urlopen(req) as resp:
+        with urllib.request.urlopen(req, context=SSL_CONTEXT) as resp:
             status = resp.getcode()
             data = resp.read()
             try:

@@ -445,6 +445,7 @@ export function ModModal({
 
   // Custom tag state
   const [customTags, setCustomTags] = useState<CustomTag[]>([]);
+  const [removedTagNames, setRemovedTagNames] = useState<Set<string>>(new Set());
   const [allTagSuggestions, setAllTagSuggestions] = useState<string[]>([]);
   const [isTagDropdownOpen, setIsTagDropdownOpen] = useState(false);
   const [tagSearchValue, setTagSearchValue] = useState("");
@@ -464,6 +465,19 @@ export function ModModal({
   const overviewTags = useMemo(() => {
     const tags: string[] = [];
     const seen = new Set<string>();
+    
+    // Add custom tag names to seen set so they aren't duplicate-added to overviewTags
+    if (Array.isArray(customTags)) {
+      customTags.forEach(ct => {
+        if (ct?.tag) {
+          seen.add(ct.tag.toLowerCase().trim());
+        }
+      });
+    }
+
+    // Prevent recently removed tag names from temporarily appearing in overview tags during refetches
+    removedTagNames.forEach(t => seen.add(t));
+
     const addTag = (tag?: string | null) => {
       if (tag == null) return;
       const normalized = String(tag).trim();
@@ -481,7 +495,20 @@ export function ModModal({
       mod?.tags.forEach(addTag);
     }
     return tags;
-  }, [details, mod]);
+  }, [details, mod, customTags, removedTagNames]);
+
+  const appliedTagNames = useMemo(() => {
+    const names = new Set<string>();
+    overviewTags.forEach(t => names.add(t.toLowerCase().trim()));
+    if (Array.isArray(customTags)) {
+      customTags.forEach(ct => {
+        if (ct?.tag) {
+          names.add(ct.tag.toLowerCase().trim());
+        }
+      });
+    }
+    return names;
+  }, [overviewTags, customTags]);
 
   useEffect(() => {
     let cancelled = false;
@@ -560,9 +587,11 @@ export function ModModal({
     async function loadCustomTags() {
       if (!isOpen || !effectiveModId) {
         setCustomTags([]);
+        setRemovedTagNames(new Set());
         return;
       }
       try {
+        setRemovedTagNames(new Set());
         const [tags, allTags] = await Promise.all([
           getModCustomTags(effectiveModId),
           getAllCustomTags(),
@@ -1362,11 +1391,23 @@ export function ModModal({
     async (tagId: number, tagName: string) => {
       if (!effectiveModId) return;
       try {
+        const normalized = tagName.toLowerCase().trim();
+        setRemovedTagNames((prev) => {
+          const next = new Set(prev);
+          next.add(normalized);
+          return next;
+        });
         await removeModCustomTag(effectiveModId, tagId);
         setCustomTags((prev) => prev.filter((ct) => ct.id !== tagId));
         toast.success(`Tag "${tagName}" removed`);
       } catch (err) {
         toast.error((err as any)?.message || "Failed to remove tag");
+        const normalized = tagName.toLowerCase().trim();
+        setRemovedTagNames((prev) => {
+          const next = new Set(prev);
+          next.delete(normalized);
+          return next;
+        });
       }
     },
     [effectiveModId],
@@ -1770,52 +1811,59 @@ export function ModModal({
                         <div>
                           <h3 className="font-medium mb-3">Tags</h3>
                           <div className="flex flex-wrap gap-2 items-center">
-                            {/* Auto-detected tags from Nexus/extraction */}
-                            {overviewTags.map((tag) => (
-                              <Badge
-                                key={`overview-tag-${tag}`}
-                                variant="secondary"
-                                className="text-xs"
-                              >
-                                {tag}
-                              </Badge>
-                            ))}
-
-                            {/* User-created custom tags */}
-                            {customTags.map((ct) => (
-                              <Badge
-                                key={`custom-tag-${ct.id}`}
-                                variant="outline"
-                                className="text-xs gap-1 pr-1 border-primary/40 text-primary bg-primary/5 hover:bg-primary/10"
-                              >
-                                {ct.tag}
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    handleRemoveCustomTag(ct.id, ct.tag)
-                                  }
-                                  className="ml-0.5 rounded-full hover:bg-primary/20 p-0.5 transition-colors"
-                                  title={`Remove tag "${ct.tag}"`}
-                                >
-                                  <X className="w-2.5 h-2.5" />
-                                </button>
-                              </Badge>
-                            ))}
+                             {/* Auto-detected tags from Nexus/extraction */}
+                             {overviewTags.map((tag) => (
+                               <Badge
+                                 key={`overview-tag-${tag}`}
+                                 variant="secondary"
+                                 className="text-xs"
+                               >
+                                 {tag}
+                               </Badge>
+                             ))}
+ 
+                             {/* User-created custom tags */}
+                             {customTags.map((ct) => (
+                               <Badge
+                                 key={`custom-tag-${ct.id}`}
+                                 variant="secondary"
+                                 className="text-xs gap-1 pr-1"
+                               >
+                                 {ct.tag}
+                                 <button
+                                   type="button"
+                                   onClick={() =>
+                                     handleRemoveCustomTag(ct.id, ct.tag)
+                                   }
+                                   className="ml-0.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 p-0.5 transition-colors"
+                                   title={`Remove tag "${ct.tag}"`}
+                                 >
+                                   <X className="w-2.5 h-2.5" />
+                                 </button>
+                               </Badge>
+                             ))}
 
                             {/* + Add tag button with dropdown */}
                             {effectiveModId && (
                               <div className="relative" ref={tagDropdownRef}>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setIsTagDropdownOpen((v) => !v);
-                                    setTagSearchValue("");
-                                  }}
-                                  className="inline-flex items-center justify-center w-6 h-6 rounded-full border border-dashed border-muted-foreground/40 text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5 transition-all duration-150"
-                                  title="Add custom tag"
+                                <Badge
+                                  variant="outline"
+                                  className="text-xs border-dashed border-violet-500/50 text-violet-500 dark:text-violet-400 hover:border-violet-600 hover:text-violet-600 dark:hover:text-violet-300 hover:bg-violet-500/10 dark:hover:bg-violet-400/15 cursor-pointer active:scale-95 transition-all duration-150"
+                                  asChild
                                 >
-                                  <Plus className="w-3 h-3" />
-                                </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setIsTagDropdownOpen((v) => !v);
+                                      setTagSearchValue("");
+                                    }}
+                                    className="flex items-center justify-center gap-1 w-full h-full bg-transparent border-none outline-none font-medium p-0 m-0"
+                                    title="Add custom tag"
+                                  >
+                                    <Plus className="w-3 h-3 shrink-0" />
+                                    <span>Add Tag</span>
+                                  </button>
+                                </Badge>
 
                                 {isTagDropdownOpen && (
                                   <div
@@ -1846,7 +1894,10 @@ export function ModModal({
                                     </div>
 
                                     {/* Tag list */}
-                                    <div className="max-h-48 overflow-y-auto custom-scrollbar py-1">
+                                    <div 
+                                      className="overflow-y-auto custom-scrollbar py-1"
+                                      style={{ maxHeight: "12rem" }}
+                                    >
                                       {/* "Create new" option */}
                                       {tagSearchValue.trim() &&
                                         !allTagSuggestions.some(
@@ -1873,51 +1924,42 @@ export function ModModal({
                                         )}
 
                                       {/* Filtered existing suggestions */}
-                                      {allTagSuggestions
-                                        .filter((t) =>
+                                      {(() => {
+                                        const filtered = allTagSuggestions.filter((t) =>
                                           t
                                             .toLowerCase()
-                                            .includes(
-                                              tagSearchValue.toLowerCase(),
-                                            ),
-                                        )
-                                        .map((suggestion) => {
-                                          const alreadyAdded = customTags.some(
-                                            (ct) =>
-                                              ct.tag.toLowerCase() ===
-                                              suggestion.toLowerCase(),
-                                          );
-                                          return (
-                                            <button
-                                              key={`suggestion-${suggestion}`}
-                                              type="button"
-                                              disabled={
-                                                alreadyAdded || isAddingTag
-                                              }
-                                              onClick={() =>
-                                                handleAddCustomTag(suggestion)
-                                              }
-                                              className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between gap-2 transition-colors ${
-                                                alreadyAdded
-                                                  ? "opacity-40 cursor-not-allowed"
-                                                  : "hover:bg-accent cursor-pointer"
-                                              }`}
-                                            >
-                                              <span className="truncate">
-                                                {suggestion}
-                                              </span>
-                                              {alreadyAdded && (
-                                                <Check className="w-3 h-3 text-primary shrink-0" />
-                                              )}
-                                            </button>
-                                          );
-                                        })}
+                                            .includes(tagSearchValue.toLowerCase()) &&
+                                          !appliedTagNames.has(t.toLowerCase().trim())
+                                        );
+
+                                        return (
+                                          <>
+                                            {filtered.slice(0, 50).map((suggestion) => (
+                                              <button
+                                                key={`suggestion-${suggestion}`}
+                                                type="button"
+                                                disabled={isAddingTag}
+                                                onClick={() => handleAddCustomTag(suggestion)}
+                                                className="w-full text-left px-3 py-2 text-xs flex items-center justify-between gap-2 hover:bg-accent cursor-pointer transition-colors"
+                                              >
+                                                <span className="truncate">{suggestion}</span>
+                                              </button>
+                                            ))}
+                                            {filtered.length > 50 && (
+                                              <div className="px-3 py-1.5 text-[10px] text-muted-foreground text-center bg-muted/20 border-t sticky bottom-0">
+                                                Showing top 50 of {filtered.length} tags. Type to refine.
+                                              </div>
+                                            )}
+                                          </>
+                                        );
+                                      })()}
 
                                       {/* Empty state */}
                                       {allTagSuggestions.filter((t) =>
                                         t
                                           .toLowerCase()
-                                          .includes(tagSearchValue.toLowerCase()),
+                                          .includes(tagSearchValue.toLowerCase()) &&
+                                        !appliedTagNames.has(t.toLowerCase().trim())
                                       ).length === 0 &&
                                         !tagSearchValue.trim() && (
                                           <p className="text-xs text-muted-foreground text-center py-3 px-3">

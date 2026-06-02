@@ -145,9 +145,18 @@ def list_handoffs() -> List[Dict[str, Any]]:
             pass
 
     # Merge persistent failures as synthetic failed handoffs if not already in-memory
+    stale_duplicate_file_ids: list[str] = []
     for fail in db_failures:
         fid_str = fail["file_id"].strip()
         if fid_str in in_memory_file_ids:
+            continue
+
+        # Skip "duplicate download detected" failures — these mean the file IS already
+        # downloaded, not that there was a real error. Surface them as already-downloaded
+        # rather than as failed, and auto-remove the stale DB record.
+        error_msg = (fail.get("error_message") or "").lower()
+        if "duplicate download detected" in error_msg or "already exists" in error_msg:
+            stale_duplicate_file_ids.append(fid_str)
             continue
 
         synthetic_id = fail["handoff_id"] or f"failed-{fid_str}"
@@ -175,6 +184,27 @@ def list_handoffs() -> List[Dict[str, Any]]:
             }
         }
         in_memory.append(synthetic_record)
+
+    # Auto-clean stale "duplicate download" failure records from the DB.
+    # These are benign — the file was already present — so there is no value in retaining them.
+    if stale_duplicate_file_ids:
+        conn2 = get_db()
+        try:
+            cur2 = conn2.cursor()
+            placeholders = ",".join("?" for _ in stale_duplicate_file_ids)
+            cur2.execute(
+                f"DELETE FROM handoff_failures WHERE file_id IN ({placeholders})",
+                tuple(stale_duplicate_file_ids),
+            )
+            conn2.commit()
+        except Exception as cleanup_err:
+            import sys
+            print(f"[LIST HANDOFFS CLEANUP ERROR] {cleanup_err}", file=sys.stderr)
+        finally:
+            try:
+                conn2.close()
+            except Exception:
+                pass
 
     return in_memory
 

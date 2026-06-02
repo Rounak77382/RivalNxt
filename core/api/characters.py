@@ -201,12 +201,46 @@ async def get_all_custom_tags():
     Return a distinct list of all custom tags used across all mods.
     Used to populate the tag suggestion dropdown in the frontend.
     """
+    import json
     conn = get_connection()
     try:
-        rows = conn.execute(
-            "SELECT DISTINCT tag FROM mod_custom_tags ORDER BY tag COLLATE NOCASE"
-        ).fetchall()
-        return [row[0] for row in rows]
+        all_tags = set()
+        
+        # 1. Custom tags
+        custom_rows = conn.execute("SELECT tag FROM mod_custom_tags").fetchall()
+        for row in custom_rows:
+            if row[0]:
+                for part in row[0].split(","):
+                    if part.strip():
+                        all_tags.add(part.strip())
+                
+        # 2. Pak extracted tags
+        pak_rows = conn.execute("SELECT tags_json FROM pak_tags_json").fetchall()
+        for row in pak_rows:
+            try:
+                tags = json.loads(row[0])
+                if isinstance(tags, list):
+                    for t in tags:
+                        if t and isinstance(t, str):
+                            for part in t.split(","):
+                                if part.strip():
+                                    all_tags.add(part.strip())
+            except:
+                pass
+
+        # 4. Official characters
+        char_rows = conn.execute("SELECT name FROM characters").fetchall()
+        for row in char_rows:
+            if row[0]:
+                all_tags.add(row[0].strip())
+
+        # 5. Official skins
+        skin_rows = conn.execute("SELECT name FROM skins").fetchall()
+        for row in skin_rows:
+            if row[0]:
+                all_tags.add(row[0].strip())
+
+        return sorted(list(all_tags), key=lambda x: x.lower())
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch custom tags: {str(e)}")
     finally:

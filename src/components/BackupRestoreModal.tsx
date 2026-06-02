@@ -249,7 +249,7 @@ export function BackupRestoreModal({ meta, installedMods, onComplete, onClose }:
   return (
     <Dialog open={!!meta} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent
-        className="max-w-lg"
+        className="w-full max-w-lg"
         style={{
           border: "1px solid hsl(var(--border))",
           borderRadius: "16px",
@@ -403,9 +403,7 @@ export function BackupRestoreModal({ meta, installedMods, onComplete, onClose }:
                   <span
                     style={{
                       color:
-                        status === "completed"
-                          ? "#10b981"
-                          : status === "analyzing"
+                        status === "analyzing"
                           ? "#a78bfa"
                           : "#f59e0b",
                       fontSize: "14px",
@@ -466,8 +464,6 @@ export function BackupRestoreModal({ meta, installedMods, onComplete, onClose }:
                     color:
                       status === "analyzing"
                         ? "#8b5cf6"
-                        : status === "completed"
-                        ? "#10b981"
                         : "#f59e0b",
                   }}
                 />

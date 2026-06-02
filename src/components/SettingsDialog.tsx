@@ -111,6 +111,12 @@ const TASKS: Array<{
     description:
       "Re-extract character and skin names from Marvel Rivals PAK files and update the database.",
   },
+  {
+    key: "delete_outdated_versions" as SettingsTask,
+    label: "Delete Outdated Versions",
+    description:
+      "Clean up older versions of mods when a newer version is already installed locally.",
+  },
 ];
 
 function formatTimestamp(value?: string | null): string | null {

@@ -64,6 +64,18 @@ import {
 } from "./lib/categoryUtils";
 
 const CATEGORY_KEYWORD_SET = getCategoryTokenSet();
+
+/** Normalise a version string for equality comparison (strips leading 'v', whitespace, and timestamp-like suffixes). */
+function normalizeVersionForCheck(ver: string | undefined | null): string {
+  if (!ver) return "";
+  let cleaned = ver.replace(/\.\d{9,11}$/, "").toLowerCase();
+  if (!cleaned.startsWith("v")) cleaned = "v" + cleaned;
+  cleaned = cleaned.replace(/^vs/, "v");
+  cleaned = cleaned.replace(/-w\d*$/, "");
+  return cleaned;
+}
+
+
 const GET_STARTED_STORAGE_KEY = "modmanager:get-started-complete";
 const GAME_VERSION_STORAGE_KEY = "modmanager:game-paks-last-modified";
 
@@ -75,6 +87,7 @@ const SETTINGS_TASK_LABELS: Record<SettingsTask, string> = {
   rebuild_conflicts: "Rebuild Conflicts",
   bootstrap_rebuild: "Initial Database Build",
   rebuild_character_data: "Rebuild Character Data",
+  delete_outdated_versions: "Delete Outdated Versions",
 };
 
 const PROGRESS_STAGE_FILTERS = [
@@ -796,6 +809,24 @@ export default function App() {
           containsAdultContent: m.containsAdultContent,
         })),
       );
+    }
+
+
+    // Debug: Log all mods that are flagged as having updates so we can detect false positives
+    const updateMods = mapped.filter((m) => m.hasUpdate);
+    if (updateMods.length > 0) {
+      console.group(`[fetchServerMods] ${updateMods.length} mods flagged hasUpdate=true`);
+      for (const m of updateMods) {
+        const grouped_d = grouped.find((g) => String(g.mod_id) === m.id || String(g.id) === m.id);
+        console.log(`  ${m.name}: installedVersion="${m.installedVersion}" latestVersion="${m.latestVersion}" hasUpdate=${m.hasUpdate}`, {
+          d_version: grouped_d?.version,
+          d_latest_version: grouped_d?.latest_version,
+          d_needs_update: grouped_d?.needs_update,
+          d_local_version_key: grouped_d?.local_version_key,
+          d_latest_version_key: grouped_d?.latest_version_key,
+        });
+      }
+      console.groupEnd();
     }
 
     return dedupeById(mapped);
@@ -1748,10 +1779,7 @@ export default function App() {
     const installedVersion = d.version || undefined;
     const localVersionKey = d.local_version_key ?? null;
     const latestVersionKey = d.latest_version_key ?? null;
-    const latestVersion =
-      d.latest_version || installedVersion || d.version || "";
-    // Exclusively rely on needs_update aggregated carefully from groupDownloadsByMod.
-    // Since that function accurately calculates the update per-variant, we avoid Mod-wide keys circumvention here.
+    const latestVersion = d.latest_version || installedVersion || d.version || "";
     let hasUpdate = Boolean(d.needs_update);
     if (hasUpdate && installedVersion && latestVersion) {
       if (normalizeVersionForCheck(installedVersion) === normalizeVersionForCheck(latestVersion)) {
@@ -1797,7 +1825,7 @@ export default function App() {
       isFavorited: false,
       hasUpdate,
       installedVersion,
-      latestVersion,
+      latestVersion: latestVersion,
       latestVersionKey,
       localVersionKey,
       latestUploadedAt: d.latest_uploaded_at ?? null,
@@ -1936,9 +1964,16 @@ export default function App() {
       let incomingNeedsUpdate = Boolean(incoming.needs_update);
       target.needs_update = Boolean(target.needs_update || incomingNeedsUpdate);
 
-      // Simple override if grouped version has reached API version locally
+      // Suppress if the locally installed version key is already >= the latest known key
       if (target.local_version_key && target.latest_version_key && target.local_version_key >= target.latest_version_key) {
         target.needs_update = false;
+      }
+      // Also suppress when the displayed version strings are identical — this catches cross-file
+      // false positives where the "latest" version comes from a different Nexus file for the same mod.
+      if (target.needs_update && target.version && target.latest_version) {
+        if (normalizeVersionForCheck(target.version) === normalizeVersionForCheck(target.latest_version)) {
+          target.needs_update = false;
+        }
       }
     };
 
