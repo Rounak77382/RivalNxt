@@ -653,22 +653,38 @@ def _normalize_optional_str(value: Optional[str]) -> Optional[str]:
 
 
 def _task_delete_outdated_versions() -> int:
-	from core.db.db import get_connection
-	import os, re
+	from core.db.db import get_connection, delete_local_downloads
+	import os, re, shutil
+	from pathlib import Path
 	
 	conn = get_connection()
 	try:
 		cur = conn.cursor()
-		cur.execute("SELECT id, path, name, mod_id, created_at FROM local_downloads WHERE mod_id IS NOT NULL")
-		downloads = cur.fetchall()
+		cur.execute("SELECT id, path, name, mod_id, created_at FROM local_downloads")
+		all_downloads = cur.fetchall()
+		
+		# Separate into all tracked paths and only the ones with mod_id (for version checks)
+		tracked_paths = set()
+		downloads_with_mod = []
+		
+		for row in all_downloads:
+			ld_id, ld_path, ld_name, mod_id, created_at = row
+			if mod_id is not None:
+				downloads_with_mod.append(row)
+			if ld_path:
+				try:
+					resolved = Path(_resolve_download_source_path(str(ld_path))).expanduser().resolve()
+					tracked_paths.add(str(resolved).lower())
+				except Exception:
+					pass
 		
 		# Group by mod_id
 		mod_groups = {}
-		for row in downloads:
+		for row in downloads_with_mod:
 			mod_id = row[3]
 			mod_groups.setdefault(mod_id, []).append(row)
 		
-		to_delete = []
+		to_delete_ids = []
 		for mod_id, variants in mod_groups.items():
 			if len(variants) < 2:
 				continue
@@ -690,38 +706,122 @@ def _task_delete_outdated_versions() -> int:
 				items.sort(key=lambda x: x[4] or "", reverse=True)
 				# First one is kept, others are outdated
 				for outdated in items[1:]:
-					to_delete.append(outdated)
+					ld_id = outdated[0]
+					ld_name = outdated[2]
+					print(f"Queueing outdated version for deletion: {ld_name} (ID: {ld_id})")
+					to_delete_ids.append(int(ld_id))
 					
 		deleted_count = 0
-		for row in to_delete:
-			ld_id, ld_path, ld_name, _, _ = row
-			print(f"Deleting outdated version: {ld_name} (ID: {ld_id})")
+		if to_delete_ids:
+			# 1. Use the main DB deletion function which handles deactivation and cascading
+			deleted_count, removed_mod_ids, source_paths = delete_local_downloads(conn, to_delete_ids)
 			
-			# 1. Delete physical file
-			if ld_path and os.path.exists(ld_path):
+			# Also remove these from tracked_paths so we don't think they are still tracked
+			for raw_path in source_paths:
+				if raw_path:
+					try:
+						resolved = Path(_resolve_download_source_path(str(raw_path))).expanduser().resolve()
+						tracked_paths.discard(str(resolved).lower())
+					except Exception:
+						pass
+			
+			# 2. Delete physical files securely
+			downloads_root = _downloads_root_from_env().resolve()
+			removed_files = []
+			seen_paths = set()
+			for raw_path in source_paths:
+				if not raw_path or not isinstance(raw_path, str):
+					continue
+				key = raw_path.strip()
+				if not key or key in seen_paths:
+					continue
+				seen_paths.add(key)
 				try:
-					os.remove(ld_path)
-					print(f"  Deleted file: {ld_path}")
+					absolute = Path(_resolve_download_source_path(key))
+				except Exception:
+					continue
+				try:
+					resolved = absolute.expanduser().resolve()
+				except Exception:
+					resolved = absolute.expanduser()
+				if resolved == downloads_root:
+					continue
+				try:
+					if not resolved.is_relative_to(downloads_root):
+						continue
+				except AttributeError:
+					try:
+						resolved.relative_to(downloads_root)
+					except Exception:
+						continue
+				if not resolved.exists():
+					print(f"  File not found on disk: {resolved}")
+					continue
+				try:
+					if resolved.is_dir():
+						shutil.rmtree(resolved)
+					else:
+						resolved.unlink()
+					removed_files.append(str(resolved))
+					print(f"  Deleted file: {resolved}")
 				except Exception as e:
-					print(f"  Failed to delete file {ld_path}: {e}")
-			else:
-				print(f"  File not found on disk: {ld_path}")
-				
-			# 2. Remove from database
-			cur.execute("DELETE FROM local_downloads WHERE id = ?", (ld_id,))
-			deleted_count += 1
+					print(f"  Failed to delete file {resolved}: {e}")
+					
+			print(f"\nSuccessfully removed {deleted_count} outdated variants ({len(removed_files)} files deleted).")
 			
-		if deleted_count > 0:
-			conn.commit()
-			print(f"\nSuccessfully removed {deleted_count} outdated variants.")
-			print("Rebuilding asset mapping to reflect deleted mods...")
-			return _task_ingest_download_assets()
 		else:
-			print("No outdated versions found to delete.")
+			print("No outdated tracked versions found to delete.")
+
+		# --- PHASE 2: Orphaned Files Cleanup ---
+		downloads_root = _downloads_root_from_env().resolve()
+		orphaned_count = 0
+		deleted_folders = 0
+		
+		if downloads_root.exists():
+			print("\nScanning for untracked/orphaned mods...")
+			for f in downloads_root.rglob('*'):
+				if f.is_file() and f.suffix.lower() in ['.zip', '.rar', '.7z', '.pak']:
+					abs_path = str(f.resolve()).lower()
+					if abs_path not in tracked_paths:
+						try:
+							f.unlink()
+							orphaned_count += 1
+							print(f"  Deleted orphaned file: {f.relative_to(downloads_root)}")
+						except Exception as e:
+							print(f"  Failed to delete orphaned {f.relative_to(downloads_root)}: {e}")
+			
+			# Clean up empty folders recursively
+			for d in sorted([d for d in downloads_root.rglob('*') if d.is_dir()], key=lambda p: len(p.parts), reverse=True):
+				try:
+					if not any(d.iterdir()):
+						d.rmdir()
+						deleted_folders += 1
+						print(f"  Deleted empty folder: {d.relative_to(downloads_root)}")
+				except Exception:
+					pass
+		
+		if orphaned_count > 0 or deleted_folders > 0:
+			print(f"\nSuccessfully deleted {orphaned_count} untracked mod files and {deleted_folders} empty folders.")
+		else:
+			print("No untracked mod files found.")
+			
+		# 3. Rebuild tags and conflicts (fast) rather than full ingest
+		if to_delete_ids or orphaned_count > 0:
+			try:
+				from scripts import build_asset_tags as _bat  # type: ignore
+				from scripts import build_pak_tags as _bpt  # type: ignore
+				_bat.main([])
+				_bpt.main([])
+			except Exception as e:
+				print(f"Warning: Failed to rebuild tags: {e}")
+				
+			_safe_rebuild_conflicts(conn, active_only=None, purpose="delete_outdated_versions")
 			
 		return 0
 	except Exception as e:
 		print(f"Error deleting outdated versions: {e}")
+		import traceback
+		traceback.print_exc()
 		return 1
 	finally:
 		try:
