@@ -204,6 +204,8 @@ export type CreateProgressControllerOptions = {
   label?: string;
   initialMessage?: string;
   pollIntervalMs?: number;
+  /** If provided, a Cancel button is shown on the download toast. */
+  onCancel?: () => void | Promise<void>;
 };
 
 export function createNxmProgressController(
@@ -212,18 +214,41 @@ export function createNxmProgressController(
 ): NxmProgressController {
   const label = options.label ?? "Downloading mod…";
   let lastDescription = options.initialMessage ?? "Preparing download…";
-  const toastId = toast.loading(label, {
+
+  // Use a mutable ref so stop() and the cancel action share state without
+  // forward-reference issues (monitor is assigned after this block).
+  const activeRef = { current: true };
+  // Will be assigned after monitorNxmDownloadProgress is called below.
+  let monitorHandle: MonitorNxmProgressHandle | null = null;
+
+  const stop = () => {
+    if (!activeRef.current) return;
+    activeRef.current = false;
+    monitorHandle?.stop();
+  };
+
+  // Build the initial toast — include a Cancel action if a handler was provided
+  const toastOptions: Parameters<typeof toast.loading>[1] = {
     description: lastDescription,
     duration: Infinity,
-  });
-
-  let active = true;
+  };
+  if (options.onCancel) {
+    const cancelHandler = options.onCancel;
+    (toastOptions as any).action = {
+      label: "Cancel",
+      onClick: () => {
+        stop();
+        void cancelHandler();
+      },
+    };
+  }
+  const toastId = toast.loading(label, toastOptions);
 
   const handleUpdate = (
     progress: ApiNxmDownloadProgress | null,
     meta: { done: boolean }
   ) => {
-    if (!active) return;
+    if (!activeRef.current) return;
     if (!progress) {
       if (meta.done && !lastDescription) {
         lastDescription = "Download finished";
@@ -265,26 +290,33 @@ export function createNxmProgressController(
     const description =
       parts.join(" · ") || progress.message || lastDescription;
     lastDescription = description;
-    toast.loading(label, {
+
+    // Keep the Cancel button on progress update toasts too
+    const updateOptions: Parameters<typeof toast.loading>[1] = {
       id: toastId,
       description,
       duration: Infinity,
-    });
+    };
+    if (options.onCancel) {
+      const cancelHandler = options.onCancel;
+      (updateOptions as any).action = {
+        label: "Cancel",
+        onClick: () => {
+          stop();
+          void cancelHandler();
+        },
+      };
+    }
+    toast.loading(label, updateOptions);
   };
 
-  const monitor = monitorNxmDownloadProgress(handoffId, handleUpdate, {
+  monitorHandle = monitorNxmDownloadProgress(handoffId, handleUpdate, {
     pollIntervalMs: options.pollIntervalMs,
     onError: (error) => {
-      if (!active) return;
+      if (!activeRef.current) return;
       console.warn("Failed to poll Nexus handoff progress", error);
     },
   });
-
-  const stop = () => {
-    if (!active) return;
-    active = false;
-    monitor.stop();
-  };
 
   return {
     toastId,

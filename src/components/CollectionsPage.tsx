@@ -824,6 +824,12 @@ export function CollectionsPage({
     setIsModalOpen(true);
   };
 
+  const handleViewFilesTab = (mod: Mod) => {
+    setSelectedMod(mod);
+    setModalInitialTab("files");
+    setIsModalOpen(true);
+  };
+
   const formatDate = (dateString?: string | null) => {
     if (!dateString) return "Unknown";
     try {
@@ -1217,8 +1223,9 @@ export function CollectionsPage({
                 <h2 className="text-xl font-bold tracking-tight mb-2">No collections imported</h2>
                 <p className="text-muted-foreground text-sm leading-relaxed mb-6">
                   To get started, navigate to any collection page on the Nexus Mods website and click the
-                  <span className="font-semibold text-foreground"> "Add to Mod Manager"</span> or 
-                  <span className="font-semibold text-foreground"> "Vortex"</span> button. 
+                  <span className="font-semibold text-foreground"> "Continue"</span>,{" "}
+                  <span className="font-semibold text-foreground">"Add to Mod Manager"</span>, or{" "}
+                  <span className="font-semibold text-foreground">"Vortex"</span> button.{" "}
                   RivalNxt will automatically intercept the link, import all data, and display your collection here in real-time.
                 </p>
                 <div className="text-xs text-muted-foreground/60 border-t border-border/40 pt-4 w-full flex items-center justify-center gap-2">
@@ -1572,11 +1579,12 @@ export function CollectionsPage({
                                     mod={modObj}
                                     viewMode={viewMode}
                                     onInstall={(mId) => {
-                                      const fileId = modObj.collectionVariants?.[0]?.file_id;
-                                      if (fileId) handleInstall(mId, c.game, fileId, modObj.name);
+                                      // Just open the Files tab in-app so the user can
+                                      // see the variants and click download there.
+                                      handleViewFilesTab(modObj);
                                     }}
                                     onFavorite={onFavorite}
-                                    onOpenFilesTab={() => {}}
+                                    onOpenFilesTab={() => handleViewFilesTab(modObj)}
                                     onToggleActive={onToggleMod}
                                     onView={handleView}
                                   />
@@ -1625,6 +1633,7 @@ export function CollectionsPage({
           onInstall={() => {}}
           onFavorite={onFavorite}
           initialTab={modalInitialTab}
+          onRefresh={onRefreshMods}
         />
       )}
       <BackupRestoreModal

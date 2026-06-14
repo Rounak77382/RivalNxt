@@ -23,6 +23,9 @@ if not exist "src-tauri" (
     exit /b 1
 )
 
+echo Updating Graphify knowledge graph...
+graphify update .
+
 REM Get version from package.json
 echo.
 echo Detecting version...

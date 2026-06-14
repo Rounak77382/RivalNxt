@@ -156,11 +156,7 @@ function ModCardInner({
       actionClassName = "";
       handleActionClick = (e: React.MouseEvent) => {
         e.stopPropagation();
-        if (onView) {
-          onView(mod);
-        } else {
-          onInstall(mod.id);
-        }
+        onInstall(mod.id);
       };
     }
   }

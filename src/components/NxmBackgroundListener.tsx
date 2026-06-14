@@ -3,6 +3,9 @@ import { toast } from "sonner";
 import {
   listNxmHandoffs,
   ingestNxmHandoff,
+  cancelNxmHandoff,
+  dismissNxmHandoff,
+  deleteLocalDownloads,
   type ApiNxmHandoffSummary,
 } from "../lib/api";
 import { createNxmProgressController, getModLabel } from "../lib/nxmHelpers";
@@ -35,6 +38,7 @@ interface HandoffFailure {
  * - Exponential backoff on failures (5s, 10s, 20s, 40s, 60s)
  * - Maximum 3 retry attempts before permanent failure
  * - Toast deduplication to prevent spam
+ * - Cancellation tracking
  */
 export function NxmBackgroundListener({
   enabled,
@@ -42,6 +46,7 @@ export function NxmBackgroundListener({
   isHandoffExcluded,
 }: NxmBackgroundListenerProps) {
   const processedHandoffsRef = useRef<Set<string>>(new Set());
+  const cancelledHandoffsRef = useRef<Set<string>>(new Set());
   const processingRef = useRef<Set<string>>(new Set());
   const failedHandoffsRef = useRef<Map<string, HandoffFailure>>(new Map());
   const toastDeduplicator = useRef(
@@ -75,8 +80,11 @@ export function NxmBackgroundListener({
             continue;
           }
 
-          // Skip if already successfully processed
-          if (processedHandoffsRef.current.has(handoff.id)) {
+          // Skip if already successfully processed or cancelled
+          if (
+            processedHandoffsRef.current.has(handoff.id) ||
+            cancelledHandoffsRef.current.has(handoff.id)
+          ) {
             continue;
           }
 
@@ -152,6 +160,27 @@ export function NxmBackgroundListener({
       const controller = createNxmProgressController(handoff.id, {
         label: `Auto-downloading ${modLabel}`,
         initialMessage: "Processing Nexus handoff...",
+        onCancel: async () => {
+          // Mark as cancelled immediately — the catch block checks this
+          // so it can suppress error toasts and retries.
+          cancelledHandoffsRef.current.add(handoff.id);
+          processingRef.current.delete(handoff.id);
+          failedHandoffsRef.current.delete(handoff.id);
+          // Show a "stopping..." toast. The backend will abort the download
+          // at the next 1 MiB chunk boundary and delete the partial file.
+          toast.loading(`Stopping download…`, {
+            id: controller.toastId,
+            duration: Infinity,
+          });
+          // Hit the real cancel endpoint — sets the per-handoff flag in
+          // the backend download loop and removes the handoff record.
+          try {
+            await cancelNxmHandoff(handoff.id);
+          } catch {
+            // If cancel fails (e.g. already finished), that's fine —
+            // the catch block below will handle the resulting 404/499.
+          }
+        },
       });
 
       try {
@@ -161,6 +190,48 @@ export function NxmBackgroundListener({
         });
 
         controller.stop();
+
+        // ── Post-cancel cleanup ──────────────────────────────────────────────
+        // The Rust backend cannot abort an in-flight download. If the user
+        // cancelled while ingest was running, it completed anyway and created a
+        // download record. Delete it now so it doesn't appear in the mod list.
+        if (cancelledHandoffsRef.current.has(handoff.id)) {
+          const downloadId: number | undefined =
+            typeof ingest.download_id === "number" ? ingest.download_id
+            : typeof (ingest as any).local_download_id === "number" ? (ingest as any).local_download_id
+            : undefined;
+
+          if (downloadId != null) {
+            toast.loading(`Removing cancelled download...`, {
+              id: controller.toastId,
+              duration: Infinity,
+            });
+            try {
+              await deleteLocalDownloads([downloadId]);
+              toast.info(`Cancelled: ${modLabel} removed`, {
+                id: controller.toastId,
+                duration: 3000,
+              });
+            } catch (delErr) {
+              console.warn("[NxmBackgroundListener] Failed to delete cancelled download:", delErr);
+              toast.info(`Cancelled: ${modLabel} (you may need to remove it manually)`, {
+                id: controller.toastId,
+                duration: 5000,
+              });
+            }
+          } else {
+            // No download id to clean up — just confirm cancellation
+            toast.info(`Cancelled: ${modLabel}`, {
+              id: controller.toastId,
+              duration: 3000,
+            });
+          }
+
+          // Mark processed so polling doesn't pick it up again
+          processedHandoffsRef.current.add(handoff.id);
+          processingRef.current.delete(handoff.id);
+          return;
+        }
 
         const modName =
           typeof ingest.mod_name === "string" && ingest.mod_name.trim()
@@ -197,6 +268,55 @@ export function NxmBackgroundListener({
 
         const errorMessage =
           err instanceof Error ? err.message : String(err ?? "Unknown error");
+
+        // ── Cancellation short-circuit ──────────────────────────────────────
+        // If the user clicked Cancel, the backend returns 499 (cancelled)
+        // or 404 (handoff was already removed by cancel endpoint).
+        // Either way: no error toast, no retry.
+        const wasCancelled = cancelledHandoffsRef.current.has(handoff.id);
+
+        const isCancelledByBackend =
+          wasCancelled ||
+          // 499 = our custom "cancelled by user" status
+          (typeof err === "object" &&
+            err !== null &&
+            "status" in err &&
+            (err as any).status === 499) ||
+          (err instanceof Error &&
+            errorMessage.toLowerCase().includes("cancelled by user"));
+
+        if (isCancelledByBackend) {
+          console.info(
+            `[NxmBackgroundListener] Handoff ${handoff.id} cancelled — suppressing error.`,
+          );
+          toast.info(`Download cancelled: ${modLabel}`, {
+            id: controller.toastId,
+            duration: 3000,
+          });
+          processedHandoffsRef.current.add(handoff.id);
+          processingRef.current.delete(handoff.id);
+          return;
+        }
+
+        // Treat 404 (Not Found / Expired) from normal (non-cancelled) operation
+        // as a clean skip — the handoff expired before we could ingest it.
+        const isNotFound =
+          (err instanceof Error &&
+            (errorMessage.includes("404") ||
+              errorMessage.toLowerCase().includes("not found") ||
+              errorMessage.toLowerCase().includes("expired"))) ||
+          (typeof err === "object" &&
+            err !== null &&
+            "status" in err &&
+            (err as any).status === 404);
+
+        if (isNotFound) {
+          console.info(
+            `[NxmBackgroundListener] Handoff ${handoff.id} not found/expired — skipping silently.`,
+          );
+          processingRef.current.delete(handoff.id);
+          return;
+        }
 
         // Special handling for duplicate downloads (HTTP 409)
         // Treat duplicates as a success case, not an error
@@ -239,6 +359,19 @@ export function NxmBackgroundListener({
           processedHandoffsRef.current.add(handoff.id);
           processingRef.current.delete(handoff.id);
           failedHandoffsRef.current.delete(handoff.id);
+
+          // Dismiss (DELETE) from backend queue so polling stops picking it up.
+          // Do NOT use cancelNxmHandoff here — that endpoint adds the ID to the
+          // cancellation set and deletes the record prematurely, which can break
+          // a concurrent ingest and leaves a stale entry in _CANCELLED_HANDOFFS.
+          try {
+            await dismissNxmHandoff(handoff.id);
+          } catch (dismissErr) {
+            console.warn(
+              "[NxmBackgroundListener] Failed to dismiss duplicate handoff",
+              dismissErr,
+            );
+          }
 
           // Notify parent component
           if (onModAdded) {

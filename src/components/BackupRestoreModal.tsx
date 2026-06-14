@@ -10,7 +10,7 @@ import { Badge } from "./ui/badge";
 import { toast } from "sonner";
 import { invokeReadTextFile } from "../lib/tauri-utils";
 import { computeRestoreDiff, type BackupMeta, type ModBackup } from "../lib/backupUtils";
-import { setActivePaks, scanActive, refreshConflicts, getLocalDownload, listDownloads } from "../lib/api";
+import { setActivePaks, scanActive, refreshConflicts, getLocalDownload, addModCustomTag } from "../lib/api";
 import { Loader2, CheckCircle2, XCircle, RotateCcw } from "lucide-react";
 
 interface BackupRestoreModalProps {
@@ -31,6 +31,8 @@ export function BackupRestoreModal({ meta, installedMods, onComplete, onClose }:
   
   // Ref to prevent double-execution in StrictMode
   const hasStarted = useRef(false);
+  // Track whether onComplete has already been auto-called (to avoid double-call on Done click)
+  const completedCalledRef = useRef(false);
 
   useEffect(() => {
     if (!meta) {
@@ -75,34 +77,11 @@ export function BackupRestoreModal({ meta, installedMods, onComplete, onClose }:
         return;
       }
 
-      setStatus("restoring");
-      
-      // Step 1 – Disable every active installed mod first to ensure a clean sweep of the ~mods folder
-      setCurrentModName("Clearing current mod loadout...");
-      try {
-        await scanActive();
-        const allDownloads = await listDownloads(1000);
-        const activeDownloads = allDownloads.filter(
-          (dl) => dl.active_paks && dl.active_paks.length > 0
-        );
-        for (const dl of activeDownloads) {
-          await setActivePaks(Number(dl.id), []);
-        }
-      } catch (err) {
-        console.warn("Failed to perform complete cleanup sweep, falling back to installedMods filter:", err);
-        const activeInstalled = installedMods.filter(
-          (m) => m.isActive !== false && m.isInstalled
-        );
-        for (const mod of activeInstalled) {
-          for (const dlId of mod.sourceDownloadIds || []) {
-            await setActivePaks(Number(dlId), []);
-          }
-        }
-      }
 
+      setStatus("restoring");
       let completed = 0;
       
-      // Process Disables
+      // Process Disables (delta only — no nuclear sweep that would wipe all active mods)
       for (const mod of toDisable) {
         setCurrentModName(`Disabling ${mod.name}...`);
         const downloadIds = mod.sourceDownloadIds || [];
@@ -114,6 +93,7 @@ export function BackupRestoreModal({ meta, installedMods, onComplete, onClose }:
         setStats(s => ({ ...s, completed }));
       }
       
+
       // Process Enables
       for (const mod of toEnable) {
         setCurrentModName(`Enabling ${mod.name}...`);
@@ -174,6 +154,28 @@ export function BackupRestoreModal({ meta, installedMods, onComplete, onClose }:
         setStats(s => ({ ...s, completed }));
       }
 
+      // Restore custom tags for enabled mods (best-effort, failures are silent)
+      setCurrentModName("Restoring custom tags...");
+      for (const mod of toEnable) {
+        const backupEntry = backup.mods.find(e => {
+          if (e.backendModId != null && mod.backendModId != null) return e.backendModId === mod.backendModId;
+          if (e.sourceDownloadIds.length > 0 && Array.isArray(mod.sourceDownloadIds)) return e.sourceDownloadIds.some(id => mod.sourceDownloadIds.includes(id));
+          return String(e.modId) === String(mod.id);
+        });
+        const savedTags = backupEntry?.customTags || [];
+        if (savedTags.length === 0) continue;
+        const effectiveModId =
+          mod.backendModId != null
+            ? mod.backendModId
+            : Array.isArray(mod.sourceDownloadIds) && mod.sourceDownloadIds.length > 0
+              ? -mod.sourceDownloadIds[0]
+              : null;
+        if (effectiveModId == null) continue;
+        for (const tagName of savedTags) {
+          try { await addModCustomTag(effectiveModId, tagName); } catch { /* tag may already exist */ }
+        }
+      }
+
       setStatus("finalizing");
       setCurrentModName("Synchronizing filesystem...");
       setProgress(95);
@@ -191,6 +193,12 @@ export function BackupRestoreModal({ meta, installedMods, onComplete, onClose }:
         });
       }
       toast.success(`Backup "${backupMeta.name}" applied — ${completed} mod${completed !== 1 ? "s" : ""} updated`);
+
+      // Auto-notify parent immediately so mod list refreshes without waiting for user to click Done
+      if (!completedCalledRef.current) {
+        completedCalledRef.current = true;
+        onComplete();
+      }
       
     } catch (err: any) {
       console.error("Restore failed:", err);
@@ -201,10 +209,12 @@ export function BackupRestoreModal({ meta, installedMods, onComplete, onClose }:
 
   const handleClose = () => {
     if (status === "restoring" || status === "analyzing" || status === "finalizing") {
-      // Prevent closing while active, although we might want to let them hide it
+      // Prevent closing while active
       return;
     }
-    if (status === "completed") {
+    // Only call onComplete here if it wasn't already auto-called on success
+    if (status === "completed" && !completedCalledRef.current) {
+      completedCalledRef.current = true;
       onComplete();
     }
     onClose();

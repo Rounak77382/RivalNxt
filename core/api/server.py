@@ -133,6 +133,18 @@ UPLOAD_CHUNK_SIZE = 1024 * 1024  # 1 MiB chunks for uploads
 
 # Store the last received NXM URL for testing/debugging purposes
 _LAST_NXM_URL: Optional[Dict[str, Any]] = None
+
+# Set of handoff IDs that the user has requested to cancel.
+# Checked every chunk inside _download_remote_archive so the download
+# stops as soon as possible after the cancel request arrives.
+_CANCELLED_HANDOFFS: set = set()
+_CANCELLED_HANDOFFS_LOCK = threading.Lock()
+
+
+class DownloadCancelledError(Exception):
+	"""Raised when a download is stopped by a user cancel request."""
+
+
 verify_required_dns_hosts()
 
 _SETTINGS_TASK_LOCK = threading.Lock()
@@ -2688,6 +2700,34 @@ def delete_nxm_handoff(handoff_id: str) -> Dict[str, Any]:
 	return {"ok": True, "handoff": serialize_handoff(record, include_metadata=True)}
 
 
+@app.post("/api/nxm/handoff/{handoff_id}/cancel")
+def cancel_nxm_handoff(handoff_id: str) -> Dict[str, Any]:
+	"""Signal an in-progress NXM download to stop.
+
+	This sets a cancellation flag that the download loop checks every chunk.
+	The partial file is deleted and the handoff record is removed so it never
+	appears in the mod list.
+	"""
+	if not handoff_id:
+		raise HTTPException(status_code=400, detail="handoff_id is required")
+
+	# Add to the cancellation set — the download loop checks this every chunk
+	with _CANCELLED_HANDOFFS_LOCK:
+		_CANCELLED_HANDOFFS.add(handoff_id)
+
+	# Update progress to reflect cancellation intent
+	try:
+		update_handoff_progress(
+			handoff_id,
+			stage="cancelling",
+			message="Cancelling download…",
+		)
+	except Exception:
+		pass  # Record may already be gone
+
+	return {"ok": True, "cancelled": True, "handoff_id": handoff_id}
+
+
 def _clear_handoff_failure_by_file_id(file_id: Optional[int]) -> None:
 	"""Remove any handoff_failures row for a given Nexus file_id.
 	
@@ -3142,6 +3182,20 @@ def ingest_nxm_handoff(handoff_id: str, payload: Optional[Dict[str, Any]] = Body
 			filtered_metadata=filtered_metadata,
 			created_at_hint=datetime.now(timezone.utc).isoformat(),
 		)
+	except DownloadCancelledError:
+		# User explicitly cancelled — dismiss the handoff, clean up, return 499
+		if handoff_identifier:
+			update_handoff_progress(
+				handoff_identifier,
+				stage="cancelled",
+				message="Cancelled by user",
+			)
+			mark_handoff_consumed(handoff_identifier)
+		# Remove from the cancellation set now that we've handled it
+		with _CANCELLED_HANDOFFS_LOCK:
+			_CANCELLED_HANDOFFS.discard(handoff_id)
+		raise HTTPException(status_code=499, detail="Download cancelled by user")
+
 	except DuplicateDownloadError as exc:
 		# A duplicate means the mod IS already downloaded — treat it as a success, not a failure.
 		# Do NOT register this as a handoff failure (it's not an error; the file is already present).
@@ -4952,6 +5006,18 @@ def list_downloads(limit: int = 500) -> List[Dict[str, Any]]:
 		elif latest_version and (version or "").strip():
 			needs_update = latest_version.strip() != (version or "").strip()
 
+		# Fetch custom tags for this mod (keyed by Nexus mod_id or synthetic negative download id)
+		custom_tag_names: list[str] = []
+		try:
+			effective_mod_id = mod_id if mod_id is not None else -dl_id
+			ct_rows = cur.execute(
+				"SELECT tag FROM mod_custom_tags WHERE mod_id = ? ORDER BY added_at ASC",
+				(effective_mod_id,),
+			).fetchall()
+			custom_tag_names = [r[0] for r in ct_rows if r[0]]
+		except Exception:
+			pass
+
 		out.append(
 			{
 				"id": dl_id,
@@ -4967,6 +5033,7 @@ def list_downloads(limit: int = 500) -> List[Dict[str, Any]]:
 				"mod_author": mod_author,
 				"picture_url": picture_url,
 				"tags": tags_list,
+				"custom_tag_names": custom_tag_names,
 				"mod_downloads": mod_downloads,
 				"endorsement_count": endorsement_count,
 				"mod_author_profile_url": mod_author_profile_url,
@@ -4984,6 +5051,7 @@ def list_downloads(limit: int = 500) -> List[Dict[str, Any]]:
 				"contains_adult_content": bool(contains_adult_content) if contains_adult_content else False,
 			}
 		)
+
 	
 	logger.info(f"[list_downloads] Returning {len(out)} download entries to client")
 	# Debug: Log NSFW content status for troubleshooting
@@ -5348,15 +5416,13 @@ def _download_remote_archive(
 	*,
 	force: bool = False,
 	progress_callback: Optional[Callable[[int, Optional[int]], None]] = None,
+	handoff_id: Optional[str] = None,
 ) -> Path:
 	downloads_root = _downloads_root_from_env()
 	_ensure_dir(downloads_root)
 	parsed = urllib.parse.urlparse(url)
 	unquoted_path = urllib.parse.unquote(parsed.path or "")
 	filename_guess = Path(unquoted_path or "download").name or "download"
-	# Nexus CDN occasionally returns URLs with literal spaces or control characters in the path
-	# (for example, when file names contain spaces). Normalize the path component so urllib
-	# does not reject the request, while keeping already-encoded characters intact.
 	sanitized_path = urllib.parse.quote(unquoted_path, safe="/%:@&=+$,;.-_~!'()*")
 	if sanitized_path != parsed.path:
 		url = urllib.parse.urlunparse(
@@ -5394,6 +5460,12 @@ def _download_remote_archive(
 		except Exception:
 			pass
 
+	def _is_cancelled() -> bool:
+		if handoff_id is None:
+			return False
+		with _CANCELLED_HANDOFFS_LOCK:
+			return handoff_id in _CANCELLED_HANDOFFS
+
 	try:
 		with urllib.request.urlopen(req, timeout=120) as response, dest.open("wb") as out:
 			total_bytes: Optional[int] = getattr(response, "length", None)
@@ -5409,6 +5481,11 @@ def _download_remote_archive(
 			chunk_size = 1024 * 1024
 			_emit_progress(downloaded, total_bytes)
 			while True:
+				# Check for cancellation before reading each chunk
+				if _is_cancelled():
+					logger.info("[download] Cancellation detected mid-download for handoff=%s, aborting", handoff_id)
+					# Close the socket by breaking — the with-block will handle cleanup
+					break
 				chunk = response.read(chunk_size)
 				if not chunk:
 					break
@@ -5422,6 +5499,19 @@ def _download_remote_archive(
 			except Exception:
 				pass
 		raise HTTPException(status_code=400, detail=f"Failed to download {url}: {e}")
+
+	# After the with-block (and its try-except), file handles are guaranteed closed.
+	# Check if we stopped because of cancellation
+	if _is_cancelled():
+		# Remove partial file now that it is no longer locked by the process
+		try:
+			if dest.exists():
+				dest.unlink()
+				logger.info("[download] Partial file deleted: %s", dest)
+		except Exception as del_err:
+			logger.warning("[download] Failed to delete partial file %s: %s", dest, del_err)
+		raise DownloadCancelledError(f"Download cancelled by user (handoff={handoff_id})")
+
 	try:
 		if dest.stat().st_size <= 0:
 			dest.unlink(missing_ok=True)
@@ -5620,6 +5710,7 @@ def _download_archive_via_nxm(
 				download_url,
 				force=True,
 				progress_callback=progress_fn,
+				handoff_id=handoff_id,
 			)
 			logger.info(
 				"[nxm_handoff] download succeeded host=%s saved_as=%s",
@@ -5636,6 +5727,15 @@ def _download_archive_via_nxm(
 					bytes_total=size,
 				)
 			return download_path, download_url
+		except DownloadCancelledError:
+			# User cancelled — clean up progress and re-raise so ingest catches it
+			if handoff_id:
+				update_handoff_progress(
+					handoff_id,
+					stage="cancelled",
+					message="Download cancelled by user",
+				)
+			raise
 		except HTTPException as exc:
 			detail = exc.detail if isinstance(exc.detail, str) else str(exc.detail)
 			download_errors.append(detail)

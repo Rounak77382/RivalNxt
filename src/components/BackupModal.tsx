@@ -34,7 +34,7 @@ import {
   invokeOpenFileDialog,
   invokeReadTextFile,
 } from "../lib/tauri-utils";
-import { setActivePaks, scanActive, refreshConflicts, getLocalDownload, listDownloads } from "../lib/api";
+import { setActivePaks, scanActive, refreshConflicts, getLocalDownload, getModCustomTags, addModCustomTag } from "../lib/api";
 
 interface BackupModalProps {
   open: boolean;
@@ -42,6 +42,8 @@ interface BackupModalProps {
   mods: any[];
   onToggleMod: (modId: string) => void;
   onBackupCreated?: () => void;
+  /** Called after a restore is applied — use this to refresh the mod list from the backend. */
+  onBackupRestored?: () => void;
 }
 
 type ModalView = "home" | "creating" | "created" | "restoring" | "restored";
@@ -60,6 +62,7 @@ export function BackupModal({
   mods,
   onToggleMod,
   onBackupCreated,
+  onBackupRestored,
 }: BackupModalProps) {
   const [view, setView] = useState<ModalView>("home");
   const [isWorking, setIsWorking] = useState(false);
@@ -86,7 +89,31 @@ export function BackupModal({
     setView("creating");
     try {
       const name = generateBackupName();
+      // Build initial backup snapshot (active state + pak selection)
       const backup = buildBackupFromMods(mods, name);
+
+      // Annotate each entry with the mod's custom tags (best-effort, non-blocking)
+      await Promise.all(
+        backup.mods.map(async (entry) => {
+          try {
+            // effectiveModId mirrors ModModal's logic: Nexus modId or -(first downloadId)
+            const modId =
+              entry.backendModId != null
+                ? entry.backendModId
+                : entry.sourceDownloadIds.length > 0
+                  ? -entry.sourceDownloadIds[0]
+                  : null;
+            if (modId == null) return;
+            const tags = await getModCustomTags(modId);
+            if (tags.length > 0) {
+              entry.customTags = tags.map((t) => t.tag);
+            }
+          } catch {
+            // Ignore per-mod failures — tags are best-effort
+          }
+        })
+      );
+
       const defaultFileName = `rivalnxt-backup-${name
         .replace(/[: ]/g, "-")
         .replace(/--+/g, "-")}.json`;
@@ -162,29 +189,16 @@ export function BackupModal({
     setView("restoring");
 
     try {
-      // Step 1 – Disable every active installed mod first to ensure a clean sweep of the ~mods folder
-      try {
-        await scanActive();
-        const allDownloads = await listDownloads(1000);
-        const activeDownloads = allDownloads.filter(
-          (dl) => dl.active_paks && dl.active_paks.length > 0
-        );
-        for (const dl of activeDownloads) {
-          await setActivePaks(Number(dl.id), []);
-        }
-      } catch (err) {
-        console.warn("Failed to perform complete cleanup sweep, falling back to installedMods filter:", err);
-        const activeInstalled = installedMods.filter(
-          (m) => m.isActive !== false && m.isInstalled
-        );
-        for (const mod of activeInstalled) {
-          for (const dlId of mod.sourceDownloadIds || []) {
-            await setActivePaks(Number(dlId), []);
-          }
-        }
-      }
-
       let changed = 0;
+
+      // Step 1 – Disable mods that were inactive in the backup (delta only — no nuclear sweep)
+      for (const mod of toDisable) {
+        const downloadIds = mod.sourceDownloadIds || [];
+        for (const dlId of downloadIds) {
+          await setActivePaks(Number(dlId), []);
+        }
+        changed++;
+      }
 
       // Step 2 – Enable each mod in toEnable with its saved active variant paks
       for (const mod of toEnable) {
@@ -231,11 +245,35 @@ export function BackupModal({
         changed++;
       }
 
-      // Step 3 – Single filesystem sync
+      // Step 3 – Restore custom tags for enabled mods (best-effort)
+      for (const mod of toEnable) {
+        const backupEntry = backup.mods.find(e => {
+          if (e.backendModId != null && mod.backendModId != null) return e.backendModId === mod.backendModId;
+          if (e.sourceDownloadIds.length > 0 && Array.isArray(mod.sourceDownloadIds)) return e.sourceDownloadIds.some(id => mod.sourceDownloadIds.includes(id));
+          return String(e.modId) === String(mod.id);
+        });
+        const savedTags = backupEntry?.customTags || [];
+        if (savedTags.length === 0) continue;
+        const effectiveModId =
+          mod.backendModId != null
+            ? mod.backendModId
+            : Array.isArray(mod.sourceDownloadIds) && mod.sourceDownloadIds.length > 0
+              ? -mod.sourceDownloadIds[0]
+              : null;
+        if (effectiveModId == null) continue;
+        for (const tagName of savedTags) {
+          try { await addModCustomTag(effectiveModId, tagName); } catch { /* already exists or missing mod */ }
+        }
+      }
+
+      // Step 4 – Single filesystem sync
       await scanActive();
       await refreshConflicts();
 
       setView("restored");
+
+      // Notify parent to refresh mod list from backend
+      onBackupRestored?.();
 
       if (missing.length > 0) {
         toast.warning(

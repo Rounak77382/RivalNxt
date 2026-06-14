@@ -16,6 +16,8 @@ export interface ModBackupEntry {
   sourceDownloadIds: number[];
   sourceFileIds: number[];
   activePaks?: string[];
+  /** User-created custom tags for this mod (optional, absent in older backups). */
+  customTags?: string[];
 }
 
 /** The full backup object saved to disk as JSON. */

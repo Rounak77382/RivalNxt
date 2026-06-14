@@ -24,6 +24,9 @@ if [ ! -d "src-tauri" ]; then
     exit 1
 fi
 
+echo "Updating Graphify knowledge graph..."
+graphify update .
+
 # ============================================================================
 echo "[1/6] Installing npm dependencies..."
 echo "============================================================================"

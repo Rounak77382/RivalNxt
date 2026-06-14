@@ -1,0 +1,4 @@
+Always check graphify-out/GRAPH_REPORT.md before exploring files.
+Use graphify-out/wiki/index.md as the codebase map.
+Only open specific files when the graph points you to them.
+Never scan entire directories like src/ or src-python/ blindly.

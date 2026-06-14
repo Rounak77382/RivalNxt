@@ -43,7 +43,6 @@ def _configure_rarfile() -> None:
                     return
         except ImportError:
             pass  # nxm_protocol not available
-            return
             
         # Try common WinRAR locations
         winrar_paths = [
@@ -117,8 +116,6 @@ def list_entries(archive_path: str) -> List[str]:
                     return [f.filename for f in rf.infolist() if not f.is_dir()]
             except Exception as e2:
                 raise RuntimeError(f"rar list failed after reconfiguration: {e2}")
-        except Exception as e:
-            raise RuntimeError(f"rar list failed: {e}")
     else:
         raise RuntimeError(f"Unsupported archive type for listing: {archive_path}")
 

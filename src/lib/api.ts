@@ -1150,6 +1150,27 @@ export async function dismissNxmHandoff(
   return response.handoff;
 }
 
+/**
+ * Signal the backend to cancel an in-progress NXM download.
+ *
+ * The backend sets a per-handoff cancellation flag that is polled every
+ * 1 MiB chunk inside the download loop. When detected the partial file is
+ * deleted and the handoff record is removed, so the download never appears
+ * in the mod list.
+ *
+ * This call returns as soon as the flag is set; the actual abort happens
+ * on the next chunk boundary (at most ~1 MiB of extra data is downloaded).
+ */
+export async function cancelNxmHandoff(
+  handoffId: string,
+): Promise<{ ok: boolean; cancelled: boolean; handoff_id: string }> {
+  const encoded = encodeURIComponent(handoffId);
+  return postJson<Record<string, never>, { ok: boolean; cancelled: boolean; handoff_id: string }>(
+    `/api/nxm/handoff/${encoded}/cancel`,
+    {},
+  );
+}
+
 export async function submitNxmHandoff(
   nxmUri: string,
 ): Promise<ApiSubmitNxmHandoffResponse> {

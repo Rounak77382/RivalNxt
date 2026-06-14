@@ -1362,6 +1362,21 @@ export default function App() {
           if (willActivate) {
             const dl = await getLocalDownload(Number(dlId));
             const paks = (dl.contents || []).filter((f: string) => f.toLowerCase().endsWith(".pak"));
+            if (paks.length === 0) {
+              // Mod file on disk is missing / orphaned — give a clear error
+              toast.error(`Cannot enable ${mod.name}: no PAK files found on disk.`, {
+                id: toastId,
+                description: 'The mod file may have been moved or deleted. Go to Settings → "Rebuild Local Downloads" to rescan.',
+                duration: 8000,
+              });
+              // Revert optimistic state
+              setMods((prev) =>
+                prev.map((m) =>
+                  m.id === modId ? { ...m, isActive: mod.isActive } : m
+                )
+              );
+              return;
+            }
             await setActivePaks(Number(dlId), paks);
           } else {
             await setActivePaks(Number(dlId), []);
@@ -1739,10 +1754,23 @@ export default function App() {
 
   function toUiMod(d: ApiDownload, customImages: Record<number, string> = {}) {
     // Consolidate tags and remove any stray tokens like 'data' and generic categories for robustness
-    const cleanTags = (d.tags || []).filter(
+    const rawTags = (d.tags || []).filter(
       (t) => t && !["data"].includes(t.toLowerCase()),
     );
+    // Merge in user-created custom tags so the search filter picks them up without extra fetches
+    const customTagNames: string[] = Array.isArray((d as any).custom_tag_names)
+      ? (d as any).custom_tag_names
+      : [];
+    const seen = new Set<string>(rawTags.map((t) => t.toLowerCase()));
+    for (const ct of customTagNames) {
+      if (ct && !seen.has(ct.toLowerCase())) {
+        rawTags.push(ct);
+        seen.add(ct.toLowerCase());
+      }
+    }
+    const cleanTags = rawTags;
     const categoryTags = deriveCategoryTags(cleanTags);
+
 
     // Priority: Nexus picture_url > Custom image > Fallback
     let images: string[];
@@ -2369,6 +2397,7 @@ export default function App() {
             mods={mods}
             onToggleMod={handleToggleMod}
             onBackupCreated={() => setBackupsRefreshTrigger((t) => t + 1)}
+            onBackupRestored={() => refreshMods({ quiet: true, includeConflicts: true })}
           />
         </div>
       </ThemeProvider>
