@@ -1,0 +1,17 @@
+*.md
+*.png
+*.jpg
+*.jpeg
+*.svg
+*.gif
+*.pdf
+*.html
+*.txt
+*.json
+!package.json
+!tsconfig.json
+!tsconfig.node.json
+*.lock
+*.dll
+*.so
+*.spec

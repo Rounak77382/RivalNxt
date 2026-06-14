@@ -1,0 +1,1870 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "label": "ModUpdateStatus",
+      "file_type": "code",
+      "source_file": "src/components/CheckForUpdatesModal.tsx",
+      "source_location": "L33",
+      "_origin": "ast",
+      "id": "components_checkforupdatesmodal_modupdatestatus",
+      "community": 1,
+      "norm_label": "modupdatestatus"
+    },
+    {
+      "label": "ModStatus",
+      "file_type": "code",
+      "source_file": "src/components/CheckForUpdatesModal.tsx",
+      "source_location": "L40",
+      "_origin": "ast",
+      "id": "components_checkforupdatesmodal_modstatus",
+      "community": 0,
+      "norm_label": "modstatus"
+    },
+    {
+      "label": "GameUpdateStep",
+      "file_type": "code",
+      "source_file": "src/components/GameUpdateModal.tsx",
+      "source_location": "L19",
+      "_origin": "ast",
+      "id": "components_gameupdatemodal_gameupdatestep",
+      "community": 3,
+      "norm_label": "gameupdatestep"
+    },
+    {
+      "label": "GameUpdatePhase",
+      "file_type": "code",
+      "source_file": "src/components/GameUpdateModal.tsx",
+      "source_location": "L26",
+      "_origin": "ast",
+      "id": "components_gameupdatemodal_gameupdatephase",
+      "community": 2,
+      "norm_label": "gameupdatephase"
+    },
+    {
+      "label": "LazyLoad",
+      "file_type": "code",
+      "source_file": "src/components/LazyLoad.tsx",
+      "source_location": "L16",
+      "_origin": "ast",
+      "id": "components_lazyload_lazyload",
+      "community": 4,
+      "norm_label": "lazyload"
+    },
+    {
+      "label": "Mod",
+      "file_type": "code",
+      "source_file": "src/components/ModCard.tsx",
+      "source_location": "L13",
+      "_origin": "ast",
+      "id": "components_modcard_mod",
+      "community": 5,
+      "norm_label": "mod"
+    },
+    {
+      "label": "NSFWFilterProvider",
+      "file_type": "code",
+      "source_file": "src/components/NSFWFilterProvider.tsx",
+      "source_location": "L24",
+      "_origin": "ast",
+      "id": "components_nsfwfilterprovider_nsfwfilterprovider",
+      "community": 6,
+      "norm_label": "nsfwfilterprovider"
+    },
+    {
+      "label": "useNsfwFilter",
+      "file_type": "code",
+      "source_file": "src/components/NSFWFilterProvider.tsx",
+      "source_location": "L67",
+      "_origin": "ast",
+      "id": "components_nsfwfilterprovider_usensfwfilter",
+      "community": 7,
+      "norm_label": "usensfwfilter"
+    },
+    {
+      "label": "NxmBackgroundListener",
+      "file_type": "code",
+      "source_file": "src/components/NxmBackgroundListener.tsx",
+      "source_location": "L43",
+      "_origin": "ast",
+      "id": "components_nxmbackgroundlistener_nxmbackgroundlistener",
+      "community": 8,
+      "norm_label": "nxmbackgroundlistener"
+    },
+    {
+      "label": "NxmHandoffPromptProps",
+      "file_type": "code",
+      "source_file": "src/components/NxmHandoffPrompt.tsx",
+      "source_location": "L6",
+      "_origin": "ast",
+      "id": "components_nxmhandoffprompt_nxmhandoffpromptprops",
+      "community": 9,
+      "norm_label": "nxmhandoffpromptprops"
+    },
+    {
+      "label": "SettingsFormValues",
+      "file_type": "code",
+      "source_file": "src/components/SettingsDialog.tsx",
+      "source_location": "L34",
+      "_origin": "ast",
+      "id": "components_settingsdialog_settingsformvalues",
+      "community": 11,
+      "norm_label": "settingsformvalues"
+    },
+    {
+      "label": "SettingsDialog",
+      "file_type": "code",
+      "source_file": "src/components/SettingsDialog.tsx",
+      "source_location": "L129",
+      "_origin": "ast",
+      "id": "components_settingsdialog_settingsdialog",
+      "community": 10,
+      "norm_label": "settingsdialog"
+    },
+    {
+      "label": "TagList",
+      "file_type": "code",
+      "source_file": "src/components/TagList.tsx",
+      "source_location": "L15",
+      "_origin": "ast",
+      "id": "components_taglist_taglist",
+      "community": 12,
+      "norm_label": "taglist"
+    },
+    {
+      "label": "ButtonVariantProps",
+      "file_type": "code",
+      "source_file": "src/components/ui/button-variants.ts",
+      "source_location": "L33",
+      "_origin": "ast",
+      "id": "ui_button_variants_buttonvariantprops",
+      "community": 182,
+      "norm_label": "buttonvariantprops"
+    },
+    {
+      "label": "ChartConfig",
+      "file_type": "code",
+      "source_file": "src/components/ui/chart.tsx",
+      "source_location": "L11",
+      "_origin": "ast",
+      "id": "ui_chart_chartconfig",
+      "community": 183,
+      "norm_label": "chartconfig"
+    },
+    {
+      "label": "useIsMobile",
+      "file_type": "code",
+      "source_file": "src/components/ui/use-mobile.ts",
+      "source_location": "L5",
+      "_origin": "ast",
+      "id": "ui_use_mobile_useismobile",
+      "community": 184,
+      "norm_label": "useismobile"
+    },
+    {
+      "label": "cn",
+      "file_type": "code",
+      "source_file": "src/components/ui/utils.ts",
+      "source_location": "L4",
+      "_origin": "ast",
+      "id": "ui_utils_cn",
+      "community": 185,
+      "norm_label": "cn"
+    },
+    {
+      "label": "ApiError",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L3",
+      "_origin": "ast",
+      "id": "lib_api_apierror",
+      "community": 29,
+      "norm_label": "apierror"
+    },
+    {
+      "label": "ApiMod",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L20",
+      "_origin": "ast",
+      "id": "lib_api_apimod",
+      "community": 31,
+      "norm_label": "apimod"
+    },
+    {
+      "label": "ApiAddModRequest",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L30",
+      "_origin": "ast",
+      "id": "lib_api_apiaddmodrequest",
+      "community": 16,
+      "norm_label": "apiaddmodrequest"
+    },
+    {
+      "label": "ApiAddModResponse",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L38",
+      "_origin": "ast",
+      "id": "lib_api_apiaddmodresponse",
+      "community": 17,
+      "norm_label": "apiaddmodresponse"
+    },
+    {
+      "label": "ApiUploadModResponse",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L54",
+      "_origin": "ast",
+      "id": "lib_api_apiuploadmodresponse",
+      "community": 51,
+      "norm_label": "apiuploadmodresponse"
+    },
+    {
+      "label": "ApiConflictParticipantMod",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L63",
+      "_origin": "ast",
+      "id": "lib_api_apiconflictparticipantmod",
+      "community": 26,
+      "norm_label": "apiconflictparticipantmod"
+    },
+    {
+      "label": "ApiConflictParticipant",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L72",
+      "_origin": "ast",
+      "id": "lib_api_apiconflictparticipant",
+      "community": 25,
+      "norm_label": "apiconflictparticipant"
+    },
+    {
+      "label": "ApiConflict",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L78",
+      "_origin": "ast",
+      "id": "lib_api_apiconflict",
+      "community": 24,
+      "norm_label": "apiconflict"
+    },
+    {
+      "label": "ApiNxmDownloadProgress",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L88",
+      "_origin": "ast",
+      "id": "lib_api_apinxmdownloadprogress",
+      "community": 35,
+      "norm_label": "apinxmdownloadprogress"
+    },
+    {
+      "label": "ApiNxmHandoffSummary",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L100",
+      "_origin": "ast",
+      "id": "lib_api_apinxmhandoffsummary",
+      "community": 37,
+      "norm_label": "apinxmhandoffsummary"
+    },
+    {
+      "label": "ApiNxmHandoffList",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L118",
+      "_origin": "ast",
+      "id": "lib_api_apinxmhandofflist",
+      "community": 36,
+      "norm_label": "apinxmhandofflist"
+    },
+    {
+      "label": "ApiNxmPreview",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L123",
+      "_origin": "ast",
+      "id": "lib_api_apinxmpreview",
+      "community": 40,
+      "norm_label": "apinxmpreview"
+    },
+    {
+      "label": "ApiNxmIngestOptions",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L133",
+      "_origin": "ast",
+      "id": "lib_api_apinxmingestoptions",
+      "community": 38,
+      "norm_label": "apinxmingestoptions"
+    },
+    {
+      "label": "ApiNxmIngestResponse",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L140",
+      "_origin": "ast",
+      "id": "lib_api_apinxmingestresponse",
+      "community": 39,
+      "norm_label": "apinxmingestresponse"
+    },
+    {
+      "label": "ApiSubmitNxmHandoffResponse",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L158",
+      "_origin": "ast",
+      "id": "lib_api_apisubmitnxmhandoffresponse",
+      "community": 48,
+      "norm_label": "apisubmitnxmhandoffresponse"
+    },
+    {
+      "label": "ApiSettings",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L163",
+      "_origin": "ast",
+      "id": "lib_api_apisettings",
+      "community": 44,
+      "norm_label": "apisettings"
+    },
+    {
+      "label": "ApiSettingPathValidation",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L178",
+      "_origin": "ast",
+      "id": "lib_api_apisettingpathvalidation",
+      "community": 43,
+      "norm_label": "apisettingpathvalidation"
+    },
+    {
+      "label": "ApiSettingsValidation",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L187",
+      "_origin": "ast",
+      "id": "lib_api_apisettingsvalidation",
+      "community": 47,
+      "norm_label": "apisettingsvalidation"
+    },
+    {
+      "label": "ApiUpdateSettingsRequest",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L197",
+      "_origin": "ast",
+      "id": "lib_api_apiupdatesettingsrequest",
+      "community": 50,
+      "norm_label": "apiupdatesettingsrequest"
+    },
+    {
+      "label": "SettingsTask",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L209",
+      "_origin": "ast",
+      "id": "lib_api_settingstask",
+      "community": 112,
+      "norm_label": "settingstask"
+    },
+    {
+      "label": "ApiSettingsTaskStatus",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L219",
+      "_origin": "ast",
+      "id": "lib_api_apisettingstaskstatus",
+      "community": 46,
+      "norm_label": "apisettingstaskstatus"
+    },
+    {
+      "label": "ApiSettingsTaskResponse",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L225",
+      "_origin": "ast",
+      "id": "lib_api_apisettingstaskresponse",
+      "community": 45,
+      "norm_label": "apisettingstaskresponse"
+    },
+    {
+      "label": "ApiBootstrapStatus",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L241",
+      "_origin": "ast",
+      "id": "lib_api_apibootstrapstatus",
+      "community": 18,
+      "norm_label": "apibootstrapstatus"
+    },
+    {
+      "label": "ApiHealthResponse",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L252",
+      "_origin": "ast",
+      "id": "lib_api_apihealthresponse",
+      "community": 30,
+      "norm_label": "apihealthresponse"
+    },
+    {
+      "label": "CharacterSkin",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L261",
+      "_origin": "ast",
+      "id": "lib_api_characterskin",
+      "community": 54,
+      "norm_label": "characterskin"
+    },
+    {
+      "label": "Character",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L266",
+      "_origin": "ast",
+      "id": "lib_api_character",
+      "community": 53,
+      "norm_label": "character"
+    },
+    {
+      "label": "RebuildCharacterDataResponse",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L272",
+      "_origin": "ast",
+      "id": "lib_api_rebuildcharacterdataresponse",
+      "community": 104,
+      "norm_label": "rebuildcharacterdataresponse"
+    },
+    {
+      "label": "TagInfo",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L280",
+      "_origin": "ast",
+      "id": "lib_api_taginfo",
+      "community": 114,
+      "norm_label": "taginfo"
+    },
+    {
+      "label": "TagLookupRequest",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L287",
+      "_origin": "ast",
+      "id": "lib_api_taglookuprequest",
+      "community": 115,
+      "norm_label": "taglookuprequest"
+    },
+    {
+      "label": "TagLookupResponse",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L291",
+      "_origin": "ast",
+      "id": "lib_api_taglookupresponse",
+      "community": 116,
+      "norm_label": "taglookupresponse"
+    },
+    {
+      "label": "getBaseUrl",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L295",
+      "_origin": "ast",
+      "id": "lib_api_getbaseurl",
+      "community": 68,
+      "norm_label": "getbaseurl"
+    },
+    {
+      "label": "listMods",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L474",
+      "_origin": "ast",
+      "id": "lib_api_listmods",
+      "community": 96,
+      "norm_label": "listmods"
+    },
+    {
+      "label": "listConflicts",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L478",
+      "_origin": "ast",
+      "id": "lib_api_listconflicts",
+      "community": 94,
+      "norm_label": "listconflicts"
+    },
+    {
+      "label": "getHealth",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L486",
+      "_origin": "ast",
+      "id": "lib_api_gethealth",
+      "community": 75,
+      "norm_label": "gethealth"
+    },
+    {
+      "label": "addMod",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L490",
+      "_origin": "ast",
+      "id": "lib_api_addmod",
+      "community": 14,
+      "norm_label": "addmod"
+    },
+    {
+      "label": "uploadModFile",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L496",
+      "_origin": "ast",
+      "id": "lib_api_uploadmodfile",
+      "community": 123,
+      "norm_label": "uploadmodfile"
+    },
+    {
+      "label": "refreshConflicts",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L526",
+      "_origin": "ast",
+      "id": "lib_api_refreshconflicts",
+      "community": 106,
+      "norm_label": "refreshconflicts"
+    },
+    {
+      "label": "copyToDownloads",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L530",
+      "_origin": "ast",
+      "id": "lib_api_copytodownloads",
+      "community": 56,
+      "norm_label": "copytodownloads"
+    },
+    {
+      "label": "getSettings",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L539",
+      "_origin": "ast",
+      "id": "lib_api_getsettings",
+      "community": 87,
+      "norm_label": "getsettings"
+    },
+    {
+      "label": "updateSettings",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L543",
+      "_origin": "ast",
+      "id": "lib_api_updatesettings",
+      "community": 122,
+      "norm_label": "updatesettings"
+    },
+    {
+      "label": "runSettingsTask",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L552",
+      "_origin": "ast",
+      "id": "lib_api_runsettingstask",
+      "community": 109,
+      "norm_label": "runsettingstask"
+    },
+    {
+      "label": "getSettingsTaskJob",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L561",
+      "_origin": "ast",
+      "id": "lib_api_getsettingstaskjob",
+      "community": 88,
+      "norm_label": "getsettingstaskjob"
+    },
+    {
+      "label": "listSettingsTaskJobs",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L567",
+      "_origin": "ast",
+      "id": "lib_api_listsettingstaskjobs",
+      "community": 98,
+      "norm_label": "listsettingstaskjobs"
+    },
+    {
+      "label": "getBootstrapStatus",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L573",
+      "_origin": "ast",
+      "id": "lib_api_getbootstrapstatus",
+      "community": 69,
+      "norm_label": "getbootstrapstatus"
+    },
+    {
+      "label": "validatePath",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L577",
+      "_origin": "ast",
+      "id": "lib_api_validatepath",
+      "community": 126,
+      "norm_label": "validatepath"
+    },
+    {
+      "label": "NxmProtocolStatus",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L598",
+      "_origin": "ast",
+      "id": "lib_api_nxmprotocolstatus",
+      "community": 101,
+      "norm_label": "nxmprotocolstatus"
+    },
+    {
+      "label": "getNxmProtocolStatus",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L606",
+      "_origin": "ast",
+      "id": "lib_api_getnxmprotocolstatus",
+      "community": 84,
+      "norm_label": "getnxmprotocolstatus"
+    },
+    {
+      "label": "registerNxmProtocol",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L610",
+      "_origin": "ast",
+      "id": "lib_api_registernxmprotocol",
+      "community": 107,
+      "norm_label": "registernxmprotocol"
+    },
+    {
+      "label": "unregisterNxmProtocol",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L619",
+      "_origin": "ast",
+      "id": "lib_api_unregisternxmprotocol",
+      "community": 118,
+      "norm_label": "unregisternxmprotocol"
+    },
+    {
+      "label": "LastNxmUrl",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L630",
+      "_origin": "ast",
+      "id": "lib_api_lastnxmurl",
+      "community": 92,
+      "norm_label": "lastnxmurl"
+    },
+    {
+      "label": "getLastNxmUrl",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L649",
+      "_origin": "ast",
+      "id": "lib_api_getlastnxmurl",
+      "community": 76,
+      "norm_label": "getlastnxmurl"
+    },
+    {
+      "label": "ApiModDetails",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L654",
+      "_origin": "ast",
+      "id": "lib_api_apimoddetails",
+      "community": 32,
+      "norm_label": "apimoddetails"
+    },
+    {
+      "label": "getModDetails",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L684",
+      "_origin": "ast",
+      "id": "lib_api_getmoddetails",
+      "community": 81,
+      "norm_label": "getmoddetails"
+    },
+    {
+      "label": "updateModDetails",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L688",
+      "_origin": "ast",
+      "id": "lib_api_updatemoddetails",
+      "community": 121,
+      "norm_label": "updatemoddetails"
+    },
+    {
+      "label": "ApiModFile",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L703",
+      "_origin": "ast",
+      "id": "lib_api_apimodfile",
+      "community": 33,
+      "norm_label": "apimodfile"
+    },
+    {
+      "label": "getModFiles",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L713",
+      "_origin": "ast",
+      "id": "lib_api_getmodfiles",
+      "community": 82,
+      "norm_label": "getmodfiles"
+    },
+    {
+      "label": "ApiChangelog",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L717",
+      "_origin": "ast",
+      "id": "lib_api_apichangelog",
+      "community": 19,
+      "norm_label": "apichangelog"
+    },
+    {
+      "label": "getModChangelogs",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L723",
+      "_origin": "ast",
+      "id": "lib_api_getmodchangelogs",
+      "community": 78,
+      "norm_label": "getmodchangelogs"
+    },
+    {
+      "label": "ModImage",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L728",
+      "_origin": "ast",
+      "id": "lib_api_modimage",
+      "community": 100,
+      "norm_label": "modimage"
+    },
+    {
+      "label": "ApiModImagesResponse",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L738",
+      "_origin": "ast",
+      "id": "lib_api_apimodimagesresponse",
+      "community": 34,
+      "norm_label": "apimodimagesresponse"
+    },
+    {
+      "label": "fetchModImages",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L744",
+      "_origin": "ast",
+      "id": "lib_api_fetchmodimages",
+      "community": 65,
+      "norm_label": "fetchmodimages"
+    },
+    {
+      "label": "uploadModImages",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L751",
+      "_origin": "ast",
+      "id": "lib_api_uploadmodimages",
+      "community": 124,
+      "norm_label": "uploadmodimages"
+    },
+    {
+      "label": "uploadModImagesByPath",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L784",
+      "_origin": "ast",
+      "id": "lib_api_uploadmodimagesbypath",
+      "community": 125,
+      "norm_label": "uploadmodimagesbypath"
+    },
+    {
+      "label": "deleteModImage",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L794",
+      "_origin": "ast",
+      "id": "lib_api_deletemodimage",
+      "community": 62,
+      "norm_label": "deletemodimage"
+    },
+    {
+      "label": "getModCustomImagePreviews",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L802",
+      "_origin": "ast",
+      "id": "lib_api_getmodcustomimagepreviews",
+      "community": 79,
+      "norm_label": "getmodcustomimagepreviews"
+    },
+    {
+      "label": "ApiDownload",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L822",
+      "_origin": "ast",
+      "id": "lib_api_apidownload",
+      "community": 27,
+      "norm_label": "apidownload"
+    },
+    {
+      "label": "ApiPakVersionStatus",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L860",
+      "_origin": "ast",
+      "id": "lib_api_apipakversionstatus",
+      "community": 42,
+      "norm_label": "apipakversionstatus"
+    },
+    {
+      "label": "ApiPakAsset",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L879",
+      "_origin": "ast",
+      "id": "lib_api_apipakasset",
+      "community": 41,
+      "norm_label": "apipakasset"
+    },
+    {
+      "label": "listDownloads",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L884",
+      "_origin": "ast",
+      "id": "lib_api_listdownloads",
+      "community": 95,
+      "norm_label": "listdownloads"
+    },
+    {
+      "label": "ApiDownloadsSummary",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L888",
+      "_origin": "ast",
+      "id": "lib_api_apidownloadssummary",
+      "community": 28,
+      "norm_label": "apidownloadssummary"
+    },
+    {
+      "label": "getDownloadsSummary",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L897",
+      "_origin": "ast",
+      "id": "lib_api_getdownloadssummary",
+      "community": 73,
+      "norm_label": "getdownloadssummary"
+    },
+    {
+      "label": "setActivePaks",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L901",
+      "_origin": "ast",
+      "id": "lib_api_setactivepaks",
+      "community": 111,
+      "norm_label": "setactivepaks"
+    },
+    {
+      "label": "scanActive",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L908",
+      "_origin": "ast",
+      "id": "lib_api_scanactive",
+      "community": 110,
+      "norm_label": "scanactive"
+    },
+    {
+      "label": "getLocalDownload",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L912",
+      "_origin": "ast",
+      "id": "lib_api_getlocaldownload",
+      "community": 77,
+      "norm_label": "getlocaldownload"
+    },
+    {
+      "label": "getPakVersionStatus",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L918",
+      "_origin": "ast",
+      "id": "lib_api_getpakversionstatus",
+      "community": 86,
+      "norm_label": "getpakversionstatus"
+    },
+    {
+      "label": "activateByName",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L943",
+      "_origin": "ast",
+      "id": "lib_api_activatebyname",
+      "community": 13,
+      "norm_label": "activatebyname"
+    },
+    {
+      "label": "deactivateByName",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L952",
+      "_origin": "ast",
+      "id": "lib_api_deactivatebyname",
+      "community": 58,
+      "norm_label": "deactivatebyname"
+    },
+    {
+      "label": "getPakAssets",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L961",
+      "_origin": "ast",
+      "id": "lib_api_getpakassets",
+      "community": 85,
+      "norm_label": "getpakassets"
+    },
+    {
+      "label": "ApiCheckModUpdateResponse",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L972",
+      "_origin": "ast",
+      "id": "lib_api_apicheckmodupdateresponse",
+      "community": 20,
+      "norm_label": "apicheckmodupdateresponse"
+    },
+    {
+      "label": "ApiUpdateModResponse",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L989",
+      "_origin": "ast",
+      "id": "lib_api_apiupdatemodresponse",
+      "community": 49,
+      "norm_label": "apiupdatemodresponse"
+    },
+    {
+      "label": "updateMod",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L1008",
+      "_origin": "ast",
+      "id": "lib_api_updatemod",
+      "community": 120,
+      "norm_label": "updatemod"
+    },
+    {
+      "label": "checkModUpdate",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L1034",
+      "_origin": "ast",
+      "id": "lib_api_checkmodupdate",
+      "community": 55,
+      "norm_label": "checkmodupdate"
+    },
+    {
+      "label": "DeleteLocalDownloadsResponse",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L1043",
+      "_origin": "ast",
+      "id": "lib_api_deletelocaldownloadsresponse",
+      "community": 61,
+      "norm_label": "deletelocaldownloadsresponse"
+    },
+    {
+      "label": "deleteLocalDownloads",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L1052",
+      "_origin": "ast",
+      "id": "lib_api_deletelocaldownloads",
+      "community": 60,
+      "norm_label": "deletelocaldownloads"
+    },
+    {
+      "label": "listNxmHandoffs",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L1072",
+      "_origin": "ast",
+      "id": "lib_api_listnxmhandoffs",
+      "community": 97,
+      "norm_label": "listnxmhandoffs"
+    },
+    {
+      "label": "getNxmHandoff",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L1077",
+      "_origin": "ast",
+      "id": "lib_api_getnxmhandoff",
+      "community": 83,
+      "norm_label": "getnxmhandoff"
+    },
+    {
+      "label": "previewNxmHandoff",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L1086",
+      "_origin": "ast",
+      "id": "lib_api_previewnxmhandoff",
+      "community": 102,
+      "norm_label": "previewnxmhandoff"
+    },
+    {
+      "label": "ingestNxmHandoff",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L1093",
+      "_origin": "ast",
+      "id": "lib_api_ingestnxmhandoff",
+      "community": 91,
+      "norm_label": "ingestnxmhandoff"
+    },
+    {
+      "label": "getCharacters",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L1118",
+      "_origin": "ast",
+      "id": "lib_api_getcharacters",
+      "community": 70,
+      "norm_label": "getcharacters"
+    },
+    {
+      "label": "getCharacterSkins",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L1122",
+      "_origin": "ast",
+      "id": "lib_api_getcharacterskins",
+      "community": 71,
+      "norm_label": "getcharacterskins"
+    },
+    {
+      "label": "rebuildCharacterData",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L1128",
+      "_origin": "ast",
+      "id": "lib_api_rebuildcharacterdata",
+      "community": 103,
+      "norm_label": "rebuildcharacterdata"
+    },
+    {
+      "label": "lookupTags",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L1135",
+      "_origin": "ast",
+      "id": "lib_api_lookuptags",
+      "community": 99,
+      "norm_label": "lookuptags"
+    },
+    {
+      "label": "dismissNxmHandoff",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L1142",
+      "_origin": "ast",
+      "id": "lib_api_dismissnxmhandoff",
+      "community": 63,
+      "norm_label": "dismissnxmhandoff"
+    },
+    {
+      "label": "cancelNxmHandoff",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L1164",
+      "_origin": "ast",
+      "id": "lib_api_cancelnxmhandoff",
+      "community": 52,
+      "norm_label": "cancelnxmhandoff"
+    },
+    {
+      "label": "submitNxmHandoff",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L1174",
+      "_origin": "ast",
+      "id": "lib_api_submitnxmhandoff",
+      "community": 113,
+      "norm_label": "submitnxmhandoff"
+    },
+    {
+      "label": "toggleFavourite",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L1184",
+      "_origin": "ast",
+      "id": "lib_api_togglefavourite",
+      "community": 117,
+      "norm_label": "togglefavourite"
+    },
+    {
+      "label": "fetchFavourites",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L1193",
+      "_origin": "ast",
+      "id": "lib_api_fetchfavourites",
+      "community": 64,
+      "norm_label": "fetchfavourites"
+    },
+    {
+      "label": "GameVersionCheckResponse",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L1201",
+      "_origin": "ast",
+      "id": "lib_api_gameversioncheckresponse",
+      "community": 66,
+      "norm_label": "gameversioncheckresponse"
+    },
+    {
+      "label": "getGameVersionCheck",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L1209",
+      "_origin": "ast",
+      "id": "lib_api_getgameversioncheck",
+      "community": 74,
+      "norm_label": "getgameversioncheck"
+    },
+    {
+      "label": "ApiCollectionModFile",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L1215",
+      "_origin": "ast",
+      "id": "lib_api_apicollectionmodfile",
+      "community": 22,
+      "norm_label": "apicollectionmodfile"
+    },
+    {
+      "label": "ApiCollectionSummary",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L1230",
+      "_origin": "ast",
+      "id": "lib_api_apicollectionsummary",
+      "community": 23,
+      "norm_label": "apicollectionsummary"
+    },
+    {
+      "label": "ApiCollection",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L1247",
+      "_origin": "ast",
+      "id": "lib_api_apicollection",
+      "community": 21,
+      "norm_label": "apicollection"
+    },
+    {
+      "label": "listCollections",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L1253",
+      "_origin": "ast",
+      "id": "lib_api_listcollections",
+      "community": 93,
+      "norm_label": "listcollections"
+    },
+    {
+      "label": "getCollection",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L1258",
+      "_origin": "ast",
+      "id": "lib_api_getcollection",
+      "community": 72,
+      "norm_label": "getcollection"
+    },
+    {
+      "label": "importCollection",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L1263",
+      "_origin": "ast",
+      "id": "lib_api_importcollection",
+      "community": 89,
+      "norm_label": "importcollection"
+    },
+    {
+      "label": "importCollectionRaw",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L1275",
+      "_origin": "ast",
+      "id": "lib_api_importcollectionraw",
+      "community": 90,
+      "norm_label": "importcollectionraw"
+    },
+    {
+      "label": "deleteCollection",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L1286",
+      "_origin": "ast",
+      "id": "lib_api_deletecollection",
+      "community": 59,
+      "norm_label": "deletecollection"
+    },
+    {
+      "label": "refreshCollection",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L1290",
+      "_origin": "ast",
+      "id": "lib_api_refreshcollection",
+      "community": 105,
+      "norm_label": "refreshcollection"
+    },
+    {
+      "label": "updateCollectionModFileState",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L1298",
+      "_origin": "ast",
+      "id": "lib_api_updatecollectionmodfilestate",
+      "community": 119,
+      "norm_label": "updatecollectionmodfilestate"
+    },
+    {
+      "label": "CustomTag",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L1313",
+      "_origin": "ast",
+      "id": "lib_api_customtag",
+      "community": 57,
+      "norm_label": "customtag"
+    },
+    {
+      "label": "getModCustomTags",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L1320",
+      "_origin": "ast",
+      "id": "lib_api_getmodcustomtags",
+      "community": 80,
+      "norm_label": "getmodcustomtags"
+    },
+    {
+      "label": "addModCustomTag",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L1325",
+      "_origin": "ast",
+      "id": "lib_api_addmodcustomtag",
+      "community": 15,
+      "norm_label": "addmodcustomtag"
+    },
+    {
+      "label": "removeModCustomTag",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L1342",
+      "_origin": "ast",
+      "id": "lib_api_removemodcustomtag",
+      "community": 108,
+      "norm_label": "removemodcustomtag"
+    },
+    {
+      "label": "getAllCustomTags",
+      "file_type": "code",
+      "source_file": "src/lib/api.ts",
+      "source_location": "L1362",
+      "_origin": "ast",
+      "id": "lib_api_getallcustomtags",
+      "community": 67,
+      "norm_label": "getallcustomtags"
+    },
+    {
+      "label": "ModBackupEntry",
+      "file_type": "code",
+      "source_file": "src/lib/backupUtils.ts",
+      "source_location": "L8",
+      "_origin": "ast",
+      "id": "lib_backuputils_modbackupentry",
+      "community": 134,
+      "norm_label": "modbackupentry"
+    },
+    {
+      "label": "ModBackup",
+      "file_type": "code",
+      "source_file": "src/lib/backupUtils.ts",
+      "source_location": "L24",
+      "_origin": "ast",
+      "id": "lib_backuputils_modbackup",
+      "community": 133,
+      "norm_label": "modbackup"
+    },
+    {
+      "label": "BackupMeta",
+      "file_type": "code",
+      "source_file": "src/lib/backupUtils.ts",
+      "source_location": "L34",
+      "_origin": "ast",
+      "id": "lib_backuputils_backupmeta",
+      "community": 128,
+      "norm_label": "backupmeta"
+    },
+    {
+      "label": "loadBackupMetas",
+      "file_type": "code",
+      "source_file": "src/lib/backupUtils.ts",
+      "source_location": "L47",
+      "_origin": "ast",
+      "id": "lib_backuputils_loadbackupmetas",
+      "community": 132,
+      "norm_label": "loadbackupmetas"
+    },
+    {
+      "label": "saveBackupMetas",
+      "file_type": "code",
+      "source_file": "src/lib/backupUtils.ts",
+      "source_location": "L57",
+      "_origin": "ast",
+      "id": "lib_backuputils_savebackupmetas",
+      "community": 137,
+      "norm_label": "savebackupmetas"
+    },
+    {
+      "label": "addBackupMeta",
+      "file_type": "code",
+      "source_file": "src/lib/backupUtils.ts",
+      "source_location": "L61",
+      "_origin": "ast",
+      "id": "lib_backuputils_addbackupmeta",
+      "community": 127,
+      "norm_label": "addbackupmeta"
+    },
+    {
+      "label": "removeBackupMeta",
+      "file_type": "code",
+      "source_file": "src/lib/backupUtils.ts",
+      "source_location": "L68",
+      "_origin": "ast",
+      "id": "lib_backuputils_removebackupmeta",
+      "community": 135,
+      "norm_label": "removebackupmeta"
+    },
+    {
+      "label": "buildBackupFromMods",
+      "file_type": "code",
+      "source_file": "src/lib/backupUtils.ts",
+      "source_location": "L79",
+      "_origin": "ast",
+      "id": "lib_backuputils_buildbackupfrommods",
+      "community": 129,
+      "norm_label": "buildbackupfrommods"
+    },
+    {
+      "label": "generateBackupName",
+      "file_type": "code",
+      "source_file": "src/lib/backupUtils.ts",
+      "source_location": "L114",
+      "_origin": "ast",
+      "id": "lib_backuputils_generatebackupname",
+      "community": 131,
+      "norm_label": "generatebackupname"
+    },
+    {
+      "label": "RestoreResult",
+      "file_type": "code",
+      "source_file": "src/lib/backupUtils.ts",
+      "source_location": "L124",
+      "_origin": "ast",
+      "id": "lib_backuputils_restoreresult",
+      "community": 136,
+      "norm_label": "restoreresult"
+    },
+    {
+      "label": "computeRestoreDiff",
+      "file_type": "code",
+      "source_file": "src/lib/backupUtils.ts",
+      "source_location": "L137",
+      "_origin": "ast",
+      "id": "lib_backuputils_computerestorediff",
+      "community": 130,
+      "norm_label": "computerestorediff"
+    },
+    {
+      "label": "deriveCategoryTags",
+      "file_type": "code",
+      "source_file": "src/lib/categoryUtils.ts",
+      "source_location": "L65",
+      "_origin": "ast",
+      "id": "lib_categoryutils_derivecategorytags",
+      "community": 139,
+      "norm_label": "derivecategorytags"
+    },
+    {
+      "label": "categoriesMatchTag",
+      "file_type": "code",
+      "source_file": "src/lib/categoryUtils.ts",
+      "source_location": "L78",
+      "_origin": "ast",
+      "id": "lib_categoryutils_categoriesmatchtag",
+      "community": 138,
+      "norm_label": "categoriesmatchtag"
+    },
+    {
+      "label": "getCategoryKeywords",
+      "file_type": "code",
+      "source_file": "src/lib/categoryUtils.ts",
+      "source_location": "L88",
+      "_origin": "ast",
+      "id": "lib_categoryutils_getcategorykeywords",
+      "community": 141,
+      "norm_label": "getcategorykeywords"
+    },
+    {
+      "label": "getCategoryTokenSet",
+      "file_type": "code",
+      "source_file": "src/lib/categoryUtils.ts",
+      "source_location": "L92",
+      "_origin": "ast",
+      "id": "lib_categoryutils_getcategorytokenset",
+      "community": 142,
+      "norm_label": "getcategorytokenset"
+    },
+    {
+      "label": "extractNonCategoryTags",
+      "file_type": "code",
+      "source_file": "src/lib/categoryUtils.ts",
+      "source_location": "L96",
+      "_origin": "ast",
+      "id": "lib_categoryutils_extractnoncategorytags",
+      "community": 140,
+      "norm_label": "extractnoncategorytags"
+    },
+    {
+      "label": "IconConfig",
+      "file_type": "code",
+      "source_file": "src/lib/iconManager.ts",
+      "source_location": "L9",
+      "_origin": "ast",
+      "id": "lib_iconmanager_iconconfig",
+      "community": 147,
+      "norm_label": "iconconfig"
+    },
+    {
+      "label": "getIconsDirectoryPath",
+      "file_type": "code",
+      "source_file": "src/lib/iconManager.ts",
+      "source_location": "L55",
+      "_origin": "ast",
+      "id": "lib_iconmanager_geticonsdirectorypath",
+      "community": 144,
+      "norm_label": "geticonsdirectorypath"
+    },
+    {
+      "label": "getIconPath",
+      "file_type": "code",
+      "source_file": "src/lib/iconManager.ts",
+      "source_location": "L63",
+      "_origin": "ast",
+      "id": "lib_iconmanager_geticonpath",
+      "community": 143,
+      "norm_label": "geticonpath"
+    },
+    {
+      "label": "getIconUrl",
+      "file_type": "code",
+      "source_file": "src/lib/iconManager.ts",
+      "source_location": "L70",
+      "_origin": "ast",
+      "id": "lib_iconmanager_geticonurl",
+      "community": 145,
+      "norm_label": "geticonurl"
+    },
+    {
+      "label": "initializeIcons",
+      "file_type": "code",
+      "source_file": "src/lib/iconManager.ts",
+      "source_location": "L88",
+      "_origin": "ast",
+      "id": "lib_iconmanager_initializeicons",
+      "community": 148,
+      "norm_label": "initializeicons"
+    },
+    {
+      "label": "getRoamingDirectoryPath",
+      "file_type": "code",
+      "source_file": "src/lib/iconManager.ts",
+      "source_location": "L107",
+      "_origin": "ast",
+      "id": "lib_iconmanager_getroamingdirectorypath",
+      "community": 146,
+      "norm_label": "getroamingdirectorypath"
+    },
+    {
+      "label": "isDevelopmentMode",
+      "file_type": "code",
+      "source_file": "src/lib/iconManager.ts",
+      "source_location": "L115",
+      "_origin": "ast",
+      "id": "lib_iconmanager_isdevelopmentmode",
+      "community": 149,
+      "norm_label": "isdevelopmentmode"
+    },
+    {
+      "label": "StepStatus",
+      "file_type": "code",
+      "source_file": "src/lib/logSummary.ts",
+      "source_location": "L3",
+      "_origin": "ast",
+      "id": "lib_logsummary_stepstatus",
+      "community": 152,
+      "norm_label": "stepstatus"
+    },
+    {
+      "label": "ParsedStep",
+      "file_type": "code",
+      "source_file": "src/lib/logSummary.ts",
+      "source_location": "L5",
+      "_origin": "ast",
+      "id": "lib_logsummary_parsedstep",
+      "community": 150,
+      "norm_label": "parsedstep"
+    },
+    {
+      "label": "ParsedSummary",
+      "file_type": "code",
+      "source_file": "src/lib/logSummary.ts",
+      "source_location": "L14",
+      "_origin": "ast",
+      "id": "lib_logsummary_parsedsummary",
+      "community": 151,
+      "norm_label": "parsedsummary"
+    },
+    {
+      "label": "summarizeTaskOutput",
+      "file_type": "code",
+      "source_file": "src/lib/logSummary.ts",
+      "source_location": "L24",
+      "_origin": "ast",
+      "id": "lib_logsummary_summarizetaskoutput",
+      "community": 153,
+      "norm_label": "summarizetaskoutput"
+    },
+    {
+      "label": "NexusSsoResponse",
+      "file_type": "code",
+      "source_file": "src/lib/nexusSso.ts",
+      "source_location": "L26",
+      "_origin": "ast",
+      "id": "lib_nexussso_nexusssoresponse",
+      "community": 156,
+      "norm_label": "nexusssoresponse"
+    },
+    {
+      "label": "NexusSsoResult",
+      "file_type": "code",
+      "source_file": "src/lib/nexusSso.ts",
+      "source_location": "L38",
+      "_origin": "ast",
+      "id": "lib_nexussso_nexusssoresult",
+      "community": 157,
+      "norm_label": "nexusssoresult"
+    },
+    {
+      "label": "NexusSsoStatusCallback",
+      "file_type": "code",
+      "source_file": "src/lib/nexusSso.ts",
+      "source_location": "L47",
+      "_origin": "ast",
+      "id": "lib_nexussso_nexusssostatuscallback",
+      "community": 158,
+      "norm_label": "nexusssostatuscallback"
+    },
+    {
+      "label": "initiateNexusSso",
+      "file_type": "code",
+      "source_file": "src/lib/nexusSso.ts",
+      "source_location": "L76",
+      "_origin": "ast",
+      "id": "lib_nexussso_initiatenexussso",
+      "community": 155,
+      "norm_label": "initiatenexussso"
+    },
+    {
+      "label": "cancelNexusSso",
+      "file_type": "code",
+      "source_file": "src/lib/nexusSso.ts",
+      "source_location": "L256",
+      "_origin": "ast",
+      "id": "lib_nexussso_cancelnexussso",
+      "community": 154,
+      "norm_label": "cancelnexussso"
+    },
+    {
+      "label": "getModLabel",
+      "file_type": "code",
+      "source_file": "src/lib/nxmHelpers.ts",
+      "source_location": "L20",
+      "_origin": "ast",
+      "id": "lib_nxmhelpers_getmodlabel",
+      "community": 162,
+      "norm_label": "getmodlabel"
+    },
+    {
+      "label": "getModLabelSync",
+      "file_type": "code",
+      "source_file": "src/lib/nxmHelpers.ts",
+      "source_location": "L53",
+      "_origin": "ast",
+      "id": "lib_nxmhelpers_getmodlabelsync",
+      "community": 163,
+      "norm_label": "getmodlabelsync"
+    },
+    {
+      "label": "WaitForHandoffOptions",
+      "file_type": "code",
+      "source_file": "src/lib/nxmHelpers.ts",
+      "source_location": "L67",
+      "_origin": "ast",
+      "id": "lib_nxmhelpers_waitforhandoffoptions",
+      "community": 170,
+      "norm_label": "waitforhandoffoptions"
+    },
+    {
+      "label": "formatBytes",
+      "file_type": "code",
+      "source_file": "src/lib/nxmHelpers.ts",
+      "source_location": "L72",
+      "_origin": "ast",
+      "id": "lib_nxmhelpers_formatbytes",
+      "community": 161,
+      "norm_label": "formatbytes"
+    },
+    {
+      "label": "waitForMatchingHandoff",
+      "file_type": "code",
+      "source_file": "src/lib/nxmHelpers.ts",
+      "source_location": "L97",
+      "_origin": "ast",
+      "id": "lib_nxmhelpers_waitformatchinghandoff",
+      "community": 171,
+      "norm_label": "waitformatchinghandoff"
+    },
+    {
+      "label": "MonitorNxmProgressOptions",
+      "file_type": "code",
+      "source_file": "src/lib/nxmHelpers.ts",
+      "source_location": "L139",
+      "_origin": "ast",
+      "id": "lib_nxmhelpers_monitornxmprogressoptions",
+      "community": 167,
+      "norm_label": "monitornxmprogressoptions"
+    },
+    {
+      "label": "MonitorNxmProgressHandle",
+      "file_type": "code",
+      "source_file": "src/lib/nxmHelpers.ts",
+      "source_location": "L144",
+      "_origin": "ast",
+      "id": "lib_nxmhelpers_monitornxmprogresshandle",
+      "community": 166,
+      "norm_label": "monitornxmprogresshandle"
+    },
+    {
+      "label": "monitorNxmDownloadProgress",
+      "file_type": "code",
+      "source_file": "src/lib/nxmHelpers.ts",
+      "source_location": "L148",
+      "_origin": "ast",
+      "id": "lib_nxmhelpers_monitornxmdownloadprogress",
+      "community": 165,
+      "norm_label": "monitornxmdownloadprogress"
+    },
+    {
+      "label": "NxmProgressController",
+      "file_type": "code",
+      "source_file": "src/lib/nxmHelpers.ts",
+      "source_location": "L197",
+      "_origin": "ast",
+      "id": "lib_nxmhelpers_nxmprogresscontroller",
+      "community": 168,
+      "norm_label": "nxmprogresscontroller"
+    },
+    {
+      "label": "CreateProgressControllerOptions",
+      "file_type": "code",
+      "source_file": "src/lib/nxmHelpers.ts",
+      "source_location": "L203",
+      "_origin": "ast",
+      "id": "lib_nxmhelpers_createprogresscontrolleroptions",
+      "community": 160,
+      "norm_label": "createprogresscontrolleroptions"
+    },
+    {
+      "label": "createNxmProgressController",
+      "file_type": "code",
+      "source_file": "src/lib/nxmHelpers.ts",
+      "source_location": "L211",
+      "_origin": "ast",
+      "id": "lib_nxmhelpers_createnxmprogresscontroller",
+      "community": 159,
+      "norm_label": "createnxmprogresscontroller"
+    },
+    {
+      "label": "isNexusOfficialNaming",
+      "file_type": "code",
+      "source_file": "src/lib/nxmHelpers.ts",
+      "source_location": "L340",
+      "_origin": "ast",
+      "id": "lib_nxmhelpers_isnexusofficialnaming",
+      "community": 164,
+      "norm_label": "isnexusofficialnaming"
+    },
+    {
+      "label": "parseNexusFilename",
+      "file_type": "code",
+      "source_file": "src/lib/nxmHelpers.ts",
+      "source_location": "L352",
+      "_origin": "ast",
+      "id": "lib_nxmhelpers_parsenexusfilename",
+      "community": 169,
+      "norm_label": "parsenexusfilename"
+    },
+    {
+      "label": "computeTagDisplay",
+      "file_type": "code",
+      "source_file": "src/lib/tagDisplay.ts",
+      "source_location": "L21",
+      "_origin": "ast",
+      "id": "lib_tagdisplay_computetagdisplay",
+      "community": 172,
+      "norm_label": "computetagdisplay"
+    },
+    {
+      "label": "openInBrowser",
+      "file_type": "code",
+      "source_file": "src/lib/tauri-utils.ts",
+      "source_location": "L22",
+      "_origin": "ast",
+      "id": "lib_tauri_utils_openinbrowser",
+      "community": 178,
+      "norm_label": "openinbrowser"
+    },
+    {
+      "label": "isTauri",
+      "file_type": "code",
+      "source_file": "src/lib/tauri-utils.ts",
+      "source_location": "L66",
+      "_origin": "ast",
+      "id": "lib_tauri_utils_istauri",
+      "community": 177,
+      "norm_label": "istauri"
+    },
+    {
+      "label": "invokeSaveFileDialog",
+      "file_type": "code",
+      "source_file": "src/lib/tauri-utils.ts",
+      "source_location": "L76",
+      "_origin": "ast",
+      "id": "lib_tauri_utils_invokesavefiledialog",
+      "community": 175,
+      "norm_label": "invokesavefiledialog"
+    },
+    {
+      "label": "invokeOpenFileDialog",
+      "file_type": "code",
+      "source_file": "src/lib/tauri-utils.ts",
+      "source_location": "L97",
+      "_origin": "ast",
+      "id": "lib_tauri_utils_invokeopenfiledialog",
+      "community": 173,
+      "norm_label": "invokeopenfiledialog"
+    },
+    {
+      "label": "invokeSaveTextFile",
+      "file_type": "code",
+      "source_file": "src/lib/tauri-utils.ts",
+      "source_location": "L115",
+      "_origin": "ast",
+      "id": "lib_tauri_utils_invokesavetextfile",
+      "community": 176,
+      "norm_label": "invokesavetextfile"
+    },
+    {
+      "label": "invokeReadTextFile",
+      "file_type": "code",
+      "source_file": "src/lib/tauri-utils.ts",
+      "source_location": "L125",
+      "_origin": "ast",
+      "id": "lib_tauri_utils_invokereadtextfile",
+      "community": 174,
+      "norm_label": "invokereadtextfile"
+    },
+    {
+      "label": "createToastDeduplicator",
+      "file_type": "code",
+      "source_file": "src/lib/toastHelpers.ts",
+      "source_location": "L12",
+      "_origin": "ast",
+      "id": "lib_toasthelpers_createtoastdeduplicator",
+      "community": 180,
+      "norm_label": "createtoastdeduplicator"
+    },
+    {
+      "label": "calculateBackoff",
+      "file_type": "code",
+      "source_file": "src/lib/toastHelpers.ts",
+      "source_location": "L57",
+      "_origin": "ast",
+      "id": "lib_toasthelpers_calculatebackoff",
+      "community": 179,
+      "norm_label": "calculatebackoff"
+    },
+    {
+      "label": "simpleHash",
+      "file_type": "code",
+      "source_file": "src/lib/toastHelpers.ts",
+      "source_location": "L71",
+      "_origin": "ast",
+      "id": "lib_toasthelpers_simplehash",
+      "community": 181,
+      "norm_label": "simplehash"
+    }
+  ],
+  "links": [],
+  "hyperedges": [],
+  "built_at_commit": "fa367bc335967d76153cadd0b3f89e50f8bee8b1"
+}
