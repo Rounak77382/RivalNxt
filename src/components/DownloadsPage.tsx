@@ -98,6 +98,25 @@ export function DownloadsPage({
     }
   };
 
+  useEffect(() => {
+    const handleOpenModModal = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const { modId, tab } = customEvent.detail;
+      const mod = mods.find((m) => m.id === modId);
+      if (mod) {
+        setSelectedMod(mod);
+        if (tab === "files") {
+          setModalInitialTab("files");
+        } else {
+          setModalInitialTab("overview");
+        }
+        setIsModalOpen(true);
+      }
+    };
+    window.addEventListener("open-mod-modal", handleOpenModModal);
+    return () => window.removeEventListener("open-mod-modal", handleOpenModModal);
+  }, [mods]);
+
   // Base: show only installed mods
   let filteredMods = mods.filter((mod) => mod.isInstalled);
 

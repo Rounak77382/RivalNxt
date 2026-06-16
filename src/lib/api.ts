@@ -664,6 +664,7 @@ export type ApiModDetails = {
     mod_downloads?: number | null;
     mod_unique_downloads?: number | null;
     endorsement_count?: number | null;
+    status?: string | null;
   } | null;
   latest_file?: {
     file_id?: number;

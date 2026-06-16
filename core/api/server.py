@@ -2965,10 +2965,39 @@ def check_mod_update(mod_id: int) -> Dict[str, Any]:
 					"local_download_id": local_download_id,
 					"local_version": entry.get("local_version"),
 					"reference_version": entry.get("reference_version"),
+					"reference_file_id": entry.get("reference_file_id"),
 					"version_status": entry.get("version_status"),
 					"display_version": entry.get("display_version"),
 				}
 			)
+		# Cross-check: if any local download for this mod already has the latest
+		# version (or newer), the pending items are false positives caused by
+		# old/duplicate files sitting in the DB. Suppress them.
+		if pending:
+			try:
+				cur = conn.cursor()
+				cur.execute(
+					"SELECT version FROM local_downloads WHERE mod_id = ? AND version IS NOT NULL AND version != ''",
+					(mod_id,),
+				)
+				local_versions = [r[0] for r in cur.fetchall()]
+				# Get the unique reference versions from pending
+				ref_versions = set(p.get("reference_version") for p in pending if p.get("reference_version"))
+				# If any local download already has the latest ref version, remove those pending entries
+				suppressed_refs: Set[str] = set()
+				for ref_v in ref_versions:
+					for local_v in local_versions:
+						if versions_equivalent(local_v, ref_v):
+							suppressed_refs.add(ref_v)
+							break
+				if suppressed_refs:
+					pending = [
+						p for p in pending
+						if p.get("reference_version") not in suppressed_refs
+					]
+			except Exception:
+				pass  # Non-fatal; keep original pending list
+
 		result: Dict[str, Any] = {
 			"ok": True,
 			"mod_id": mod_id,
@@ -3158,7 +3187,7 @@ def ingest_nxm_handoff(handoff_id: str, payload: Optional[Dict[str, Any]] = Body
 				except Exception:
 					pass
 		
-		download_path, resolved_url = _download_archive_via_nxm(record, game_domain, file_id)
+		download_path, resolved_url = _download_archive_via_nxm(record, game_domain, file_id, desired_filename=remote_name)
 		logger.info(
 			"[nxm_handoff] download complete path=%s mod_id=%s file_id=%s", download_path, mod_id, file_id
 		)
@@ -5417,12 +5446,13 @@ def _download_remote_archive(
 	force: bool = False,
 	progress_callback: Optional[Callable[[int, Optional[int]], None]] = None,
 	handoff_id: Optional[str] = None,
+	desired_filename: Optional[str] = None,
 ) -> Path:
 	downloads_root = _downloads_root_from_env()
 	_ensure_dir(downloads_root)
 	parsed = urllib.parse.urlparse(url)
 	unquoted_path = urllib.parse.unquote(parsed.path or "")
-	filename_guess = Path(unquoted_path or "download").name or "download"
+	filename_guess = desired_filename or Path(unquoted_path or "download").name or "download"
 	sanitized_path = urllib.parse.quote(unquoted_path, safe="/%:@&=+$,;.-_~!'()*")
 	if sanitized_path != parsed.path:
 		url = urllib.parse.urlunparse(
@@ -5668,6 +5698,7 @@ def _download_archive_via_nxm(
 	record: Dict[str, Any],
 	game_domain: str,
 	file_id: int,
+	desired_filename: Optional[str] = None,
 ) -> Tuple[Path, str]:
 	download_errors: List[str] = []
 	handoff_id = record.get("id") if isinstance(record.get("id"), str) else None
@@ -5711,6 +5742,7 @@ def _download_archive_via_nxm(
 				force=True,
 				progress_callback=progress_fn,
 				handoff_id=handoff_id,
+				desired_filename=desired_filename,
 			)
 			logger.info(
 				"[nxm_handoff] download succeeded host=%s saved_as=%s",

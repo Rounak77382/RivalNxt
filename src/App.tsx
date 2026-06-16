@@ -62,18 +62,9 @@ import {
   categoriesMatchTag,
   getCategoryTokenSet,
 } from "./lib/categoryUtils";
+import { isVariantActuallyUpdatable } from "./lib/updateUtils";
 
 const CATEGORY_KEYWORD_SET = getCategoryTokenSet();
-
-/** Normalise a version string for equality comparison (strips leading 'v', whitespace, and timestamp-like suffixes). */
-function normalizeVersionForCheck(ver: string | undefined | null): string {
-  if (!ver) return "";
-  let cleaned = ver.replace(/\.\d{9,11}$/, "").toLowerCase();
-  if (!cleaned.startsWith("v")) cleaned = "v" + cleaned;
-  cleaned = cleaned.replace(/^vs/, "v");
-  cleaned = cleaned.replace(/-w\d*$/, "");
-  return cleaned;
-}
 
 
 const GET_STARTED_STORAGE_KEY = "modmanager:get-started-complete";
@@ -692,11 +683,6 @@ export default function App() {
   // Get counts for header
   const installedMods = mods.filter((mod) => mod.isInstalled);
   const activeMods = installedMods.filter((mod) => mod.isActive !== false);
-  const formatVersionDisplay = (ver: string | undefined | null): string => {
-    if (!ver) return "";
-    const cleaned = ver.replace(/\.\d{9,11}$/, "");
-    return cleaned.toLowerCase().startsWith("v") ? cleaned : `v${cleaned}`;
-  };
 
   const normalizeVersionForCheck = (ver: string | undefined | null): string => {
     if (!ver) return "";
@@ -712,14 +698,7 @@ export default function App() {
     const seen = new Set<string>();
     for (const mod of installedMods) {
       if (!mod.hasUpdate) continue;
-      
-      if (
-        mod.installedVersion &&
-        mod.latestVersion &&
-        normalizeVersionForCheck(mod.installedVersion) === normalizeVersionForCheck(mod.latestVersion)
-      ) {
-        continue;
-      }
+
       if (
         typeof mod.backendModId === "number" &&
         Number.isFinite(mod.backendModId)
@@ -1808,12 +1787,7 @@ export default function App() {
     const localVersionKey = d.local_version_key ?? null;
     const latestVersionKey = d.latest_version_key ?? null;
     const latestVersion = d.latest_version || installedVersion || d.version || "";
-    let hasUpdate = Boolean(d.needs_update);
-    if (hasUpdate && installedVersion && latestVersion) {
-      if (normalizeVersionForCheck(installedVersion) === normalizeVersionForCheck(latestVersion)) {
-        hasUpdate = false;
-      }
-    }
+    const hasUpdate = Boolean(d.needs_update);
     const isActive = d.active_paks && d.active_paks.length > 0;
     const releaseDate = d.mod_created_time || null;
     const rawUpdatedAt = d.latest_uploaded_at || d.mod_updated_at || null;
@@ -1833,7 +1807,7 @@ export default function App() {
       sourceFileIds: d.source_file_ids || (d.latest_file_id ? [d.latest_file_id] : []),
       sourcePaths: d.source_paths || (d.path ? [d.path] : []),
       name: d.mod_name || d.name,
-      description: d.path || "",
+      description: "",
       author: d.mod_author || "",
       authorAvatar,
       authorMemberId,
@@ -1867,6 +1841,9 @@ export default function App() {
       contents: d.contents || [],
       performanceImpact: undefined,
       needsUpdate: hasUpdate,
+      updateVariantName: (d as any).updateVariantName ?? null,
+      updateVariantLocalVersion: (d as any).updateVariantLocalVersion ?? null,
+      updateVariantLatestVersion: (d as any).updateVariantLatestVersion ?? null,
       isUpdating: false,
       updateError: null,
       containsAdultContent: Boolean(d.contains_adult_content),
@@ -1978,31 +1955,17 @@ export default function App() {
           target.latest_file_name = incoming.latest_file_name;
       }
 
-      if (incoming.local_version_key) {
-        if (
-          !target.local_version_key ||
-          incoming.local_version_key > target.local_version_key
-        ) {
-          target.local_version_key = incoming.local_version_key;
-          if (incoming.version) target.version = incoming.version;
-          if (incoming.created_at) target.created_at = incoming.created_at;
-        }
-      }
+      // Track whether incoming has a higher local version key (i.e., it's the "newer" variant)
+      const incomingWinsVersion =
+        incoming.local_version_key &&
+        (!target.local_version_key || incoming.local_version_key > target.local_version_key);
 
-      let incomingNeedsUpdate = Boolean(incoming.needs_update);
-      target.needs_update = Boolean(target.needs_update || incomingNeedsUpdate);
-
-      // Suppress if the locally installed version key is already >= the latest known key
-      if (target.local_version_key && target.latest_version_key && target.local_version_key >= target.latest_version_key) {
-        target.needs_update = false;
+      if (incomingWinsVersion) {
+        target.local_version_key = incoming.local_version_key!;
+        if (incoming.version) target.version = incoming.version;
+        if (incoming.created_at) target.created_at = incoming.created_at;
       }
-      // Also suppress when the displayed version strings are identical — this catches cross-file
-      // false positives where the "latest" version comes from a different Nexus file for the same mod.
-      if (target.needs_update && target.version && target.latest_version) {
-        if (normalizeVersionForCheck(target.version) === normalizeVersionForCheck(target.latest_version)) {
-          target.needs_update = false;
-        }
-      }
+      // We handle needs_update recalculation at the end using local_variants.
     };
 
     for (const d of deduplicated) {
@@ -2045,7 +2008,8 @@ export default function App() {
             latest_file_id: d.latest_file_id ?? null,
             latest_file_name: d.latest_file_name ?? null,
             needs_update: initialNeedsUpdate,
-          });
+            local_variants: [d],
+          } as any);
           continue;
         }
         // merge into prev by name
@@ -2097,6 +2061,7 @@ export default function App() {
         if (merged.endorsement_count == null && d.endorsement_count != null)
           merged.endorsement_count = d.endorsement_count;
         mergeMetadata(merged, d);
+        (merged as any).local_variants.push(d);
         continue;
       }
       const prev = byMod.get(d.mod_id);
@@ -2117,7 +2082,8 @@ export default function App() {
           latest_file_id: d.latest_file_id ?? null,
           latest_file_name: d.latest_file_name ?? null,
           needs_update: initialNeedsUpdate,
-        });
+          local_variants: [d],
+        } as any);
         continue;
       }
       // merge into prev
@@ -2166,10 +2132,28 @@ export default function App() {
       if (merged.endorsement_count == null && d.endorsement_count != null)
         merged.endorsement_count = d.endorsement_count;
       mergeMetadata(merged, d);
+      (merged as any).local_variants.push(d);
     }
 
     byMod.forEach((v) => out.push(v));
     byName.forEach((v) => out.push(v));
+
+    // Final pass: Re-calculate needs_update for all grouped mods based on full variant knowledge
+    for (const merged of out) {
+      const variants = (merged as any).local_variants || [merged];
+      let hasRealUpdate = false;
+      for (const variant of variants) {
+        if (isVariantActuallyUpdatable(variant, variants)) {
+          hasRealUpdate = true;
+          (merged as any).updateVariantName = variant.name || variant.mod_name || "";
+          (merged as any).updateVariantLocalVersion = variant.version || "";
+          (merged as any).updateVariantLatestVersion = variant.latest_version || "";
+          break;
+        }
+      }
+      merged.needs_update = hasRealUpdate;
+    }
+
     return out;
   }
 

@@ -55,6 +55,9 @@ export interface Mod {
   contents?: string[];
   performanceImpact?: number; // 1-5 scale for performance impact
   needsUpdate?: boolean;
+  updateVariantName?: string | null;
+  updateVariantLocalVersion?: string | null;
+  updateVariantLatestVersion?: string | null;
   isUpdating?: boolean;
   updateError?: string | null;
   containsAdultContent?: boolean;
@@ -162,7 +165,17 @@ function ModCardInner({
   }
 
   if (hasMultiStage && mod.isInstalled && !mod.isIncompatible && mod.collectionDownloadedCount === mod.collectionVariantsCount) {
-    if (mod.isActive) {
+    if (mod.hasUpdate || mod.isUpdating) {
+      actionLabel = mod.isUpdating ? "Updating…" : "Update Available";
+      actionVariant = "default";
+      ActionIcon = RefreshCw;
+      actionClassName = mod.isUpdating ? "cursor-wait" : "";
+      actionStyle = {};
+      handleActionClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        onOpenFilesTab(mod.id);
+      };
+    } else if (mod.isActive) {
       actionLabel = "Enabled";
       actionVariant = "outline";
       ActionIcon = Power;

@@ -13,6 +13,7 @@ import type { Mod } from "./ModCard";
 import {
   checkModUpdate,
 } from "../lib/api";
+import { normalizeVersionForCheck } from "../lib/updateUtils";
 import { toast } from "sonner";
 
 interface CheckForUpdatesModalProps {
@@ -40,6 +41,7 @@ export type ModUpdateStatus =
 export interface ModStatus {
   status: ModUpdateStatus;
   error?: string;
+  pendingVersions?: { local: string; latest: string; referenceFileId?: number | null; pakName?: string; variantName?: string }[];
 }
 
 const FALLBACK_IMG =
@@ -51,14 +53,7 @@ const formatVersionDisplay = (ver: string | undefined | null): string => {
   return cleaned.toLowerCase().startsWith("v") ? cleaned : `v${cleaned}`;
 };
 
-const normalizeVersionForCheck = (ver: string | undefined | null): string => {
-  if (!ver) return "";
-  let cleaned = ver.replace(/\.\d{9,11}$/, "").toLowerCase();
-  if (!cleaned.startsWith("v")) cleaned = "v" + cleaned;
-  cleaned = cleaned.replace(/^vs/, "v");
-  cleaned = cleaned.replace(/-w\d*$/, "");
-  return cleaned;
-};
+
 
 export function CheckForUpdatesModal({
   open,
@@ -89,8 +84,8 @@ export function CheckForUpdatesModal({
   statusesRef.current = statuses;
 
   const setModStatus = useCallback(
-    (modId: string, status: ModUpdateStatus, error?: string) => {
-      const next = { ...statusesRef.current, [modId]: { status, error } };
+    (modId: string, status: ModUpdateStatus, error?: string, pendingVersions?: { local: string; latest: string; referenceFileId?: number | null }[]) => {
+      const next = { ...statusesRef.current, [modId]: { status, error, pendingVersions } };
       statusesRef.current = next;
       onStatusesChange(next);
     },
@@ -107,7 +102,14 @@ export function CheckForUpdatesModal({
         // Use the backend's authoritative needs_update value directly
         // (same field as mod.hasUpdate) to stay in sync with the sidebar badge
         if (result?.needs_update) {
-          setModStatus(mod.id, "has-update");
+          const pendingVersions = result.pending?.map((p: any) => ({
+            local: p.local_version || "",
+            latest: p.reference_version || "",
+            referenceFileId: typeof p.reference_file_id === "number" ? p.reference_file_id : null,
+            pakName: p.pak_name || "",
+            variantName: p.local_file_name || mod.updateVariantName || p.pak_name || "",
+          })) || [];
+          setModStatus(mod.id, "has-update", undefined, pendingVersions);
         } else {
           setModStatus(mod.id, "up-to-date");
         }
@@ -157,19 +159,8 @@ export function CheckForUpdatesModal({
     if (statuses[mod.id]) {
       return statuses[mod.id].status;
     }
-    // Before a check has been run, only surface "has-update" when the backend
-    // says so AND the displayed versions genuinely differ.  This filters out
-    // false-positives where list_downloads marks needs_update=true because it
-    // compared the installed file against a DIFFERENT file's version from Nexus.
+    // Before a check has been run, surface "has-update" when the backend says so
     if (mod.hasUpdate) {
-      // If versions are identical (after normalisation), suppress the badge.
-      if (
-        mod.installedVersion &&
-        mod.latestVersion &&
-        normalizeVersionForCheck(mod.installedVersion) === normalizeVersionForCheck(mod.latestVersion)
-      ) {
-        return "idle";
-      }
       return "has-update";
     }
     return "idle";
@@ -191,12 +182,21 @@ export function CheckForUpdatesModal({
   const handleUpdateAll = useCallback(() => {
     if (!onUpdateMod) return;
     for (const mod of modsWithUpdates) {
-      onUpdateMod(mod.id, mod.latestFileId ?? undefined);
+      // Use the specific file ID from the first pending variant (from check result),
+      // falling back to the grouped mod's latestFileId only if no check was run yet.
+      const modStatus = statuses[mod.id];
+      if (modStatus?.pendingVersions && modStatus.pendingVersions.length > 0) {
+        for (const pending of modStatus.pendingVersions) {
+          onUpdateMod(mod.id, pending.referenceFileId ?? mod.latestFileId ?? undefined);
+        }
+      } else {
+        onUpdateMod(mod.id, mod.latestFileId ?? undefined);
+      }
     }
     toast.success(
       `Started update for ${modsWithUpdates.length} mod${modsWithUpdates.length !== 1 ? "s" : ""}.`,
     );
-  }, [modsWithUpdates, onUpdateMod]);
+  }, [modsWithUpdates, onUpdateMod, statuses]);
 
   // Stats for header
   const totalChecked = installedMods.filter((m) =>
@@ -228,7 +228,54 @@ export function CheckForUpdatesModal({
           Checking…
         </span>
       );
-    if (s === "has-update")
+    if (s === "has-update") {
+      const modStatus = statuses[mod.id];
+      const hasPending = modStatus?.pendingVersions && modStatus.pendingVersions.length > 0;
+      
+      // If we have specific pending versions from the backend check, use the first one
+      if (hasPending && modStatus.pendingVersions![0].local && modStatus.pendingVersions![0].latest) {
+        const p = modStatus.pendingVersions![0];
+        
+        return (
+          <div className="text-xs flex items-center gap-1.5 font-medium pr-2">
+            <span className="px-2 py-0.5 rounded bg-muted text-muted-foreground border border-border/40 font-semibold">
+              {formatVersionDisplay(p.local)}
+            </span>
+            <span className="text-muted-foreground/60">→</span>
+            <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold animate-pulse">
+              {formatVersionDisplay(p.latest)}
+            </span>
+          </div>
+        );
+      }
+
+      // Initial load: we haven't run the backend check yet, but App.tsx calculated the specific variant needs an update
+      if (mod.updateVariantName && mod.updateVariantLocalVersion && mod.updateVariantLatestVersion) {
+        return (
+          <div className="text-xs flex items-center gap-1.5 font-medium pr-2">
+            <span className="px-2 py-0.5 rounded bg-muted text-muted-foreground border border-border/40 font-semibold">
+              {formatVersionDisplay(mod.updateVariantLocalVersion)}
+            </span>
+            <span className="text-muted-foreground/60">→</span>
+            <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold animate-pulse">
+              {formatVersionDisplay(mod.updateVariantLatestVersion)}
+            </span>
+          </div>
+        );
+      }
+
+      // Fallback: If grouped display versions match, but it has an update
+      if (mod.installedVersion && mod.latestVersion && 
+          normalizeVersionForCheck(mod.installedVersion) === normalizeVersionForCheck(mod.latestVersion)) {
+        return (
+          <div className="text-xs flex items-center gap-1.5 font-medium pr-2">
+            <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold animate-pulse">
+              Variant Update
+            </span>
+          </div>
+        );
+      }
+
       return (
         <div className="text-xs flex items-center gap-1.5 font-medium pr-2">
           {mod.installedVersion ? (
@@ -254,6 +301,7 @@ export function CheckForUpdatesModal({
           )}
         </div>
       );
+    }
     if (s === "up-to-date")
       return (
         <span className="flex items-center gap-1.5 text-xs text-emerald-400 font-semibold">
@@ -460,98 +508,121 @@ export function CheckForUpdatesModal({
             </div>
           ) : (
             <div className="grid gap-2">
-              {visibleMods.map((mod) => {
+              {visibleMods.flatMap((mod) => {
                 const s = getDerivedStatus(mod);
                 const hasUpdate = s === "has-update";
+                const modStatus = statuses[mod.id];
+                const pendingVersions = modStatus?.pendingVersions || [];
 
-                return (
-                  <div
-                    key={mod.id}
-                    className={`group flex items-center gap-4 p-3.5 rounded-xl border transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg ${
-                      hasUpdate
-                        ? "border-red-500/25 bg-red-500/5 hover:border-red-500/40 hover:shadow-red-500/5"
-                        : "border-border/60 bg-card hover:border-border/80 hover:bg-accent/30 hover:shadow-black/5"
-                    }`}
-                  >
-                    {/* Thumbnail */}
-                    <div className="w-14 h-10 rounded-lg overflow-hidden bg-muted flex-shrink-0 border border-border/40 relative">
-                      <img
-                        src={mod.images?.[0] || FALLBACK_IMG}
-                        alt={mod.name}
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                        onError={(e) => {
-                          if (e.currentTarget.src !== FALLBACK_IMG)
-                            e.currentTarget.src = FALLBACK_IMG;
-                        }}
-                        loading="lazy"
-                      />
-                    </div>
+                const renderRow = (pending?: any, idx?: number) => {
+                  const rawFileName = pending?.variantName || mod.updateVariantName || pending?.pakName || mod.latestFileName;
+                  const targetFileId = pending?.referenceFileId ?? mod.latestFileId ?? undefined;
+                  const rowKey = pending ? `${mod.id}-${pending.referenceFileId || idx}` : mod.id;
 
-                    {/* Name + author + variant */}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold truncate leading-tight">
-                        {mod.name}
-                      </p>
-                      <div className="flex items-center gap-2 mt-0.5 min-w-0 text-xs text-muted-foreground">
-                        {mod.author && (
-                          <p className="truncate flex-shrink-0">
-                            by {mod.author}
-                          </p>
-                        )}
-                        {/* Variant file name — shown when it differs meaningfully from the mod name */}
-                        {(() => {
-                          const raw = mod.latestFileName;
-                          if (!raw) return null;
-                          // Strip common file extensions and trim
-                          const clean = raw.replace(/\.(zip|7z|rar|pak|utoc|ucas)$/i, "").trim();
-                          // Only show if it looks different from the mod name
-                          const modNameLower = mod.name.toLowerCase().replace(/\s+/g, "");
-                          const cleanLower = clean.toLowerCase().replace(/\s+/g, "");
-                          if (cleanLower === modNameLower) return null;
-                          // Truncate to 32 chars with ellipsis
-                          const label = clean.length > 32 ? clean.slice(0, 30) + "…" : clean;
-                          return (
-                            <div className="flex items-center gap-2 truncate opacity-80">
-                              <span className="flex-shrink-0">•</span>
-                              <span className="truncate italic" title={clean}>{label}</span>
-                            </div>
-                          );
-                        })()}
+                  return (
+                    <div
+                      key={rowKey}
+                      className={`group flex items-center gap-4 p-3.5 rounded-xl border transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg ${
+                        hasUpdate
+                          ? "border-red-500/25 bg-red-500/5 hover:border-red-500/40 hover:shadow-red-500/5"
+                          : "border-border/60 bg-card hover:border-border/80 hover:bg-accent/30 hover:shadow-black/5"
+                      }`}
+                    >
+                      {/* Thumbnail */}
+                      <div className="w-14 h-10 rounded-lg overflow-hidden bg-muted flex-shrink-0 border border-border/40 relative">
+                        <img
+                          src={mod.images?.[0] || FALLBACK_IMG}
+                          alt={mod.name}
+                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                          onError={(e) => {
+                            if (e.currentTarget.src !== FALLBACK_IMG)
+                              e.currentTarget.src = FALLBACK_IMG;
+                          }}
+                          loading="lazy"
+                        />
                       </div>
-                    </div>
 
-                    {/* Version info */}
-                    {mod.installedVersion && !hasUpdate && (
-                      <div className="text-xs hidden sm:flex items-center gap-1.5 flex-shrink-0 font-medium">
-                        <span className="px-2 py-0.5 rounded bg-muted/60 text-muted-foreground border border-border/40">
-                          {formatVersionDisplay(mod.installedVersion)}
-                        </span>
+                      {/* Name + author + variant */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold truncate leading-tight">
+                          {mod.name}
+                        </p>
+                        <div className="flex items-center gap-2 mt-0.5 min-w-0 text-xs text-muted-foreground">
+                          {mod.author && (
+                            <p className="truncate flex-shrink-0">
+                              by {mod.author}
+                            </p>
+                          )}
+                          {/* Variant file name — shown when it differs meaningfully from the mod name */}
+                          {(() => {
+                            const raw = rawFileName;
+                            if (!raw) return null;
+                            // Strip common file extensions and trim
+                            const clean = raw.replace(/\.(zip|7z|rar|pak|utoc|ucas)$/i, "").trim();
+                            // Only show if it looks different from the mod name
+                            const modNameLower = mod.name.toLowerCase().replace(/\s+/g, "");
+                            const cleanLower = clean.toLowerCase().replace(/\s+/g, "");
+                            if (cleanLower === modNameLower) return null;
+                            // Truncate to 50 chars with ellipsis
+                            const label = clean.length > 50 ? clean.slice(0, 48) + "…" : clean;
+                            return (
+                              <div className="flex items-center gap-2 truncate opacity-80">
+                                <span className="flex-shrink-0">•</span>
+                                <span className="truncate italic" title={clean}>{label}</span>
+                              </div>
+                            );
+                          })()}
+                        </div>
                       </div>
-                    )}
 
-                    {/* Status badge */}
-                    <div className={`flex items-center justify-end flex-shrink-0 ${hasUpdate ? "w-32" : "w-28"}`}>
-                      {getStatusBadge(mod)}
+                      {/* Version info */}
+                      {(pending?.local || mod.installedVersion) && !hasUpdate && (
+                        <div className="text-xs hidden sm:flex items-center gap-1.5 flex-shrink-0 font-medium">
+                          <span className="px-2 py-0.5 rounded bg-muted/60 text-muted-foreground border border-border/40">
+                            {formatVersionDisplay(pending?.local || mod.installedVersion)}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Status badge */}
+                      <div className={`flex items-center justify-end flex-shrink-0 ${hasUpdate ? "w-32" : "w-28"}`}>
+                        {getStatusBadge(mod)}
+                      </div>
+
+                      {/* Update button (only when update available) */}
+                      {hasUpdate && onUpdateMod && (
+                        <Button
+                          size="sm"
+                          variant="default"
+                          className="gap-1.5 flex-shrink-0 h-8 text-xs font-semibold transition-all duration-300 hover:shadow-md hover:shadow-red-500/10 active:scale-95 border-none"
+                          style={{
+                            background: "linear-gradient(135deg, #ef4444, #f97316)",
+                            border: "none",
+                          }}
+                          onClick={() => {
+                            onOpenChange(false);
+                            // Add a small delay to ensure modal closure transition doesn't clash with opening the new one
+                            setTimeout(() => {
+                              window.dispatchEvent(
+                                new CustomEvent("open-mod-modal", {
+                                  detail: { modId: mod.id, tab: "files" },
+                                })
+                              );
+                            }, 100);
+                          }}
+                        >
+                          <ArrowUpCircle className="w-3.5 h-3.5" />
+                          Update
+                        </Button>
+                      )}
                     </div>
+                  );
+                };
 
-                    {/* Update button (only when update available) */}
-                    {hasUpdate && onUpdateMod && (
-                      <Button
-                        size="sm"
-                        variant="default"
-                        className="gap-1.5 flex-shrink-0 h-8 text-xs font-semibold transition-all duration-300 hover:shadow-md hover:shadow-red-500/10 active:scale-95 border-none"
-                        style={{
-                          background: "linear-gradient(135deg, #ef4444, #f97316)",
-                          border: "none",
-                        }}
-                        onClick={() => onUpdateMod(mod.id, mod.latestFileId ?? undefined)}
-                      >
-                        <ArrowUpCircle className="w-3.5 h-3.5" />
-                        Update
-                      </Button>
-                    )}
-                  </div>
-                );
+                if (hasUpdate && pendingVersions.length > 0) {
+                  return pendingVersions.map((pending: any, idx: number) => renderRow(pending, idx));
+                }
+                return [renderRow()];
               })}
             </div>
           )}

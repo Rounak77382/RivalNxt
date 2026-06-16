@@ -39,6 +39,7 @@ import {
   Check,
   X as XIcon,
   RefreshCw,
+  AlertTriangle,
 } from "lucide-react";
 import type { Mod } from "./ModCard";
 import {
@@ -81,6 +82,7 @@ import {
 } from "../lib/api";
 import { toast } from "sonner";
 import React from "react";
+import { isVariantActuallyUpdatable } from "../lib/updateUtils";
 
 type DownloadEntry = {
   id: number;
@@ -797,10 +799,27 @@ export function ModModal({
 
   const downloadSections = useMemo(
     () =>
-      downloadEntries.map((entry) => ({
-        entry,
-        groups: groupPakEntries(entry.contents),
-      })),
+      downloadEntries
+        .map((entry) => ({
+          entry,
+          groups: groupPakEntries(entry.contents),
+        }))
+        .sort((a, b) => {
+          const aNeedsUpdate =
+            isVariantActuallyUpdatable(a.entry, downloadEntries) &&
+            a.entry.local_version_key != null &&
+            a.entry.latest_version_key != null &&
+            a.entry.local_version_key < a.entry.latest_version_key;
+          const bNeedsUpdate =
+            isVariantActuallyUpdatable(b.entry, downloadEntries) &&
+            b.entry.local_version_key != null &&
+            b.entry.latest_version_key != null &&
+            b.entry.local_version_key < b.entry.latest_version_key;
+
+          if (aNeedsUpdate && !bNeedsUpdate) return -1;
+          if (!aNeedsUpdate && bNeedsUpdate) return 1;
+          return 0;
+        }),
     [downloadEntries],
   );
 
@@ -1639,9 +1658,23 @@ export function ModModal({
               </div>
 
               <div className="flex-1 min-w-0">
-                <DialogTitle className="text-2xl mb-2">{mod.name}</DialogTitle>
+                <DialogTitle className="text-2xl mb-2">{details?.mod?.name || mod.name}</DialogTitle>
+                
+                {details?.mod?.status === 'under_moderation' && (
+                  <div className="text-amber-500 font-medium text-sm flex items-center gap-1.5 mb-2 bg-amber-500/10 p-2 rounded-md border border-amber-500/20">
+                    <AlertTriangle className="w-4 h-4" />
+                    This mod is currently under moderation on Nexus Mods and cannot be synced properly.
+                  </div>
+                )}
+                {details?.mod?.status === 'hidden' && (
+                  <div className="text-amber-500 font-medium text-sm flex items-center gap-1.5 mb-2 bg-amber-500/10 p-2 rounded-md border border-amber-500/20">
+                    <AlertTriangle className="w-4 h-4" />
+                    This mod is currently hidden on Nexus Mods by its author.
+                  </div>
+                )}
+
                 <p className="text-muted-foreground mb-3">
-                  {details?.mod?.summary || mod.description}
+                  {details?.mod?.summary || mod.description || "No summary available."}
                 </p>
 
                 <div className="flex items-center gap-3 mb-3">
@@ -2413,21 +2446,15 @@ export function ModModal({
                                     </Badge>
                                   </div>
                                   <div className="flex items-center gap-2">
-                                    {(() => {
-                                      const isHighestLocal =
-                                        entry.local_version_key != null &&
-                                        entry.local_version_key ===
-                                          highestLocalVersionKey;
+                                      {(() => {
+                                        const variantNeedsUpdate =
+                                          isVariantActuallyUpdatable(entry, downloadEntries) &&
+                                          entry.local_version_key != null &&
+                                          entry.latest_version_key != null &&
+                                          entry.local_version_key <
+                                            entry.latest_version_key;
 
-                                      const variantNeedsUpdate =
-                                        isHighestLocal &&
-                                        Boolean(entry.needs_update) &&
-                                        entry.local_version_key != null &&
-                                        entry.latest_version_key != null &&
-                                        entry.local_version_key <
-                                          entry.latest_version_key;
-
-                                      if (!variantNeedsUpdate) return null;
+                                        if (!variantNeedsUpdate) return null;
 
                                       return (
                                         <Button
