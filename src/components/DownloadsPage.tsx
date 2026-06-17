@@ -22,6 +22,7 @@ interface DownloadsPageProps {
   viewMode: "grid" | "list";
   onViewModeChange: (mode: "grid" | "list") => void;
   onRefresh?: () => void;
+  selectedCustomTags?: string[];
 }
 
 export function DownloadsPage({
@@ -37,6 +38,7 @@ export function DownloadsPage({
   viewMode,
   onViewModeChange,
   onRefresh,
+  selectedCustomTags = [],
 }: DownloadsPageProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<string>("Recent");
@@ -173,6 +175,17 @@ export function DownloadsPage({
 
       // Otherwise only show mods that carry at least one of the selected skins
       return modSkins.some((s) => selectedSkinsForChar.includes(s));
+    });
+  }
+
+  // Filter by custom tags
+  if (selectedCustomTags && selectedCustomTags.length > 0) {
+    filteredMods = filteredMods.filter((mod) => {
+      // Mod must have ALL selected custom tags (AND logic)
+      // or you can choose OR logic. Usually tags are OR logic if selecting multiple, but AND logic narrows down. Let's use OR logic to match characters/categories.
+      return selectedCustomTags.some((tag) =>
+        mod.tags.some((t) => t.toLowerCase() === tag.toLowerCase()),
+      );
     });
   }
 

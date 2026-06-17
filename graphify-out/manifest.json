@@ -1100,8 +1100,8 @@
     "semantic_hash": "3997abdee9e4784ff5103f017b3dd7f4"
   },
   "src/App.tsx": {
-    "mtime": 1781625339.868281,
-    "ast_hash": "44f47ce4fe1bf9e1fd7ec2319428217d",
+    "mtime": 1781681631.110649,
+    "ast_hash": "75c85331d168a38cc346aa9ff32e9e78",
     "semantic_hash": ""
   },
   "src/components/ActiveModsPanel.tsx": {
@@ -1110,8 +1110,8 @@
     "semantic_hash": "d8ec23473a668b6e33f049bb8726620f"
   },
   "src/components/ActiveModsView.tsx": {
-    "mtime": 1781627392.3979278,
-    "ast_hash": "f844b8d5387f8ba3c27d4d32c5fb0cca",
+    "mtime": 1781681684.112071,
+    "ast_hash": "bae4ceadf88369832667b2ec3d20541f",
     "semantic_hash": ""
   },
   "src/components/AddModModal.tsx": {
@@ -1145,14 +1145,14 @@
     "semantic_hash": "4e312505cce9724b2453adb42457422e"
   },
   "src/components/DownloadsPage.tsx": {
-    "mtime": 1781627377.4705582,
-    "ast_hash": "54318a22d59bff38567c2afc5a6ad9a1",
+    "mtime": 1781681666.0294302,
+    "ast_hash": "e5d196aaf27882317fe3d2a713b7718e",
     "semantic_hash": ""
   },
   "src/components/DownloadsSidebar.tsx": {
-    "mtime": 1779368808.1099226,
-    "ast_hash": "fc92b953cda05851c98d525d44a61d6a",
-    "semantic_hash": "fc92b953cda05851c98d525d44a61d6a"
+    "mtime": 1781683305.2458029,
+    "ast_hash": "d0fb02d7c215fd689a1eee45dd3e80e6",
+    "semantic_hash": ""
   },
   "src/components/GameUpdateModal.tsx": {
     "mtime": 1777552196.7631056,
@@ -1185,8 +1185,8 @@
     "semantic_hash": "f7cb7ad671ee6fcc6ff3aa99d5a4cc0e"
   },
   "src/components/ModModal.tsx": {
-    "mtime": 1781627944.7667766,
-    "ast_hash": "d99ebe96c2596e797dbb667e75305c2e",
+    "mtime": 1781647301.508966,
+    "ast_hash": "4ce3c2143aec852001626b2becec9bf5",
     "semantic_hash": ""
   },
   "src/components/NSFWFilterProvider.tsx": {
@@ -1500,8 +1500,8 @@
     "semantic_hash": "e3f848f1b39f863e6164cf58b5a8e752"
   },
   "src/lib/api.ts": {
-    "mtime": 1781613924.2856228,
-    "ast_hash": "915bc8f2d6516c3a3241f0b005e08990",
+    "mtime": 1781647180.517223,
+    "ast_hash": "7cfa441f1c9ac9e1c9f17b57f0f8ca90",
     "semantic_hash": ""
   },
   "src/lib/backupUtils.ts": {

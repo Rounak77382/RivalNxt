@@ -24,6 +24,7 @@ interface ActiveModsViewProps {
   viewMode: "grid" | "list";
   onViewModeChange: (mode: "grid" | "list") => void;
   onRefresh?: () => void;
+  selectedCustomTags?: string[];
 }
 
 export function ActiveModsView({
@@ -38,6 +39,7 @@ export function ActiveModsView({
   viewMode,
   onViewModeChange,
   onRefresh,
+  selectedCustomTags = [],
 }: ActiveModsViewProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<string>("Recent");
@@ -169,6 +171,17 @@ export function ActiveModsView({
 
       if (selectedSkinsForChar.length === 0) return true;
       return modSkins.some((s) => selectedSkinsForChar.includes(s));
+    });
+  }
+
+  // Filter by custom tags
+  if (selectedCustomTags && selectedCustomTags.length > 0) {
+    filteredMods = filteredMods.filter((mod) => {
+      // Mod must have ALL selected custom tags (AND logic)
+      // Actually, matching DownloadsPage, we'll use OR logic
+      return selectedCustomTags.some((tag) =>
+        mod.tags.some((t) => t.toLowerCase() === tag.toLowerCase()),
+      );
     });
   }
 

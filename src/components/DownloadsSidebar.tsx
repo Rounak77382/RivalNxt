@@ -21,6 +21,7 @@ import {
   CheckCircle,
   ChevronDown,
   Heart,
+  Tag,
 } from "lucide-react";
 
 
@@ -52,6 +53,8 @@ interface DownloadsSidebarProps {
   updatesCount: number;
   selectedCharacters?: string[];
   onCharacterToggle?: (character: string) => void;
+  selectedCustomTags?: string[];
+  onCustomTagToggle?: (tag: string) => void;
   mods: Mod[];
   conflictsReloadToken?: number;
   onRefreshMods?: () => void;
@@ -96,6 +99,8 @@ export function DownloadsSidebar({
   updatesCount,
   selectedCharacters = [],
   onCharacterToggle,
+  selectedCustomTags = [],
+  onCustomTagToggle,
   mods,
   conflictsReloadToken = 0,
   onRefreshMods,
@@ -122,6 +127,31 @@ export function DownloadsSidebar({
     }
     return Array.from(allTags).sort().join("|");
   }, [installedMods]);
+
+  // Compute all custom tags used by installed mods
+  const customTagsInMods = useMemo(() => {
+    const ct = new Set<string>();
+    for (const mod of installedMods) {
+      const tags = extractNonCategoryTags(mod.tags);
+      for (const tag of tags) {
+        if (tag.toLowerCase() === "required" || tag.toLowerCase() === "optional") continue;
+        const tagInfo = tagLookupMap[tag];
+        // If it's neither a character nor a skin, it's a custom tag
+        if (!tagInfo || (tagInfo.type !== "character" && tagInfo.type !== "skin")) {
+          ct.add(tag);
+        }
+      }
+    }
+    return Array.from(ct).sort((a, b) => a.localeCompare(b));
+  }, [installedMods, tagLookupMap]);
+
+  const totalModsWithCustomTags = useMemo(() => {
+    return installedMods.filter((mod) =>
+      customTagsInMods.some((tag) =>
+        mod.tags.some((t) => t.toLowerCase() === tag.toLowerCase()),
+      ),
+    ).length;
+  }, [installedMods, customTagsInMods]);
 
   // Load all unique tags and lookup their types
   useEffect(() => {
@@ -613,6 +643,72 @@ export function DownloadsSidebar({
               </div>
             );
           })}
+
+          {/* Custom Tags Section */}
+          {customTagsInMods.length > 0 && onCustomTagToggle && (
+            <div>
+              <Collapsible defaultOpen>
+                <CollapsibleTrigger asChild>
+                  <Button
+                    variant={selectedCustomTags.length > 0 ? "secondary" : "ghost"}
+                    className="w-full justify-start gap-3 h-10 min-w-0"
+                  >
+                    <Tag className="h-4 w-4 shrink-0" />
+                    <span className="flex-1 truncate text-left">
+                      Custom Tags
+                    </span>
+                    {totalModsWithCustomTags > 0 && (
+                      <Badge variant="secondary" className="shrink-0 text-xs">
+                        {totalModsWithCustomTags}
+                      </Badge>
+                    )}
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-1 mt-2 ml-6">
+                  {customTagsInMods.map((tag) => {
+                    const isSelected = selectedCustomTags.includes(tag);
+                    const modCount = installedMods.filter((mod) =>
+                      mod.tags.some((t) => t.toLowerCase() === tag.toLowerCase()),
+                    ).length;
+
+                    return (
+                      <Button
+                        key={tag}
+                        variant={isSelected ? "secondary" : "ghost"}
+                        className={`w-full justify-start h-8 px-2 text-sm transition-colors ${
+                          isSelected
+                            ? "font-medium text-foreground"
+                            : "font-normal text-muted-foreground hover:text-foreground"
+                        }`}
+                        onClick={() => onCustomTagToggle(tag)}
+                      >
+                        <span className="truncate flex-1 text-left">{tag}</span>
+                        {modCount > 0 && (
+                          <Badge variant="secondary" className="shrink-0 text-xs opacity-70">
+                            {modCount}
+                          </Badge>
+                        )}
+                      </Button>
+                    );
+                  })}
+                  {selectedCustomTags.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full text-xs mt-2"
+                      onClick={() => {
+                        selectedCustomTags.forEach((tag) =>
+                          onCustomTagToggle(tag),
+                        );
+                      }}
+                    >
+                      Clear Selection
+                    </Button>
+                  )}
+                </CollapsibleContent>
+              </Collapsible>
+            </div>
+          )}
         </div>
       </div>
 

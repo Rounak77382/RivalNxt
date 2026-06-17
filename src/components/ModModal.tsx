@@ -823,14 +823,7 @@ export function ModModal({
     [downloadEntries],
   );
 
-  const highestLocalVersionKey = useMemo(() => {
-    return downloadEntries.reduce<string | null>((best, entry) => {
-      if (!entry.local_version_key) return best;
-      if (!best || entry.local_version_key > best)
-        return entry.local_version_key;
-      return best;
-    }, null);
-  }, [downloadEntries]);
+
 
   const handleToggle = useCallback(
     async (downloadId: number, files: string[], willCheck: boolean) => {

@@ -840,6 +840,7 @@ export type ApiDownload = {
   mod_author: string | null;
   picture_url: string | null;
   tags: string[];
+  custom_tag_names?: string[];
   mod_downloads?: number | null;
   endorsement_count?: number | null;
   mod_author_profile_url?: string | null;

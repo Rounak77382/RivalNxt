@@ -143,6 +143,7 @@ export default function App() {
   >("downloads");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedCharacters, setSelectedCharacters] = useState<string[]>([]);
+  const [selectedCustomTags, setSelectedCustomTags] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [nxmEntries, setNxmEntries] = useState<Record<string, NxmEntry>>({});
   const nxmEntriesRef = useRef<Record<string, NxmEntry>>({});
@@ -2207,6 +2208,12 @@ export default function App() {
     );
   };
 
+  const handleCustomTagToggle = (tag: string) => {
+    setSelectedCustomTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
+    );
+  };
+
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category);
     // Clear character filters when switching away from characters
@@ -2231,6 +2238,8 @@ export default function App() {
               updatesCount={updatesCount}
               selectedCharacters={selectedCharacters}
               onCharacterToggle={handleCharacterToggle}
+              selectedCustomTags={selectedCustomTags}
+              onCustomTagToggle={handleCustomTagToggle}
               mods={mods}
               conflictsReloadToken={conflictsReloadToken}
               onRefreshMods={handleRefresh}
@@ -2265,6 +2274,7 @@ export default function App() {
                     onFavorite={handleFavorite}
                     selectedCategory={selectedCategory}
                     selectedCharacters={selectedCharacters}
+                    selectedCustomTags={selectedCustomTags}
                     onModAdded={handleModAdded}
                     onConflictStateChanged={notifyConflictsDirty}
                     viewMode={viewMode}
@@ -2283,6 +2293,7 @@ export default function App() {
                     onFavorite={handleFavorite}
                     selectedCategory={selectedCategory}
                     selectedCharacters={selectedCharacters}
+                    selectedCustomTags={selectedCustomTags}
                     onConflictStateChanged={notifyConflictsDirty}
                     viewMode={viewMode}
                     onViewModeChange={setViewMode}

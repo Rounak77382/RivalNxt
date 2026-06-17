@@ -98,7 +98,7 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "api_characters_list_characters",
-      "community": 82,
+      "community": 57,
       "norm_label": "list_characters()"
     },
     {
@@ -228,7 +228,7 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "api_characters_rationale_36",
-      "community": 82,
+      "community": 57,
       "norm_label": "get all characters with their skins."
     },
     {
@@ -308,7 +308,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "api_dependencies",
-      "community": 7,
+      "community": 57,
       "norm_label": "dependencies.py"
     },
     {
@@ -328,7 +328,7 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "api_dependencies_ensure_schema_initialised",
-      "community": 7,
+      "community": 57,
       "norm_label": "_ensure_schema_initialised()"
     },
     {
@@ -358,7 +358,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "api_dependencies_rationale_1",
-      "community": 7,
+      "community": 57,
       "norm_label": "shared dependencies and environment checks for the api layer."
     },
     {
@@ -478,7 +478,7 @@
       "source_location": "L333",
       "_origin": "ast",
       "id": "api_server_create_settings_task_job",
-      "community": 15,
+      "community": 26,
       "norm_label": "_create_settings_task_job()"
     },
     {
@@ -488,7 +488,7 @@
       "source_location": "L333",
       "_origin": "ast",
       "id": "settingstaskname",
-      "community": 15,
+      "community": 26,
       "norm_label": "settingstaskname"
     },
     {
@@ -578,7 +578,7 @@
       "source_location": "L481",
       "_origin": "ast",
       "id": "api_server_settingstaskrequest",
-      "community": 15,
+      "community": 26,
       "norm_label": "settingstaskrequest"
     },
     {
@@ -588,7 +588,7 @@
       "source_location": "L486",
       "_origin": "ast",
       "id": "api_server_serialize_path",
-      "community": 0,
+      "community": 15,
       "norm_label": "_serialize_path()"
     },
     {
@@ -608,7 +608,7 @@
       "source_location": "L495",
       "_origin": "ast",
       "id": "api_server_to_path",
-      "community": 0,
+      "community": 15,
       "norm_label": "_to_path()"
     },
     {
@@ -618,7 +618,7 @@
       "source_location": "L506",
       "_origin": "ast",
       "id": "api_server_serialize_validation",
-      "community": 0,
+      "community": 15,
       "norm_label": "_serialize_validation()"
     },
     {
@@ -628,7 +628,7 @@
       "source_location": "L519",
       "_origin": "ast",
       "id": "api_server_validate_directory_path",
-      "community": 0,
+      "community": 15,
       "norm_label": "_validate_directory_path()"
     },
     {
@@ -638,7 +638,7 @@
       "source_location": "L561",
       "_origin": "ast",
       "id": "api_server_validate_executable_path",
-      "community": 0,
+      "community": 15,
       "norm_label": "_validate_executable_path()"
     },
     {
@@ -648,7 +648,7 @@
       "source_location": "L614",
       "_origin": "ast",
       "id": "api_server_validate_api_key",
-      "community": 0,
+      "community": 15,
       "norm_label": "_validate_api_key()"
     },
     {
@@ -658,7 +658,7 @@
       "source_location": "L634",
       "_origin": "ast",
       "id": "api_server_collect_settings_validation",
-      "community": 0,
+      "community": 15,
       "norm_label": "_collect_settings_validation()"
     },
     {
@@ -668,7 +668,7 @@
       "source_location": "L645",
       "_origin": "ast",
       "id": "api_server_serialize_settings",
-      "community": 0,
+      "community": 15,
       "norm_label": "_serialize_settings()"
     },
     {
@@ -858,7 +858,7 @@
       "source_location": "L1374",
       "_origin": "ast",
       "id": "api_server_normalize_contents_for_compare",
-      "community": 0,
+      "community": 15,
       "norm_label": "_normalize_contents_for_compare()"
     },
     {
@@ -868,7 +868,7 @@
       "source_location": "L1399",
       "_origin": "ast",
       "id": "api_server_extract_created_at_hint",
-      "community": 21,
+      "community": 0,
       "norm_label": "_extract_created_at_hint()"
     },
     {
@@ -878,7 +878,7 @@
       "source_location": "L1412",
       "_origin": "ast",
       "id": "api_server_duplicate_detail_from_error",
-      "community": 26,
+      "community": 0,
       "norm_label": "_duplicate_detail_from_error()"
     },
     {
@@ -1008,7 +1008,7 @@
       "source_location": "L2186",
       "_origin": "ast",
       "id": "api_server_get_settings_route",
-      "community": 0,
+      "community": 15,
       "norm_label": "get_settings_route()"
     },
     {
@@ -1028,7 +1028,7 @@
       "source_location": "L2203",
       "_origin": "ast",
       "id": "api_server_run_settings_task_route",
-      "community": 15,
+      "community": 26,
       "norm_label": "run_settings_task_route()"
     },
     {
@@ -1058,7 +1058,7 @@
       "source_location": "L2228",
       "_origin": "ast",
       "id": "api_server_validate_path",
-      "community": 0,
+      "community": 15,
       "norm_label": "validate_path()"
     },
     {
@@ -1138,7 +1138,7 @@
       "source_location": "L2513",
       "_origin": "ast",
       "id": "api_server_eager_resolve_mod_name",
-      "community": 0,
+      "community": 70,
       "norm_label": "_eager_resolve_mod_name()"
     },
     {
@@ -1198,7 +1198,7 @@
       "source_location": "L2704",
       "_origin": "ast",
       "id": "api_server_cancel_nxm_handoff",
-      "community": 70,
+      "community": 84,
       "norm_label": "cancel_nxm_handoff()"
     },
     {
@@ -1228,7 +1228,7 @@
       "source_location": "L2766",
       "_origin": "ast",
       "id": "api_server_coerce_int",
-      "community": 70,
+      "community": 0,
       "norm_label": "_coerce_int()"
     },
     {
@@ -1248,7 +1248,7 @@
       "source_location": "L2812",
       "_origin": "ast",
       "id": "api_server_find_matching_handoff",
-      "community": 70,
+      "community": 0,
       "norm_label": "_find_matching_handoff()"
     },
     {
@@ -1258,7 +1258,7 @@
       "source_location": "L2848",
       "_origin": "ast",
       "id": "api_server_summarize_mod_files",
-      "community": 70,
+      "community": 0,
       "norm_label": "_summarize_mod_files()"
     },
     {
@@ -1268,7 +1268,7 @@
       "source_location": "L2897",
       "_origin": "ast",
       "id": "api_server_select_file_entry",
-      "community": 70,
+      "community": 0,
       "norm_label": "_select_file_entry()"
     },
     {
@@ -1278,7 +1278,7 @@
       "source_location": "L2922",
       "_origin": "ast",
       "id": "api_server_preview_nxm_handoff",
-      "community": 70,
+      "community": 0,
       "norm_label": "preview_nxm_handoff()"
     },
     {
@@ -1298,7 +1298,7 @@
       "source_location": "L3039",
       "_origin": "ast",
       "id": "api_server_ingest_nxm_handoff",
-      "community": 70,
+      "community": 0,
       "norm_label": "ingest_nxm_handoff()"
     },
     {
@@ -1308,7 +1308,7 @@
       "source_location": "L3392",
       "_origin": "ast",
       "id": "api_server_extract_download_uri",
-      "community": 84,
+      "community": 0,
       "norm_label": "_extract_download_uri()"
     },
     {
@@ -1318,7 +1318,7 @@
       "source_location": "L3413",
       "_origin": "ast",
       "id": "api_server_snapshot_local_downloads",
-      "community": 84,
+      "community": 0,
       "norm_label": "_snapshot_local_downloads()"
     },
     {
@@ -1328,7 +1328,7 @@
       "source_location": "L3475",
       "_origin": "ast",
       "id": "api_server_complete_update_from_handoff",
-      "community": 84,
+      "community": 0,
       "norm_label": "_complete_update_from_handoff()"
     },
     {
@@ -1338,7 +1338,7 @@
       "source_location": "L3561",
       "_origin": "ast",
       "id": "api_server_update_mod",
-      "community": 84,
+      "community": 0,
       "norm_label": "update_mod()"
     },
     {
@@ -1348,7 +1348,7 @@
       "source_location": "L3881",
       "_origin": "ast",
       "id": "api_server_upload_mod_file",
-      "community": 84,
+      "community": 21,
       "norm_label": "upload_mod_file()"
     },
     {
@@ -1358,7 +1358,7 @@
       "source_location": "L3881",
       "_origin": "ast",
       "id": "uploadfile",
-      "community": 84,
+      "community": 21,
       "norm_label": "uploadfile"
     },
     {
@@ -1498,7 +1498,7 @@
       "source_location": "L4557",
       "_origin": "ast",
       "id": "api_server_updatemoddetailspayload",
-      "community": 124,
+      "community": 26,
       "norm_label": "updatemoddetailspayload"
     },
     {
@@ -1508,7 +1508,7 @@
       "source_location": "L4562",
       "_origin": "ast",
       "id": "api_server_update_mod_details",
-      "community": 124,
+      "community": 26,
       "norm_label": "update_mod_details()"
     },
     {
@@ -1658,7 +1658,7 @@
       "source_location": "L5388",
       "_origin": "ast",
       "id": "api_server_safe_filename",
-      "community": 84,
+      "community": 21,
       "norm_label": "_safe_filename()"
     },
     {
@@ -1668,7 +1668,7 @@
       "source_location": "L5400",
       "_origin": "ast",
       "id": "api_server_unique_destination",
-      "community": 84,
+      "community": 21,
       "norm_label": "_unique_destination()"
     },
     {
@@ -1688,7 +1688,7 @@
       "source_location": "L5414",
       "_origin": "ast",
       "id": "api_server_nxm_required_detail",
-      "community": 84,
+      "community": 0,
       "norm_label": "_nxm_required_detail()"
     },
     {
@@ -1698,7 +1698,7 @@
       "source_location": "L5443",
       "_origin": "ast",
       "id": "api_server_download_remote_archive",
-      "community": 84,
+      "community": 21,
       "norm_label": "_download_remote_archive()"
     },
     {
@@ -1708,7 +1708,7 @@
       "source_location": "L5554",
       "_origin": "ast",
       "id": "api_server_resolve_nexus_download_candidates",
-      "community": 26,
+      "community": 84,
       "norm_label": "_resolve_nexus_download_candidates()"
     },
     {
@@ -1718,7 +1718,7 @@
       "source_location": "L5697",
       "_origin": "ast",
       "id": "api_server_download_archive_via_nxm",
-      "community": 26,
+      "community": 84,
       "norm_label": "_download_archive_via_nxm()"
     },
     {
@@ -2198,7 +2198,7 @@
       "source_location": "L2229",
       "_origin": "ast",
       "id": "api_server_rationale_2229",
-      "community": 0,
+      "community": 15,
       "norm_label": "validate a single path field. \texpects: { \"field\": \"data_dir\"|\"marvel_rivals_roo"
     },
     {
@@ -2248,7 +2248,7 @@
       "source_location": "L2514",
       "_origin": "ast",
       "id": "api_server_rationale_2514",
-      "community": 0,
+      "community": 70,
       "norm_label": "best-effort resolve the mod name and store it in the handoff metadata.  \tchecks"
     },
     {
@@ -2268,7 +2268,7 @@
       "source_location": "L2705",
       "_origin": "ast",
       "id": "api_server_rationale_2705",
-      "community": 70,
+      "community": 84,
       "norm_label": "signal an in-progress nxm download to stop.  \tthis sets a cancellation flag that"
     },
     {
@@ -2288,7 +2288,7 @@
       "source_location": "L2817",
       "_origin": "ast",
       "id": "api_server_rationale_2817",
-      "community": 70,
+      "community": 0,
       "norm_label": "return the most recent handoff compatible with the given mod and file.  \tparamet"
     },
     {
@@ -2308,7 +2308,7 @@
       "source_location": "L3562",
       "_origin": "ast",
       "id": "api_server_rationale_3562",
-      "community": 84,
+      "community": 0,
       "norm_label": "download the latest nexus file for a mod, ingest it, and activate it while deact"
     },
     {
@@ -2318,7 +2318,7 @@
       "source_location": "L3882",
       "_origin": "ast",
       "id": "api_server_rationale_3882",
-      "community": 84,
+      "community": 21,
       "norm_label": "accept an uploaded mod archive/pak and store it under the downloads root. \t\tretu"
     },
     {
@@ -2328,7 +2328,7 @@
       "source_location": "L3949",
       "_origin": "ast",
       "id": "api_server_rationale_3949",
-      "community": 84,
+      "community": 21,
       "norm_label": "fallback upload endpoint when python-multipart is unavailable."
     },
     {
@@ -2398,7 +2398,7 @@
       "source_location": "L4563",
       "_origin": "ast",
       "id": "api_server_rationale_4563",
-      "community": 124,
+      "community": 26,
       "norm_label": "update mod details (description only for now)."
     },
     {
@@ -2458,7 +2458,7 @@
       "source_location": "L5401",
       "_origin": "ast",
       "id": "api_server_rationale_5401",
-      "community": 84,
+      "community": 21,
       "norm_label": "return a deterministic destination under ``directory`` without suffixing.  \tif t"
     },
     {
@@ -2838,7 +2838,7 @@
       "source_location": "L243",
       "_origin": "ast",
       "id": "services_handoffs_update_handoff_progress",
-      "community": 70,
+      "community": 84,
       "norm_label": "update_handoff_progress()"
     },
     {
@@ -2878,7 +2878,7 @@
       "source_location": "L385",
       "_origin": "ast",
       "id": "services_handoffs_clear_handoff_failure",
-      "community": 70,
+      "community": 0,
       "norm_label": "clear_handoff_failure()"
     },
     {
@@ -2948,7 +2948,7 @@
       "source_location": "L386",
       "_origin": "ast",
       "id": "services_handoffs_rationale_386",
-      "community": 70,
+      "community": 0,
       "norm_label": "clear failure record for a handoff (e.g., after successful processing)."
     },
     {
@@ -3368,7 +3368,7 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "db_db_get_connection",
-      "community": 7,
+      "community": 57,
       "norm_label": "get_connection()"
     },
     {
@@ -3388,7 +3388,7 @@
       "source_location": "L61",
       "_origin": "ast",
       "id": "db_db_init_schema",
-      "community": 7,
+      "community": 44,
       "norm_label": "init_schema()"
     },
     {
@@ -3488,7 +3488,7 @@
       "source_location": "L653",
       "_origin": "ast",
       "id": "db_db_init_views",
-      "community": 7,
+      "community": 44,
       "norm_label": "_init_views()"
     },
     {
@@ -3518,7 +3518,7 @@
       "source_location": "L992",
       "_origin": "ast",
       "id": "db_db_replace_local_downloads",
-      "community": 74,
+      "community": 48,
       "norm_label": "replace_local_downloads()"
     },
     {
@@ -3688,7 +3688,7 @@
       "source_location": "L1957",
       "_origin": "ast",
       "id": "db_db_get_all_characters",
-      "community": 82,
+      "community": 57,
       "norm_label": "get_all_characters()"
     },
     {
@@ -3758,7 +3758,7 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "db_db_rationale_62",
-      "community": 7,
+      "community": 44,
       "norm_label": "create tables and views if they do not already exist."
     },
     {
@@ -3868,7 +3868,7 @@
       "source_location": "L1958",
       "_origin": "ast",
       "id": "db_db_rationale_1958",
-      "community": 82,
+      "community": 57,
       "norm_label": "get all characters with their skins.          returns:         list of dicts"
     },
     {
@@ -5148,7 +5148,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "utils_bbcode_wrapper",
-      "community": 124,
+      "community": 26,
       "norm_label": "bbcode_wrapper.py"
     },
     {
@@ -5158,7 +5158,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "utils_bbcode_wrapper_get_parser",
-      "community": 124,
+      "community": 26,
       "norm_label": "_get_parser()"
     },
     {
@@ -5168,7 +5168,7 @@
       "source_location": "L96",
       "_origin": "ast",
       "id": "utils_bbcode_wrapper_bbcode_to_html",
-      "community": 124,
+      "community": 26,
       "norm_label": "bbcode_to_html()"
     },
     {
@@ -5178,7 +5178,7 @@
       "source_location": "L97",
       "_origin": "ast",
       "id": "utils_bbcode_wrapper_rationale_97",
-      "community": 124,
+      "community": 26,
       "norm_label": "convert bbcode text to html using the centralized parser logic."
     },
     {
@@ -5188,7 +5188,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "utils_download_paths",
-      "community": 77,
+      "community": 48,
       "norm_label": "download_paths.py"
     },
     {
@@ -5198,7 +5198,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "utils_download_paths_expand",
-      "community": 77,
+      "community": 48,
       "norm_label": "_expand()"
     },
     {
@@ -5208,7 +5208,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "core_utils_download_paths_py_path",
-      "community": 77,
+      "community": 48,
       "norm_label": "path"
     },
     {
@@ -5218,7 +5218,7 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "utils_download_paths_iter_config_roots",
-      "community": 77,
+      "community": 48,
       "norm_label": "_iter_config_roots()"
     },
     {
@@ -5228,7 +5228,7 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "utils_download_paths_known_download_roots",
-      "community": 77,
+      "community": 48,
       "norm_label": "known_download_roots()"
     },
     {
@@ -5238,7 +5238,7 @@
       "source_location": "L50",
       "_origin": "ast",
       "id": "utils_download_paths_normalize_download_path",
-      "community": 77,
+      "community": 48,
       "norm_label": "normalize_download_path()"
     },
     {
@@ -5248,7 +5248,7 @@
       "source_location": "L85",
       "_origin": "ast",
       "id": "utils_download_paths_resolve_absolute_download_path",
-      "community": 77,
+      "community": 48,
       "norm_label": "resolve_absolute_download_path()"
     },
     {
@@ -5258,7 +5258,7 @@
       "source_location": "L86",
       "_origin": "ast",
       "id": "utils_download_paths_rationale_86",
-      "community": 77,
+      "community": 48,
       "norm_label": "resolve a potentially relative download path back to an absolute filesystem path"
     },
     {
@@ -6598,7 +6598,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scratch_find_all_variant_fallbacks",
-      "community": 82,
+      "community": 57,
       "norm_label": "find_all_variant_fallbacks.py"
     },
     {
@@ -6608,7 +6608,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "scratch_find_all_variant_fallbacks_find_fallbacks",
-      "community": 82,
+      "community": 57,
       "norm_label": "find_fallbacks()"
     },
     {
@@ -6618,7 +6618,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scratch_find_all_variant_fallbacks_rationale_1",
-      "community": 82,
+      "community": 57,
       "norm_label": "list all skins in the database that currently have fallback names starting with"
     },
     {
@@ -6648,7 +6648,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scratch_inspect_hela_db",
-      "community": 82,
+      "community": 57,
       "norm_label": "inspect_hela_db.py"
     },
     {
@@ -6658,7 +6658,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "scratch_inspect_hela_db_inspect_hela",
-      "community": 82,
+      "community": 57,
       "norm_label": "inspect_hela()"
     },
     {
@@ -6668,7 +6668,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scratch_inspect_hela_db_rationale_1",
-      "community": 82,
+      "community": 57,
       "norm_label": "inspect hela (1024) skins in the sqlite database."
     },
     {
@@ -6678,7 +6678,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scratch_inspect_magik_db",
-      "community": 82,
+      "community": 57,
       "norm_label": "inspect_magik_db.py"
     },
     {
@@ -6688,7 +6688,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "scratch_inspect_magik_db_inspect_magik",
-      "community": 82,
+      "community": 57,
       "norm_label": "inspect_magik()"
     },
     {
@@ -6698,7 +6698,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scratch_inspect_magik_db_rationale_1",
-      "community": 82,
+      "community": 57,
       "norm_label": "inspect magik (1029) skins in the sqlite database."
     },
     {
@@ -7108,7 +7108,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_backfill_pak_mod_ids",
-      "community": 7,
+      "community": 68,
       "norm_label": "backfill_pak_mod_ids.py"
     },
     {
@@ -7118,7 +7118,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "scripts_backfill_pak_mod_ids_parse_args",
-      "community": 7,
+      "community": 68,
       "norm_label": "parse_args()"
     },
     {
@@ -7128,7 +7128,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "scripts_backfill_pak_mod_ids_backfill",
-      "community": 7,
+      "community": 68,
       "norm_label": "backfill()"
     },
     {
@@ -7138,7 +7138,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "scripts_backfill_pak_mod_ids_py_connection",
-      "community": 7,
+      "community": 68,
       "norm_label": "connection"
     },
     {
@@ -7148,7 +7148,7 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "scripts_backfill_pak_mod_ids_main",
-      "community": 7,
+      "community": 68,
       "norm_label": "main()"
     },
     {
@@ -7158,7 +7158,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "scripts_backfill_pak_mod_ids_rationale_18",
-      "community": 7,
+      "community": 68,
       "norm_label": "attempt to set mod_paks.mod_id where null using multiple strategies:     1. dir"
     },
     {
@@ -7308,7 +7308,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_check_tags",
-      "community": 7,
+      "community": 57,
       "norm_label": "check_tags.py"
     },
     {
@@ -7318,7 +7318,7 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "scripts_check_tags_main",
-      "community": 7,
+      "community": 57,
       "norm_label": "main()"
     },
     {
@@ -7408,7 +7408,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_demo_conflict_views",
-      "community": 7,
+      "community": 44,
       "norm_label": "demo_conflict_views.py"
     },
     {
@@ -7418,7 +7418,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "scripts_demo_conflict_views_main",
-      "community": 7,
+      "community": 44,
       "norm_label": "main()"
     },
     {
@@ -7458,7 +7458,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_demo_nxm_download",
-      "community": 26,
+      "community": 84,
       "norm_label": "demo_nxm_download.py"
     },
     {
@@ -7468,7 +7468,7 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "scripts_demo_nxm_download_load_nxm_source",
-      "community": 26,
+      "community": 84,
       "norm_label": "_load_nxm_source()"
     },
     {
@@ -7478,7 +7478,7 @@
       "source_location": "L47",
       "_origin": "ast",
       "id": "scripts_demo_nxm_download_mask_token",
-      "community": 26,
+      "community": 84,
       "norm_label": "_mask_token()"
     },
     {
@@ -7488,7 +7488,7 @@
       "source_location": "L56",
       "_origin": "ast",
       "id": "scripts_demo_nxm_download_build_demo_record",
-      "community": 26,
+      "community": 84,
       "norm_label": "_build_demo_record()"
     },
     {
@@ -7498,7 +7498,7 @@
       "source_location": "L78",
       "_origin": "ast",
       "id": "scripts_demo_nxm_download_emit_candidates",
-      "community": 26,
+      "community": 84,
       "norm_label": "_emit_candidates()"
     },
     {
@@ -7508,7 +7508,7 @@
       "source_location": "L84",
       "_origin": "ast",
       "id": "scripts_demo_nxm_download_main",
-      "community": 26,
+      "community": 84,
       "norm_label": "main()"
     },
     {
@@ -7518,7 +7518,7 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "scripts_demo_nxm_download_rationale_27",
-      "community": 26,
+      "community": 84,
       "norm_label": "return an nxm uri from a direct string or a file path."
     },
     {
@@ -7548,7 +7548,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_export_changelogs",
-      "community": 141,
+      "community": 57,
       "norm_label": "export_changelogs.py"
     },
     {
@@ -7558,7 +7558,7 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "scripts_export_changelogs_export_all",
-      "community": 141,
+      "community": 57,
       "norm_label": "export_all()"
     },
     {
@@ -7568,7 +7568,7 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "scripts_export_changelogs_py_path",
-      "community": 141,
+      "community": 57,
       "norm_label": "path"
     },
     {
@@ -7578,7 +7578,7 @@
       "source_location": "L57",
       "_origin": "ast",
       "id": "scripts_export_changelogs_main",
-      "community": 141,
+      "community": 57,
       "norm_label": "main()"
     },
     {
@@ -7588,7 +7588,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_export_changelogs_rationale_1",
-      "community": 141,
+      "community": 57,
       "norm_label": "export mod_changelogs rows into per-mod json files.  creates one file per mod"
     },
     {
@@ -7608,7 +7608,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_import_downloads",
-      "community": 7,
+      "community": 48,
       "norm_label": "import_downloads.py"
     },
     {
@@ -7618,7 +7618,7 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "scripts_import_downloads_main",
-      "community": 7,
+      "community": 48,
       "norm_label": "main()"
     },
     {
@@ -7768,7 +7768,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_inspect_db",
-      "community": 7,
+      "community": 57,
       "norm_label": "inspect_db.py"
     },
     {
@@ -7778,7 +7778,7 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "scripts_inspect_db_main",
-      "community": 7,
+      "community": 57,
       "norm_label": "main()"
     },
     {
@@ -7788,7 +7788,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_inspect_pak_backfill",
-      "community": 7,
+      "community": 57,
       "norm_label": "inspect_pak_backfill.py"
     },
     {
@@ -7798,7 +7798,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "scripts_inspect_pak_backfill_parse_args",
-      "community": 7,
+      "community": 57,
       "norm_label": "parse_args()"
     },
     {
@@ -7808,7 +7808,7 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "scripts_inspect_pak_backfill_main",
-      "community": 7,
+      "community": 57,
       "norm_label": "main()"
     },
     {
@@ -7928,7 +7928,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_normalize_local_downloads",
-      "community": 7,
+      "community": 44,
       "norm_label": "normalize_local_downloads.py"
     },
     {
@@ -7938,7 +7938,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "scripts_normalize_local_downloads_normalize_local_downloads",
-      "community": 7,
+      "community": 44,
       "norm_label": "normalize_local_downloads()"
     },
     {
@@ -7948,7 +7948,7 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "scripts_normalize_local_downloads_main",
-      "community": 7,
+      "community": 44,
       "norm_label": "main()"
     },
     {
@@ -8678,7 +8678,7 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "scripts_tag_assets_load_entity_map_from_db",
-      "community": 82,
+      "community": 57,
       "norm_label": "load_entity_map_from_db()"
     },
     {
@@ -8778,7 +8778,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "scripts_tag_assets_rationale_12",
-      "community": 82,
+      "community": 57,
       "norm_label": "load character and skin names from database."
     },
     {
@@ -8798,7 +8798,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_test_byname_flow",
-      "community": 7,
+      "community": 57,
       "norm_label": "test_byname_flow.py"
     },
     {
@@ -8808,7 +8808,7 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "scripts_test_byname_flow_setup_fixture",
-      "community": 7,
+      "community": 57,
       "norm_label": "setup_fixture()"
     },
     {
@@ -8818,7 +8818,7 @@
       "source_location": "L72",
       "_origin": "ast",
       "id": "scripts_test_byname_flow_teardown_fixture",
-      "community": 7,
+      "community": 57,
       "norm_label": "teardown_fixture()"
     },
     {
@@ -8828,7 +8828,7 @@
       "source_location": "L91",
       "_origin": "ast",
       "id": "scripts_test_byname_flow_main",
-      "community": 7,
+      "community": 57,
       "norm_label": "main()"
     },
     {
@@ -8988,7 +8988,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_test_tauri_db_path",
-      "community": 7,
+      "community": 74,
       "norm_label": "test_tauri_db_path.py"
     },
     {
@@ -8998,7 +8998,7 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "scripts_test_tauri_db_path_test_tauri_environment",
-      "community": 7,
+      "community": 74,
       "norm_label": "test_tauri_environment()"
     },
     {
@@ -9008,7 +9008,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_test_tauri_db_path_rationale_1",
-      "community": 7,
+      "community": 74,
       "norm_label": "test script to verify tauri database path configuration. simulates what happens"
     },
     {
@@ -9018,7 +9018,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "scripts_test_tauri_db_path_rationale_17",
-      "community": 7,
+      "community": 74,
       "norm_label": "simulate tauri environment and test database path."
     },
     {
@@ -9508,7 +9508,7 @@
       "source_location": "L39",
       "_origin": "ast",
       "id": "schemas_desktop_schema_definitions_capability",
-      "community": 201,
+      "community": 79,
       "norm_label": "capability"
     },
     {
@@ -9518,7 +9518,7 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "schemas_desktop_schema_capability_description",
-      "community": 201,
+      "community": 79,
       "norm_label": "description"
     },
     {
@@ -9528,7 +9528,7 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "schemas_desktop_schema_capability_type",
-      "community": 201,
+      "community": 79,
       "norm_label": "type"
     },
     {
@@ -9538,7 +9538,7 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "schemas_desktop_schema_capability_required",
-      "community": 201,
+      "community": 79,
       "norm_label": "required"
     },
     {
@@ -9568,7 +9568,7 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "schemas_desktop_schema_identifier_description",
-      "community": 79,
+      "community": 88,
       "norm_label": "description"
     },
     {
@@ -10028,7 +10028,7 @@
       "source_location": "L2545",
       "_origin": "ast",
       "id": "schemas_desktop_schema_definitions_value",
-      "community": 88,
+      "community": 134,
       "norm_label": "value"
     },
     {
@@ -10038,7 +10038,7 @@
       "source_location": "L2546",
       "_origin": "ast",
       "id": "schemas_desktop_schema_value_description",
-      "community": 88,
+      "community": 134,
       "norm_label": "description"
     },
     {
@@ -10048,7 +10048,7 @@
       "source_location": "L2547",
       "_origin": "ast",
       "id": "schemas_desktop_schema_value_anyof",
-      "community": 88,
+      "community": 134,
       "norm_label": "anyof"
     },
     {
@@ -10238,7 +10238,7 @@
       "source_location": "L39",
       "_origin": "ast",
       "id": "schemas_windows_schema_definitions_capability",
-      "community": 68,
+      "community": 82,
       "norm_label": "capability"
     },
     {
@@ -10248,7 +10248,7 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "schemas_windows_schema_capability_description",
-      "community": 68,
+      "community": 82,
       "norm_label": "description"
     },
     {
@@ -10258,7 +10258,7 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "schemas_windows_schema_capability_type",
-      "community": 68,
+      "community": 82,
       "norm_label": "type"
     },
     {
@@ -10268,7 +10268,7 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "schemas_windows_schema_capability_required",
-      "community": 68,
+      "community": 82,
       "norm_label": "required"
     },
     {
@@ -26296,7 +26296,7 @@
       "source_location": "L181",
       "_origin": "ast",
       "id": "src_zen_fpackagefileversion",
-      "community": 199,
+      "community": 31,
       "norm_label": "fpackagefileversion"
     },
     {
@@ -26306,7 +26306,7 @@
       "source_location": "L187",
       "_origin": "ast",
       "id": "src_zen_fpackagefileversion_create_ue4",
-      "community": 199,
+      "community": 34,
       "norm_label": ".create_ue4()"
     },
     {
@@ -26316,7 +26316,7 @@
       "source_location": "L187",
       "_origin": "ast",
       "id": "src_tauri_src_rust_ue_tools_repak_rivals_retoc_rivals_src_zen_rs_eunrealengineobjectue4version",
-      "community": 199,
+      "community": 34,
       "norm_label": "eunrealengineobjectue4version"
     },
     {
@@ -26326,7 +26326,7 @@
       "source_location": "L188",
       "_origin": "ast",
       "id": "src_zen_fpackagefileversion_create_ue5",
-      "community": 199,
+      "community": 31,
       "norm_label": ".create_ue5()"
     },
     {
@@ -26336,7 +26336,7 @@
       "source_location": "L188",
       "_origin": "ast",
       "id": "src_tauri_src_rust_ue_tools_repak_rivals_retoc_rivals_src_zen_rs_eunrealengineobjectue5version",
-      "community": 199,
+      "community": 31,
       "norm_label": "eunrealengineobjectue5version"
     },
     {
@@ -26346,7 +26346,7 @@
       "source_location": "L189",
       "_origin": "ast",
       "id": "src_zen_fpackagefileversion_is_ue5",
-      "community": 199,
+      "community": 31,
       "norm_label": ".is_ue5()"
     },
     {
@@ -26446,7 +26446,7 @@
       "source_location": "L239",
       "_origin": "ast",
       "id": "src_tauri_src_rust_ue_tools_repak_rivals_retoc_rivals_src_zen_rs_vec",
-      "community": 130,
+      "community": 31,
       "norm_label": "vec"
     },
     {
@@ -26656,7 +26656,7 @@
       "source_location": "L453",
       "_origin": "ast",
       "id": "src_zen_fpackageindex",
-      "community": 31,
+      "community": 124,
       "norm_label": "fpackageindex"
     },
     {
@@ -26666,7 +26666,7 @@
       "source_location": "L457",
       "_origin": "ast",
       "id": "src_zen_fpackageindex_create_null",
-      "community": 31,
+      "community": 124,
       "norm_label": ".create_null()"
     },
     {
@@ -26676,7 +26676,7 @@
       "source_location": "L458",
       "_origin": "ast",
       "id": "src_zen_fpackageindex_create_import",
-      "community": 31,
+      "community": 124,
       "norm_label": ".create_import()"
     },
     {
@@ -26686,7 +26686,7 @@
       "source_location": "L459",
       "_origin": "ast",
       "id": "src_zen_fpackageindex_create_export",
-      "community": 31,
+      "community": 124,
       "norm_label": ".create_export()"
     },
     {
@@ -26696,7 +26696,7 @@
       "source_location": "L461",
       "_origin": "ast",
       "id": "src_zen_fpackageindex_is_import",
-      "community": 31,
+      "community": 124,
       "norm_label": ".is_import()"
     },
     {
@@ -26706,7 +26706,7 @@
       "source_location": "L462",
       "_origin": "ast",
       "id": "src_zen_fpackageindex_is_export",
-      "community": 31,
+      "community": 124,
       "norm_label": ".is_export()"
     },
     {
@@ -26716,7 +26716,7 @@
       "source_location": "L463",
       "_origin": "ast",
       "id": "src_zen_fpackageindex_is_null",
-      "community": 31,
+      "community": 124,
       "norm_label": ".is_null()"
     },
     {
@@ -26726,7 +26726,7 @@
       "source_location": "L465",
       "_origin": "ast",
       "id": "src_zen_fpackageindex_to_import_index",
-      "community": 31,
+      "community": 124,
       "norm_label": ".to_import_index()"
     },
     {
@@ -26736,7 +26736,7 @@
       "source_location": "L469",
       "_origin": "ast",
       "id": "src_zen_fpackageindex_to_export_index",
-      "community": 31,
+      "community": 124,
       "norm_label": ".to_export_index()"
     },
     {
@@ -26796,7 +26796,7 @@
       "source_location": "L512",
       "_origin": "ast",
       "id": "src_zen_finternaldependencyarc",
-      "community": 130,
+      "community": 31,
       "norm_label": "finternaldependencyarc"
     },
     {
@@ -26856,7 +26856,7 @@
       "source_location": "L569",
       "_origin": "ast",
       "id": "src_zen_externalpackagedependency",
-      "community": 130,
+      "community": 31,
       "norm_label": "externalpackagedependency"
     },
     {
@@ -26866,7 +26866,7 @@
       "source_location": "L570",
       "_origin": "ast",
       "id": "src_tauri_src_rust_ue_tools_repak_rivals_retoc_rivals_src_zen_rs_fpackageid",
-      "community": 130,
+      "community": 31,
       "norm_label": "fpackageid"
     },
     {
@@ -26876,7 +26876,7 @@
       "source_location": "L580",
       "_origin": "ast",
       "id": "src_zen_fexportbundleheader",
-      "community": 34,
+      "community": 31,
       "norm_label": "fexportbundleheader"
     },
     {
@@ -26936,7 +26936,7 @@
       "source_location": "L656",
       "_origin": "ast",
       "id": "src_zen_fzenpackageimportedpackagenamescontainer",
-      "community": 130,
+      "community": 31,
       "norm_label": "fzenpackageimportedpackagenamescontainer"
     },
     {
@@ -26966,7 +26966,7 @@
       "source_location": "L694",
       "_origin": "ast",
       "id": "src_zen_fzenpackageheader",
-      "community": 130,
+      "community": 31,
       "norm_label": "fzenpackageheader"
     },
     {
@@ -26976,7 +26976,7 @@
       "source_location": "L697",
       "_origin": "ast",
       "id": "src_tauri_src_rust_ue_tools_repak_rivals_retoc_rivals_src_zen_rs_fnamemap",
-      "community": 130,
+      "community": 31,
       "norm_label": "fnamemap"
     },
     {
@@ -26986,7 +26986,7 @@
       "source_location": "L711",
       "_origin": "ast",
       "id": "src_tauri_src_rust_ue_tools_repak_rivals_retoc_rivals_src_zen_rs_fshahash",
-      "community": 130,
+      "community": 31,
       "norm_label": "fshahash"
     },
     {
@@ -27076,7 +27076,7 @@
       "source_location": "L1177",
       "_origin": "ast",
       "id": "src_zen_test_zen_asset_parsing",
-      "community": 31,
+      "community": 130,
       "norm_label": "test_zen_asset_parsing()"
     },
     {
@@ -27086,7 +27086,7 @@
       "source_location": "L1193",
       "_origin": "ast",
       "id": "src_zen_run_parse",
-      "community": 31,
+      "community": 130,
       "norm_label": "run_parse()"
     },
     {
@@ -27096,7 +27096,7 @@
       "source_location": "L1193",
       "_origin": "ast",
       "id": "src_tauri_src_rust_ue_tools_repak_rivals_retoc_rivals_src_zen_rs_path",
-      "community": 31,
+      "community": 130,
       "norm_label": "path"
     },
     {
@@ -30846,7 +30846,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_app",
-      "community": 24,
+      "community": 2,
       "norm_label": "app.tsx"
     },
     {
@@ -30856,7 +30856,7 @@
       "source_location": "L67",
       "_origin": "ast",
       "id": "src_app_category_keyword_set",
-      "community": 24,
+      "community": 2,
       "norm_label": "category_keyword_set"
     },
     {
@@ -30866,7 +30866,7 @@
       "source_location": "L73",
       "_origin": "ast",
       "id": "src_app_settings_task_labels",
-      "community": 24,
+      "community": 2,
       "norm_label": "settings_task_labels"
     },
     {
@@ -30876,7 +30876,7 @@
       "source_location": "L84",
       "_origin": "ast",
       "id": "src_app_progress_stage_filters",
-      "community": 24,
+      "community": 2,
       "norm_label": "progress_stage_filters"
     },
     {
@@ -30886,7 +30886,7 @@
       "source_location": "L91",
       "_origin": "ast",
       "id": "src_app_suppressed_backend_error_patterns",
-      "community": 24,
+      "community": 2,
       "norm_label": "suppressed_backend_error_patterns"
     },
     {
@@ -30896,7 +30896,7 @@
       "source_location": "L98",
       "_origin": "ast",
       "id": "src_app_shouldsuppressbackenderror",
-      "community": 24,
+      "community": 2,
       "norm_label": "shouldsuppressbackenderror()"
     },
     {
@@ -30906,7 +30906,7 @@
       "source_location": "L111",
       "_origin": "ast",
       "id": "src_app_sanitizeprogressdescription",
-      "community": 24,
+      "community": 2,
       "norm_label": "sanitizeprogressdescription()"
     },
     {
@@ -30916,7 +30916,7 @@
       "source_location": "L127",
       "_origin": "ast",
       "id": "src_app_nxmentry",
-      "community": 24,
+      "community": 2,
       "norm_label": "nxmentry"
     },
     {
@@ -30926,7 +30926,7 @@
       "source_location": "L133",
       "_origin": "ast",
       "id": "src_app_backendstatusstate",
-      "community": 24,
+      "community": 2,
       "norm_label": "backendstatusstate"
     },
     {
@@ -30936,7 +30936,7 @@
       "source_location": "L138",
       "_origin": "ast",
       "id": "src_app_app",
-      "community": 24,
+      "community": 2,
       "norm_label": "app()"
     },
     {
@@ -30993,7 +30993,7 @@
       "label": "ActiveModsView()",
       "file_type": "code",
       "source_file": "src/components/ActiveModsView.tsx",
-      "source_location": "L29",
+      "source_location": "L30",
       "_origin": "ast",
       "id": "components_activemodsview_activemodsview",
       "community": 18,
@@ -31303,7 +31303,7 @@
       "label": "DownloadsPage()",
       "file_type": "code",
       "source_file": "src/components/DownloadsPage.tsx",
-      "source_location": "L27",
+      "source_location": "L28",
       "_origin": "ast",
       "id": "components_downloadspage_downloadspage",
       "community": 18,
@@ -31323,7 +31323,7 @@
       "label": "DownloadsSidebarProps",
       "file_type": "code",
       "source_file": "src/components/DownloadsSidebar.tsx",
-      "source_location": "L48",
+      "source_location": "L49",
       "_origin": "ast",
       "id": "components_downloadssidebar_downloadssidebarprops",
       "community": 18,
@@ -31333,7 +31333,7 @@
       "label": "categories",
       "file_type": "code",
       "source_file": "src/components/DownloadsSidebar.tsx",
-      "source_location": "L61",
+      "source_location": "L64",
       "_origin": "ast",
       "id": "components_downloadssidebar_categories",
       "community": 17,
@@ -31343,20 +31343,20 @@
       "label": "calculateTotalSize()",
       "file_type": "code",
       "source_file": "src/components/DownloadsSidebar.tsx",
-      "source_location": "L69",
+      "source_location": "L72",
       "_origin": "ast",
       "id": "components_downloadssidebar_calculatetotalsize",
-      "community": 24,
+      "community": 17,
       "norm_label": "calculatetotalsize()"
     },
     {
       "label": "DownloadsSidebar()",
       "file_type": "code",
       "source_file": "src/components/DownloadsSidebar.tsx",
-      "source_location": "L92",
+      "source_location": "L95",
       "_origin": "ast",
       "id": "components_downloadssidebar_downloadssidebar",
-      "community": 24,
+      "community": 17,
       "norm_label": "downloadssidebar()"
     },
     {
@@ -31996,7 +31996,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_nxmprotocolsettings",
-      "community": 2,
+      "community": 50,
       "norm_label": "nxmprotocolsettings.tsx"
     },
     {
@@ -32006,7 +32006,7 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "components_nxmprotocolsettings_nxmprotocolsettings",
-      "community": 2,
+      "community": 50,
       "norm_label": "nxmprotocolsettings()"
     },
     {
@@ -32046,7 +32046,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_serverstartupoverlay",
-      "community": 24,
+      "community": 2,
       "norm_label": "serverstartupoverlay.tsx"
     },
     {
@@ -32056,7 +32056,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "components_serverstartupoverlay_serverstartupoverlayprops",
-      "community": 24,
+      "community": 2,
       "norm_label": "serverstartupoverlayprops"
     },
     {
@@ -32066,7 +32066,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "components_serverstartupoverlay_serverstartupoverlay",
-      "community": 24,
+      "community": 2,
       "norm_label": "serverstartupoverlay()"
     },
     {
@@ -32236,7 +32236,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_themeprovider",
-      "community": 24,
+      "community": 17,
       "norm_label": "themeprovider.tsx"
     },
     {
@@ -32246,7 +32246,7 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "components_themeprovider_theme",
-      "community": 24,
+      "community": 17,
       "norm_label": "theme"
     },
     {
@@ -32256,7 +32256,7 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "components_themeprovider_themecontexttype",
-      "community": 24,
+      "community": 17,
       "norm_label": "themecontexttype"
     },
     {
@@ -32266,7 +32266,7 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "components_themeprovider_themecontext",
-      "community": 24,
+      "community": 17,
       "norm_label": "themecontext"
     },
     {
@@ -32276,7 +32276,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "components_themeprovider_usetheme",
-      "community": 24,
+      "community": 17,
       "norm_label": "usetheme()"
     },
     {
@@ -32286,7 +32286,7 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "components_themeprovider_themeproviderprops",
-      "community": 24,
+      "community": 17,
       "norm_label": "themeproviderprops"
     },
     {
@@ -32296,7 +32296,7 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "components_themeprovider_themeprovider",
-      "community": 24,
+      "community": 17,
       "norm_label": "themeprovider()"
     },
     {
@@ -32516,7 +32516,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ui_alert",
-      "community": 1,
+      "community": 50,
       "norm_label": "alert.tsx"
     },
     {
@@ -32526,7 +32526,7 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "ui_alert_alertvariants",
-      "community": 1,
+      "community": 50,
       "norm_label": "alertvariants"
     },
     {
@@ -32536,7 +32536,7 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "ui_alert_alert",
-      "community": 1,
+      "community": 50,
       "norm_label": "alert()"
     },
     {
@@ -32546,7 +32546,7 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "ui_alert_alerttitle",
-      "community": 1,
+      "community": 50,
       "norm_label": "alerttitle()"
     },
     {
@@ -32556,7 +32556,7 @@
       "source_location": "L50",
       "_origin": "ast",
       "id": "ui_alert_alertdescription",
-      "community": 1,
+      "community": 50,
       "norm_label": "alertdescription()"
     },
     {
@@ -34596,7 +34596,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ui_scroll_area",
-      "community": 50,
+      "community": 91,
       "norm_label": "scroll-area.tsx"
     },
     {
@@ -34606,7 +34606,7 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "ui_scroll_area_scrollarea",
-      "community": 50,
+      "community": 91,
       "norm_label": "scrollarea()"
     },
     {
@@ -34616,7 +34616,7 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "ui_scroll_area_scrollbar",
-      "community": 50,
+      "community": 91,
       "norm_label": "scrollbar()"
     },
     {
@@ -35186,7 +35186,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ui_sonner",
-      "community": 24,
+      "community": 17,
       "norm_label": "sonner.tsx"
     },
     {
@@ -35196,7 +35196,7 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "ui_sonner_toaster",
-      "community": 24,
+      "community": 17,
       "norm_label": "toaster()"
     },
     {
@@ -35206,7 +35206,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ui_switch",
-      "community": 50,
+      "community": 91,
       "norm_label": "switch.tsx"
     },
     {
@@ -35216,7 +35216,7 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "ui_switch_switch",
-      "community": 50,
+      "community": 91,
       "norm_label": "switch()"
     },
     {
@@ -35676,7 +35676,7 @@
       "source_location": "L123",
       "_origin": "ast",
       "id": "lib_api_apinxmpreview",
-      "community": 24,
+      "community": 2,
       "norm_label": "apinxmpreview"
     },
     {
@@ -35746,7 +35746,7 @@
       "source_location": "L197",
       "_origin": "ast",
       "id": "lib_api_apiupdatesettingsrequest",
-      "community": 24,
+      "community": 2,
       "norm_label": "apiupdatesettingsrequest"
     },
     {
@@ -36086,7 +36086,7 @@
       "source_location": "L598",
       "_origin": "ast",
       "id": "lib_api_nxmprotocolstatus",
-      "community": 2,
+      "community": 50,
       "norm_label": "nxmprotocolstatus"
     },
     {
@@ -36096,7 +36096,7 @@
       "source_location": "L606",
       "_origin": "ast",
       "id": "lib_api_getnxmprotocolstatus",
-      "community": 2,
+      "community": 50,
       "norm_label": "getnxmprotocolstatus()"
     },
     {
@@ -36106,7 +36106,7 @@
       "source_location": "L610",
       "_origin": "ast",
       "id": "lib_api_registernxmprotocol",
-      "community": 2,
+      "community": 50,
       "norm_label": "registernxmprotocol()"
     },
     {
@@ -36116,7 +36116,7 @@
       "source_location": "L619",
       "_origin": "ast",
       "id": "lib_api_unregisternxmprotocol",
-      "community": 2,
+      "community": 50,
       "norm_label": "unregisternxmprotocol()"
     },
     {
@@ -36126,7 +36126,7 @@
       "source_location": "L630",
       "_origin": "ast",
       "id": "lib_api_lastnxmurl",
-      "community": 2,
+      "community": 50,
       "norm_label": "lastnxmurl"
     },
     {
@@ -36136,7 +36136,7 @@
       "source_location": "L649",
       "_origin": "ast",
       "id": "lib_api_getlastnxmurl",
-      "community": 2,
+      "community": 50,
       "norm_label": "getlastnxmurl()"
     },
     {
@@ -36276,7 +36276,7 @@
       "source_location": "L803",
       "_origin": "ast",
       "id": "lib_api_getmodcustomimagepreviews",
-      "community": 24,
+      "community": 2,
       "norm_label": "getmodcustomimagepreviews()"
     },
     {
@@ -36286,14 +36286,14 @@
       "source_location": "L823",
       "_origin": "ast",
       "id": "lib_api_apidownload",
-      "community": 24,
+      "community": 2,
       "norm_label": "apidownload"
     },
     {
       "label": "ApiPakVersionStatus",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L861",
+      "source_location": "L862",
       "_origin": "ast",
       "id": "lib_api_apipakversionstatus",
       "community": 18,
@@ -36303,7 +36303,7 @@
       "label": "ApiPakAsset",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L880",
+      "source_location": "L881",
       "_origin": "ast",
       "id": "lib_api_apipakasset",
       "community": 18,
@@ -36313,7 +36313,7 @@
       "label": "listDownloads()",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L885",
+      "source_location": "L886",
       "_origin": "ast",
       "id": "lib_api_listdownloads",
       "community": 19,
@@ -36323,7 +36323,7 @@
       "label": "ApiDownloadsSummary",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L889",
+      "source_location": "L890",
       "_origin": "ast",
       "id": "lib_api_apidownloadssummary",
       "community": 17,
@@ -36333,7 +36333,7 @@
       "label": "getDownloadsSummary()",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L898",
+      "source_location": "L899",
       "_origin": "ast",
       "id": "lib_api_getdownloadssummary",
       "community": 17,
@@ -36343,7 +36343,7 @@
       "label": "setActivePaks()",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L902",
+      "source_location": "L903",
       "_origin": "ast",
       "id": "lib_api_setactivepaks",
       "community": 2,
@@ -36353,7 +36353,7 @@
       "label": "scanActive()",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L909",
+      "source_location": "L910",
       "_origin": "ast",
       "id": "lib_api_scanactive",
       "community": 19,
@@ -36363,7 +36363,7 @@
       "label": "getLocalDownload()",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L913",
+      "source_location": "L914",
       "_origin": "ast",
       "id": "lib_api_getlocaldownload",
       "community": 19,
@@ -36373,7 +36373,7 @@
       "label": "getPakVersionStatus()",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L919",
+      "source_location": "L920",
       "_origin": "ast",
       "id": "lib_api_getpakversionstatus",
       "community": 2,
@@ -36383,7 +36383,7 @@
       "label": "activateByName()",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L944",
+      "source_location": "L945",
       "_origin": "ast",
       "id": "lib_api_activatebyname",
       "community": 2,
@@ -36393,7 +36393,7 @@
       "label": "deactivateByName()",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L953",
+      "source_location": "L954",
       "_origin": "ast",
       "id": "lib_api_deactivatebyname",
       "community": 2,
@@ -36403,7 +36403,7 @@
       "label": "getPakAssets()",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L962",
+      "source_location": "L963",
       "_origin": "ast",
       "id": "lib_api_getpakassets",
       "community": 2,
@@ -36413,7 +36413,7 @@
       "label": "ApiCheckModUpdateResponse",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L973",
+      "source_location": "L974",
       "_origin": "ast",
       "id": "lib_api_apicheckmodupdateresponse",
       "community": 2,
@@ -36423,7 +36423,7 @@
       "label": "ApiUpdateModResponse",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L990",
+      "source_location": "L991",
       "_origin": "ast",
       "id": "lib_api_apiupdatemodresponse",
       "community": 2,
@@ -36433,7 +36433,7 @@
       "label": "updateMod()",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L1009",
+      "source_location": "L1010",
       "_origin": "ast",
       "id": "lib_api_updatemod",
       "community": 2,
@@ -36443,7 +36443,7 @@
       "label": "checkModUpdate()",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L1035",
+      "source_location": "L1036",
       "_origin": "ast",
       "id": "lib_api_checkmodupdate",
       "community": 17,
@@ -36453,7 +36453,7 @@
       "label": "DeleteLocalDownloadsResponse",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L1044",
+      "source_location": "L1045",
       "_origin": "ast",
       "id": "lib_api_deletelocaldownloadsresponse",
       "community": 2,
@@ -36463,7 +36463,7 @@
       "label": "deleteLocalDownloads()",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L1053",
+      "source_location": "L1054",
       "_origin": "ast",
       "id": "lib_api_deletelocaldownloads",
       "community": 2,
@@ -36473,7 +36473,7 @@
       "label": "listNxmHandoffs()",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L1073",
+      "source_location": "L1074",
       "_origin": "ast",
       "id": "lib_api_listnxmhandoffs",
       "community": 2,
@@ -36483,7 +36483,7 @@
       "label": "getNxmHandoff()",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L1078",
+      "source_location": "L1079",
       "_origin": "ast",
       "id": "lib_api_getnxmhandoff",
       "community": 2,
@@ -36493,7 +36493,7 @@
       "label": "previewNxmHandoff()",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L1087",
+      "source_location": "L1088",
       "_origin": "ast",
       "id": "lib_api_previewnxmhandoff",
       "community": 2,
@@ -36503,7 +36503,7 @@
       "label": "ingestNxmHandoff()",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L1094",
+      "source_location": "L1095",
       "_origin": "ast",
       "id": "lib_api_ingestnxmhandoff",
       "community": 2,
@@ -36513,7 +36513,7 @@
       "label": "getCharacters()",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L1119",
+      "source_location": "L1120",
       "_origin": "ast",
       "id": "lib_api_getcharacters",
       "community": 2,
@@ -36523,7 +36523,7 @@
       "label": "getCharacterSkins()",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L1123",
+      "source_location": "L1124",
       "_origin": "ast",
       "id": "lib_api_getcharacterskins",
       "community": 2,
@@ -36533,7 +36533,7 @@
       "label": "rebuildCharacterData()",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L1129",
+      "source_location": "L1130",
       "_origin": "ast",
       "id": "lib_api_rebuildcharacterdata",
       "community": 2,
@@ -36543,7 +36543,7 @@
       "label": "lookupTags()",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L1136",
+      "source_location": "L1137",
       "_origin": "ast",
       "id": "lib_api_lookuptags",
       "community": 18,
@@ -36553,7 +36553,7 @@
       "label": "dismissNxmHandoff()",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L1143",
+      "source_location": "L1144",
       "_origin": "ast",
       "id": "lib_api_dismissnxmhandoff",
       "community": 2,
@@ -36563,7 +36563,7 @@
       "label": "cancelNxmHandoff()",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L1165",
+      "source_location": "L1166",
       "_origin": "ast",
       "id": "lib_api_cancelnxmhandoff",
       "community": 2,
@@ -36573,7 +36573,7 @@
       "label": "submitNxmHandoff()",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L1175",
+      "source_location": "L1176",
       "_origin": "ast",
       "id": "lib_api_submitnxmhandoff",
       "community": 2,
@@ -36583,7 +36583,7 @@
       "label": "toggleFavourite()",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L1185",
+      "source_location": "L1186",
       "_origin": "ast",
       "id": "lib_api_togglefavourite",
       "community": 2,
@@ -36593,17 +36593,17 @@
       "label": "fetchFavourites()",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L1194",
+      "source_location": "L1195",
       "_origin": "ast",
       "id": "lib_api_fetchfavourites",
-      "community": 24,
+      "community": 2,
       "norm_label": "fetchfavourites()"
     },
     {
       "label": "GameVersionCheckResponse",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L1202",
+      "source_location": "L1203",
       "_origin": "ast",
       "id": "lib_api_gameversioncheckresponse",
       "community": 2,
@@ -36613,7 +36613,7 @@
       "label": "getGameVersionCheck()",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L1210",
+      "source_location": "L1211",
       "_origin": "ast",
       "id": "lib_api_getgameversioncheck",
       "community": 2,
@@ -36623,7 +36623,7 @@
       "label": "ApiCollectionModFile",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L1216",
+      "source_location": "L1217",
       "_origin": "ast",
       "id": "lib_api_apicollectionmodfile",
       "community": 19,
@@ -36633,7 +36633,7 @@
       "label": "ApiCollectionSummary",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L1231",
+      "source_location": "L1232",
       "_origin": "ast",
       "id": "lib_api_apicollectionsummary",
       "community": 2,
@@ -36643,7 +36643,7 @@
       "label": "ApiCollection",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L1248",
+      "source_location": "L1249",
       "_origin": "ast",
       "id": "lib_api_apicollection",
       "community": 19,
@@ -36653,7 +36653,7 @@
       "label": "listCollections()",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L1254",
+      "source_location": "L1255",
       "_origin": "ast",
       "id": "lib_api_listcollections",
       "community": 19,
@@ -36663,7 +36663,7 @@
       "label": "getCollection()",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L1259",
+      "source_location": "L1260",
       "_origin": "ast",
       "id": "lib_api_getcollection",
       "community": 19,
@@ -36673,7 +36673,7 @@
       "label": "importCollection()",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L1264",
+      "source_location": "L1265",
       "_origin": "ast",
       "id": "lib_api_importcollection",
       "community": 2,
@@ -36683,7 +36683,7 @@
       "label": "importCollectionRaw()",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L1276",
+      "source_location": "L1277",
       "_origin": "ast",
       "id": "lib_api_importcollectionraw",
       "community": 2,
@@ -36693,7 +36693,7 @@
       "label": "deleteCollection()",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L1287",
+      "source_location": "L1288",
       "_origin": "ast",
       "id": "lib_api_deletecollection",
       "community": 2,
@@ -36703,7 +36703,7 @@
       "label": "refreshCollection()",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L1291",
+      "source_location": "L1292",
       "_origin": "ast",
       "id": "lib_api_refreshcollection",
       "community": 2,
@@ -36713,7 +36713,7 @@
       "label": "updateCollectionModFileState()",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L1299",
+      "source_location": "L1300",
       "_origin": "ast",
       "id": "lib_api_updatecollectionmodfilestate",
       "community": 2,
@@ -36723,7 +36723,7 @@
       "label": "CustomTag",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L1314",
+      "source_location": "L1315",
       "_origin": "ast",
       "id": "lib_api_customtag",
       "community": 18,
@@ -36733,7 +36733,7 @@
       "label": "getModCustomTags()",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L1321",
+      "source_location": "L1322",
       "_origin": "ast",
       "id": "lib_api_getmodcustomtags",
       "community": 19,
@@ -36743,7 +36743,7 @@
       "label": "addModCustomTag()",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L1326",
+      "source_location": "L1327",
       "_origin": "ast",
       "id": "lib_api_addmodcustomtag",
       "community": 2,
@@ -36753,7 +36753,7 @@
       "label": "removeModCustomTag()",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L1343",
+      "source_location": "L1344",
       "_origin": "ast",
       "id": "lib_api_removemodcustomtag",
       "community": 2,
@@ -36763,7 +36763,7 @@
       "label": "getAllCustomTags()",
       "file_type": "code",
       "source_file": "src/lib/api.ts",
-      "source_location": "L1363",
+      "source_location": "L1364",
       "_origin": "ast",
       "id": "lib_api_getallcustomtags",
       "community": 2,
@@ -36896,7 +36896,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_categoryutils",
-      "community": 24,
+      "community": 18,
       "norm_label": "categoryutils.ts"
     },
     {
@@ -36906,7 +36906,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_categoryutils_category_keywords",
-      "community": 24,
+      "community": 18,
       "norm_label": "category_keywords"
     },
     {
@@ -36916,7 +36916,7 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "lib_categoryutils_category_token_set",
-      "community": 24,
+      "community": 18,
       "norm_label": "category_token_set"
     },
     {
@@ -36926,7 +36926,7 @@
       "source_location": "L45",
       "_origin": "ast",
       "id": "lib_categoryutils_normalizetag",
-      "community": 24,
+      "community": 18,
       "norm_label": "normalizetag()"
     },
     {
@@ -36936,7 +36936,7 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "lib_categoryutils_buildtagset",
-      "community": 24,
+      "community": 18,
       "norm_label": "buildtagset()"
     },
     {
@@ -36946,7 +36946,7 @@
       "source_location": "L65",
       "_origin": "ast",
       "id": "lib_categoryutils_derivecategorytags",
-      "community": 24,
+      "community": 18,
       "norm_label": "derivecategorytags()"
     },
     {
@@ -36956,7 +36956,7 @@
       "source_location": "L78",
       "_origin": "ast",
       "id": "lib_categoryutils_categoriesmatchtag",
-      "community": 24,
+      "community": 18,
       "norm_label": "categoriesmatchtag()"
     },
     {
@@ -36966,7 +36966,7 @@
       "source_location": "L88",
       "_origin": "ast",
       "id": "lib_categoryutils_getcategorykeywords",
-      "community": 24,
+      "community": 18,
       "norm_label": "getcategorykeywords()"
     },
     {
@@ -36976,7 +36976,7 @@
       "source_location": "L92",
       "_origin": "ast",
       "id": "lib_categoryutils_getcategorytokenset",
-      "community": 24,
+      "community": 18,
       "norm_label": "getcategorytokenset()"
     },
     {
@@ -36986,7 +36986,7 @@
       "source_location": "L96",
       "_origin": "ast",
       "id": "lib_categoryutils_extractnoncategorytags",
-      "community": 24,
+      "community": 18,
       "norm_label": "extractnoncategorytags()"
     },
     {
@@ -37306,7 +37306,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_nexussso",
-      "community": 19,
+      "community": 91,
       "norm_label": "nexussso.ts"
     },
     {
@@ -37316,7 +37316,7 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "lib_nexussso_nexusssoresponse",
-      "community": 19,
+      "community": 91,
       "norm_label": "nexusssoresponse"
     },
     {
@@ -37326,7 +37326,7 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "lib_nexussso_nexusssoresult",
-      "community": 19,
+      "community": 91,
       "norm_label": "nexusssoresult"
     },
     {
@@ -37336,7 +37336,7 @@
       "source_location": "L47",
       "_origin": "ast",
       "id": "lib_nexussso_nexusssostatuscallback",
-      "community": 19,
+      "community": 91,
       "norm_label": "nexusssostatuscallback"
     },
     {
@@ -37346,7 +37346,7 @@
       "source_location": "L55",
       "_origin": "ast",
       "id": "lib_nexussso_generateuuid",
-      "community": 19,
+      "community": 91,
       "norm_label": "generateuuid()"
     },
     {
@@ -37356,7 +37356,7 @@
       "source_location": "L76",
       "_origin": "ast",
       "id": "lib_nexussso_initiatenexussso",
-      "community": 19,
+      "community": 91,
       "norm_label": "initiatenexussso()"
     },
     {
@@ -37366,7 +37366,7 @@
       "source_location": "L256",
       "_origin": "ast",
       "id": "lib_nexussso_cancelnexussso",
-      "community": 19,
+      "community": 91,
       "norm_label": "cancelnexussso()"
     },
     {
@@ -37596,7 +37596,7 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "lib_tauri_utils_openinbrowser",
-      "community": 19,
+      "community": 91,
       "norm_label": "openinbrowser()"
     },
     {
@@ -37696,7 +37696,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_updateutils",
-      "community": 24,
+      "community": 2,
       "norm_label": "updateutils.ts"
     },
     {
@@ -37706,7 +37706,7 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "lib_updateutils_normalizeversionforcheck",
-      "community": 24,
+      "community": 2,
       "norm_label": "normalizeversionforcheck()"
     },
     {
@@ -37716,7 +37716,7 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "lib_updateutils_isvariantactuallyupdatable",
-      "community": 24,
+      "community": 2,
       "norm_label": "isvariantactuallyupdatable()"
     },
     {
@@ -37726,7 +37726,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_main_tsx_src_main",
-      "community": 24,
+      "community": 2,
       "norm_label": "main.tsx"
     },
     {
@@ -37776,7 +37776,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tests_check_1029303",
-      "community": 82,
+      "community": 57,
       "norm_label": "check_1029303.py"
     },
     {
@@ -37786,7 +37786,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tests_check_1029303_rationale_1",
-      "community": 82,
+      "community": 57,
       "norm_label": "simple diagnostic for skin 1029303"
     },
     {
@@ -37826,7 +37826,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "tests_debug_skin_1029303_check_skin_in_database",
-      "community": 82,
+      "community": 57,
       "norm_label": "check_skin_in_database()"
     },
     {
@@ -37856,7 +37856,7 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "tests_debug_skin_1029303_rationale_10",
-      "community": 82,
+      "community": 57,
       "norm_label": "check if skin 1029303 exists in the database."
     },
     {
@@ -118639,9 +118639,9 @@
       "source_file": "src/App.tsx",
       "source_location": "L65",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app",
-      "target": "lib_updateutils",
-      "confidence_score": 1.0
+      "target": "lib_updateutils"
     },
     {
       "relation": "imports",
@@ -118650,9 +118650,9 @@
       "source_file": "src/App.tsx",
       "source_location": "L65",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app",
-      "target": "lib_updateutils_isvariantactuallyupdatable",
-      "confidence_score": 1.0
+      "target": "lib_updateutils_isvariantactuallyupdatable"
     },
     {
       "relation": "contains",
@@ -120370,9 +120370,9 @@
       "source_file": "src/components/CheckForUpdatesModal.tsx",
       "source_location": "L16",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "components_checkforupdatesmodal",
-      "target": "lib_updateutils",
-      "confidence_score": 1.0
+      "target": "lib_updateutils"
     },
     {
       "relation": "imports",
@@ -120381,9 +120381,9 @@
       "source_file": "src/components/CheckForUpdatesModal.tsx",
       "source_location": "L16",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "components_checkforupdatesmodal",
-      "target": "lib_updateutils_normalizeversionforcheck",
-      "confidence_score": 1.0
+      "target": "lib_updateutils_normalizeversionforcheck"
     },
     {
       "relation": "imports_from",
@@ -135740,5 +135740,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "e5e244139e3fc99572e55080b461120f3099c11a"
+  "built_at_commit": "bd2cc3505ba94adb0c2b73d2276d61d007827b2f"
 }
