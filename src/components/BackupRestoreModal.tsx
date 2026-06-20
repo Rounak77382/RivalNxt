@@ -10,7 +10,7 @@ import { Badge } from "./ui/badge";
 import { toast } from "sonner";
 import { invokeReadTextFile } from "../lib/tauri-utils";
 import { computeRestoreDiff, type BackupMeta, type ModBackup } from "../lib/backupUtils";
-import { setActivePaks, scanActive, refreshConflicts, getLocalDownload, addModCustomTag } from "../lib/api";
+import { setActivePaks, scanActive, refreshConflicts, getLocalDownload, addModCustomTag, updateModDetails, uploadModImagesBase64 } from "../lib/api";
 import { Loader2, CheckCircle2, XCircle, RotateCcw } from "lucide-react";
 
 interface BackupRestoreModalProps {
@@ -154,16 +154,17 @@ export function BackupRestoreModal({ meta, installedMods, onComplete, onClose }:
         setStats(s => ({ ...s, completed }));
       }
 
-      // Restore custom tags for enabled mods (best-effort, failures are silent)
-      setCurrentModName("Restoring custom tags...");
-      for (const mod of toEnable) {
+      // Restore custom user data (tags, description, images)
+      setCurrentModName("Restoring custom data...");
+      for (const mod of installedMods) {
         const backupEntry = backup.mods.find(e => {
           if (e.backendModId != null && mod.backendModId != null) return e.backendModId === mod.backendModId;
-          if (e.sourceDownloadIds.length > 0 && Array.isArray(mod.sourceDownloadIds)) return e.sourceDownloadIds.some(id => mod.sourceDownloadIds.includes(id));
+          if (e.sourceDownloadIds.length > 0 && Array.isArray(mod.sourceDownloadIds)) return e.sourceDownloadIds.some((id: number | string) => mod.sourceDownloadIds.includes(id));
           return String(e.modId) === String(mod.id);
         });
-        const savedTags = backupEntry?.customTags || [];
-        if (savedTags.length === 0) continue;
+
+        if (!backupEntry) continue; // Only process mods that were in the backup
+
         const effectiveModId =
           mod.backendModId != null
             ? mod.backendModId
@@ -171,8 +172,27 @@ export function BackupRestoreModal({ meta, installedMods, onComplete, onClose }:
               ? -mod.sourceDownloadIds[0]
               : null;
         if (effectiveModId == null) continue;
-        for (const tagName of savedTags) {
-          try { await addModCustomTag(effectiveModId, tagName); } catch { /* tag may already exist */ }
+
+        // Restore custom tags
+        const savedTags = backupEntry?.customTags || [];
+        if (savedTags.length > 0) {
+          for (const tagName of savedTags) {
+            try { await addModCustomTag(effectiveModId, tagName); } catch { /* tag may already exist */ }
+          }
+        }
+
+        // Restore custom description
+        if (backupEntry?.description) {
+          try {
+            await updateModDetails(effectiveModId, { description: backupEntry.description });
+          } catch { /* best effort */ }
+        }
+
+        // Restore custom images
+        if (backupEntry?.customImages && backupEntry.customImages.length > 0) {
+          try {
+            await uploadModImagesBase64(effectiveModId, backupEntry.customImages);
+          } catch { /* best effort */ }
         }
       }
 

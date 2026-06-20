@@ -868,12 +868,12 @@ def _init_views(conn: sqlite3.Connection) -> None:
         WITH latest_mod_files AS (
             SELECT
                 mod_id,
-                LOWER(name) AS key_name,
+                REPLACE(REPLACE(REPLACE(LOWER(name), ' ', ''), '-', ''), '_', '') AS key_name,
                 file_id,
                 version,
                 uploaded_at,
                 ROW_NUMBER() OVER (
-                    PARTITION BY mod_id, LOWER(name)
+                    PARTITION BY mod_id, REPLACE(REPLACE(REPLACE(LOWER(name), ' ', ''), '-', ''), '_', '')
                     ORDER BY uploaded_at DESC, file_id DESC
                 ) AS rn
             FROM mod_files
@@ -886,18 +886,18 @@ def _init_views(conn: sqlite3.Connection) -> None:
             ld.path AS local_path,
             ld.name AS local_name,
             ld.version AS local_version,
-            COALESCE(mf.file_id, latest.latest_file_id) AS reference_file_id,
-            COALESCE(mf.version, latest.file_version) AS reference_version,
+            mf.file_id AS reference_file_id,
+            mf.version AS reference_version,
             CASE
                 WHEN ld.version IS NULL OR ld.version = '' THEN 'missing_local_version'
-                WHEN COALESCE(mf.version, latest.file_version) IS NULL OR COALESCE(mf.version, latest.file_version) = '' THEN 'missing_remote_version'
-                WHEN LOWER(ld.version) = LOWER(COALESCE(mf.version, latest.file_version)) THEN 'match'
+                WHEN mf.version IS NULL OR mf.version = '' THEN 'missing_remote_version'
+                WHEN LOWER(ld.version) = LOWER(mf.version) THEN 'match'
                 ELSE 'mismatch'
             END AS version_status,
             CASE
                 WHEN ld.version IS NULL OR ld.version = '' THEN 1
-                WHEN COALESCE(mf.version, latest.file_version) IS NULL OR COALESCE(mf.version, latest.file_version) = '' THEN 0
-                WHEN LOWER(ld.version) = LOWER(COALESCE(mf.version, latest.file_version)) THEN 0
+                WHEN mf.version IS NULL OR mf.version = '' THEN 0
+                WHEN LOWER(ld.version) = LOWER(mf.version) THEN 0
                 ELSE 1
             END AS needs_update
         FROM mod_paks mp
@@ -906,8 +906,8 @@ def _init_views(conn: sqlite3.Connection) -> None:
             ON mf.mod_id = mp.mod_id
             AND mf.rn = 1
             AND (
-                mf.key_name = LOWER(mp.source_zip)
-                OR (ld.name IS NOT NULL AND mf.key_name = LOWER(ld.name))
+                mf.key_name = REPLACE(REPLACE(REPLACE(LOWER(mp.source_zip), ' ', ''), '-', ''), '_', '')
+                OR (ld.name IS NOT NULL AND mf.key_name = REPLACE(REPLACE(REPLACE(LOWER(ld.name), ' ', ''), '-', ''), '_', ''))
             )
         LEFT JOIN v_mods_with_latest_by_version latest ON latest.mod_id = mp.mod_id;
         """

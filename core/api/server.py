@@ -66,6 +66,7 @@ from core.db import (
 	delete_local_downloads,
 	get_changelogs,
 	get_latest_file,
+	get_file_by_id,
 	get_latest_file_by_version,
 	get_mod,
 	init_schema,
@@ -665,14 +666,14 @@ def _normalize_optional_str(value: Optional[str]) -> Optional[str]:
 
 
 def _task_delete_outdated_versions() -> int:
-	from core.db.db import get_connection, delete_local_downloads
+	from core.db.db import get_connection, delete_local_downloads, make_version_key
 	import os, re, shutil
 	from pathlib import Path
 	
 	conn = get_connection()
 	try:
 		cur = conn.cursor()
-		cur.execute("SELECT id, path, name, mod_id, created_at FROM local_downloads")
+		cur.execute("SELECT id, path, name, mod_id, created_at, version FROM local_downloads")
 		all_downloads = cur.fetchall()
 		
 		# Separate into all tracked paths and only the ones with mod_id (for version checks)
@@ -680,7 +681,7 @@ def _task_delete_outdated_versions() -> int:
 		downloads_with_mod = []
 		
 		for row in all_downloads:
-			ld_id, ld_path, ld_name, mod_id, created_at = row
+			ld_id, ld_path, ld_name, mod_id, created_at, version = row
 			if mod_id is not None:
 				downloads_with_mod.append(row)
 			if ld_path:
@@ -701,21 +702,24 @@ def _task_delete_outdated_versions() -> int:
 			if len(variants) < 2:
 				continue
 				
-			# Group by base name
-			base_groups = {}
+			# Group by variant identity (matching update detection logic)
+			identity_groups = {}
 			for row in variants:
-				name = row[2]
-				base = re.sub(r'\.(zip|rar|7z|pak)$', '', name, flags=re.IGNORECASE)
-				base = re.sub(r'-[\d\.]+(?:-[a-zA-Z\d\.]+)*$', '', base)
-				base = re.sub(r'[-_][vV]?[\d\.]+$', '', base)
-				base = base.strip()
-				base_groups.setdefault(base, []).append(row)
+				name = row[2] or ""
+				identity = name.lower().replace(' ', '').replace('-', '').replace('_', '')
+				identity_groups.setdefault(identity, []).append(row)
 				
-			for base, items in base_groups.items():
+			for identity, items in identity_groups.items():
 				if len(items) < 2:
 					continue
-				# Sort by created_at DESC (newest first)
-				items.sort(key=lambda x: x[4] or "", reverse=True)
+				# Sort by semantic version DESC, then created_at DESC (newest first)
+				def sort_key(x):
+					ver = x[5]
+					created = x[4] or ""
+					v_key = make_version_key(ver)[0] or ""
+					return (v_key, created)
+					
+				items.sort(key=sort_key, reverse=True)
 				# First one is kept, others are outdated
 				for outdated in items[1:]:
 					ld_id = outdated[0]
@@ -2970,33 +2974,6 @@ def check_mod_update(mod_id: int) -> Dict[str, Any]:
 					"display_version": entry.get("display_version"),
 				}
 			)
-		# Cross-check: if any local download for this mod already has the latest
-		# version (or newer), the pending items are false positives caused by
-		# old/duplicate files sitting in the DB. Suppress them.
-		if pending:
-			try:
-				cur = conn.cursor()
-				cur.execute(
-					"SELECT version FROM local_downloads WHERE mod_id = ? AND version IS NOT NULL AND version != ''",
-					(mod_id,),
-				)
-				local_versions = [r[0] for r in cur.fetchall()]
-				# Get the unique reference versions from pending
-				ref_versions = set(p.get("reference_version") for p in pending if p.get("reference_version"))
-				# If any local download already has the latest ref version, remove those pending entries
-				suppressed_refs: Set[str] = set()
-				for ref_v in ref_versions:
-					for local_v in local_versions:
-						if versions_equivalent(local_v, ref_v):
-							suppressed_refs.add(ref_v)
-							break
-				if suppressed_refs:
-					pending = [
-						p for p in pending
-						if p.get("reference_version") not in suppressed_refs
-					]
-			except Exception:
-				pass  # Non-fatal; keep original pending list
 
 		result: Dict[str, Any] = {
 			"ok": True,
@@ -3600,7 +3577,10 @@ def update_mod(mod_id: int, payload: Optional[Dict[str, Any]] = Body(default=Non
 
 		related_versions = sorted([s for s in local_version_strings if s])
 		preflight_metadata = _sync_mod_metadata(conn, mod_id, mod_name)
-		latest = get_latest_file_by_version(conn, mod_id)
+		if requested_file_id is not None:
+			latest = get_file_by_id(conn, mod_id, requested_file_id)
+		else:
+			latest = get_latest_file_by_version(conn, mod_id)
 	finally:
 		try:
 			conn.close()
@@ -3621,12 +3601,17 @@ def update_mod(mod_id: int, payload: Optional[Dict[str, Any]] = Body(default=Non
 		latest_version_key = make_version_key(latest_version)[0]
 
 	already_installed = False
-	for local_v in local_version_strings:
-		if versions_equivalent(local_v, latest_version):
+	
+	# If a specific file was requested, we bypass the global heuristic checks
+	# because the frontend already verified this specific variant needs an update.
+	# Global checks would falsely flag variants as updated if another variant has a higher version.
+	if requested_file_id is None:
+		for local_v in local_version_strings:
+			if versions_equivalent(local_v, latest_version):
+				already_installed = True
+				break
+		if not already_installed and latest_version_key and best_local_key and latest_version_key <= best_local_key:
 			already_installed = True
-			break
-	if not already_installed and latest_version_key and best_local_key and latest_version_key <= best_local_key:
-		already_installed = True
 
 	if already_installed and not options.get("force", False):
 		logger.info(
@@ -4889,7 +4874,7 @@ def delete_mod_image(image_id: int) -> Dict[str, Any]:
 
 
 @app.get("/api/downloads")
-def list_downloads(limit: int = 500) -> List[Dict[str, Any]]:
+def list_downloads(limit: int = 2000) -> List[Dict[str, Any]]:
 	"""List local downloads with joined mod info and tags sourced strictly from v_local_downloads_with_tags.
 
 	Returns items like: { id, name, mod_id, version, path, contents[], active_paks[], created_at,
@@ -4917,11 +4902,11 @@ def list_downloads(limit: int = 500) -> List[Dict[str, Any]]:
 		   m.author_profile_url, m.author_member_id,
 		   m.contains_adult_content,
 		   v.tags_json,
-		   COALESCE(variant_latest.version, overall_latest.file_version) AS file_version,
-		   COALESCE(variant_latest.uploaded_at, overall_latest.latest_uploaded_at) AS latest_uploaded_at,
-		   COALESCE(variant_latest.file_id, overall_latest.latest_file_id) AS latest_file_id,
-		   COALESCE(variant_latest.version_key, overall_latest.latest_version_key) AS latest_version_key,
-		   COALESCE(variant_latest.name, overall_latest.file_name) AS file_name
+		   variant_latest.version AS file_version,
+		   variant_latest.uploaded_at AS latest_uploaded_at,
+		   variant_latest.file_id AS latest_file_id,
+		   variant_latest.version_key AS latest_version_key,
+		   variant_latest.name AS file_name
 		FROM local_downloads l
 		LEFT JOIN mods m ON m.mod_id = l.mod_id
 		LEFT JOIN v_local_downloads_with_tags v ON v.download_id = l.id
@@ -6054,6 +6039,37 @@ def delete_local_downloads_endpoint(payload: Dict[str, Any] = Body(...)) -> Dict
 			pass
 
 
+@app.post("/api/mods/disable-all")
+def disable_all_mods() -> Dict[str, Any]:
+	"""Disable all active mods and clear the ~mods folder."""
+	conn = get_db()
+	try:
+		# 1. Clear ~mods directory
+		mods_dir = _mods_folder_from_env()
+		if mods_dir.exists():
+			import shutil
+			try:
+				shutil.rmtree(mods_dir)
+			except Exception as e:
+				logger.error(f"Failed to clear ~mods: {e}")
+		try:
+			mods_dir.mkdir(parents=True, exist_ok=True)
+		except Exception:
+			pass
+
+		# 2. Update database
+		conn.execute("UPDATE local_downloads SET active_paks = '[]'")
+		conn.commit()
+		_safe_rebuild_conflicts(conn, active_only=True, purpose="disable_all_mods")
+		
+		return {"ok": True}
+	finally:
+		try:
+			conn.close()
+		except Exception:
+			pass
+
+
 @app.post("/api/local_downloads/{download_id}/set-active")
 def set_active_paks(download_id: int, payload: Dict[str, Any] = Body(...)) -> Dict[str, Any]:
 	"""Set the active pak list for a local_downloads row and mirror files into the game's ~mods folder.
@@ -6781,11 +6797,11 @@ def get_local_download(download_id: int) -> Dict[str, Any]:
 		row = cur.execute(
 			"""
 			SELECT l.id, l.name, l.mod_id, l.version, l.path, l.contents, l.active_paks, l.created_at,
-			   COALESCE(variant_latest.version, overall_latest.file_version) AS file_version,
-			   COALESCE(variant_latest.uploaded_at, overall_latest.latest_uploaded_at) AS latest_uploaded_at,
-			   COALESCE(variant_latest.file_id, overall_latest.latest_file_id) AS latest_file_id,
-			   COALESCE(variant_latest.version_key, overall_latest.latest_version_key) AS latest_version_key,
-			   COALESCE(variant_latest.name, overall_latest.file_name) AS file_name
+			   variant_latest.version AS file_version,
+			   variant_latest.uploaded_at AS latest_uploaded_at,
+			   variant_latest.file_id AS latest_file_id,
+			   variant_latest.version_key AS latest_version_key,
+			   variant_latest.name AS file_name
 			FROM local_downloads l
 			LEFT JOIN v_mods_with_latest_by_version overall_latest ON overall_latest.mod_id = l.mod_id
 			LEFT JOIN (
@@ -7144,6 +7160,13 @@ def _upsert_collection(conn, revision: Dict[str, Any], slug: str) -> int:
 	for mf in revision.get("modFiles") or []:
 		f = mf.get("file") or {}
 		mod = f.get("mod") or {}
+		
+		# Skip UTOC Signature Bypass Patch (Mod 2940) as requested by user
+		# It's a tool and doesn't need to be installed via the collection flow
+		parsed_mod_id = int(f.get("modId") or 0) or None
+		if parsed_mod_id == 2940:
+			continue
+			
 		cur.execute(
 			"""INSERT INTO collection_mod_files
 				(collection_id, entry_id, file_id, mod_id, optional, version,
@@ -7153,7 +7176,7 @@ def _upsert_collection(conn, revision: Dict[str, Any], slug: str) -> int:
 				cid,
 				str(mf.get("id") or ""),
 				int(f.get("fileId") or mf.get("fileId") or 0),
-				int(f.get("modId") or 0) or None,
+				parsed_mod_id,
 				1 if mf.get("optional") else 0,
 				str(mf.get("version") or f.get("version") or ""),
 				f.get("name") or "",
@@ -7184,7 +7207,7 @@ def _serialize_collection(conn, cid: int) -> Dict[str, Any]:
 	files = cur.execute(
 		"SELECT id, entry_id, file_id, mod_id, optional, version, file_name, file_uri, "
 		"size_in_bytes, mod_name, picture_url, download_state "
-		"FROM collection_mod_files WHERE collection_id = ? ORDER BY id",
+		"FROM collection_mod_files WHERE collection_id = ? AND (mod_id IS NULL OR mod_id != 2940) ORDER BY id",
 		(cid,)
 	).fetchall()
 	fkeys = ["id","entry_id","file_id","mod_id","optional","version","file_name","file_uri",

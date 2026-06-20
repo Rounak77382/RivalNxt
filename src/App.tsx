@@ -35,6 +35,7 @@ import {
   listNxmHandoffs,
   previewNxmHandoff,
   setActivePaks,
+  disableAllMods,
   scanActive,
   getLocalDownload,
   ApiError,
@@ -62,7 +63,6 @@ import {
   categoriesMatchTag,
   getCategoryTokenSet,
 } from "./lib/categoryUtils";
-import { isVariantActuallyUpdatable } from "./lib/updateUtils";
 
 const CATEGORY_KEYWORD_SET = getCategoryTokenSet();
 
@@ -734,7 +734,7 @@ export default function App() {
   };
 
   // Event handlers
-  async function fetchServerMods(limit = 500): Promise<any[]> {
+  async function fetchServerMods(limit = 2000): Promise<any[]> {
     // Start fetching downloads and favourites in parallel
     const [downloads, favouritedIds] = await Promise.all([
       listDownloads(limit),
@@ -1626,6 +1626,16 @@ export default function App() {
     void fetchCollectionsCount();
   };
 
+  const handleDisableAllMods = async () => {
+    try {
+      await disableAllMods();
+      toast.success("All mods have been disabled");
+      handleRefresh();
+    } catch (err) {
+      toast.error(`Failed to disable all mods: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+
   const handleModAdded = () =>
     refreshMods({ quiet: true, includeConflicts: true });
 
@@ -2144,7 +2154,7 @@ export default function App() {
       const variants = (merged as any).local_variants || [merged];
       let hasRealUpdate = false;
       for (const variant of variants) {
-        if (isVariantActuallyUpdatable(variant, variants)) {
+        if (variant.needs_update) {
           hasRealUpdate = true;
           (merged as any).updateVariantName = variant.name || variant.mod_name || "";
           (merged as any).updateVariantLocalVersion = variant.version || "";
@@ -2261,6 +2271,7 @@ export default function App() {
                 onOpenSettings={handleOpenSettings}
                 onOpenBootstrap={handleOpenBootstrap}
                 onOpenBackup={() => setBackupOpen(true)}
+                onDisableAllMods={handleDisableAllMods}
               />
 
               {/* Tab Content */}

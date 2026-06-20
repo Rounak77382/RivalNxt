@@ -18,6 +18,10 @@ export interface ModBackupEntry {
   activePaks?: string[];
   /** User-created custom tags for this mod (optional, absent in older backups). */
   customTags?: string[];
+  /** Custom description for this mod (optional). */
+  description?: string | null;
+  /** Custom images uploaded for this mod (optional). */
+  customImages?: { data: string; filename?: string; mimeType?: string }[];
 }
 
 /** The full backup object saved to disk as JSON. */

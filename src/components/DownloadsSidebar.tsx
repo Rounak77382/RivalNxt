@@ -647,7 +647,7 @@ export function DownloadsSidebar({
           {/* Custom Tags Section */}
           {customTagsInMods.length > 0 && onCustomTagToggle && (
             <div>
-              <Collapsible defaultOpen>
+              <Collapsible>
                 <CollapsibleTrigger asChild>
                   <Button
                     variant={selectedCustomTags.length > 0 ? "secondary" : "ghost"}

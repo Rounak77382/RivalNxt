@@ -2846,3 +2846,31 @@ html {
   background-color: var(--muted/50) !important;
   border-radius: var(--radius);
 }
+
+/* Custom Header Action Buttons */
+.header-action-btn {
+  padding-left: 0.75rem !important;
+  padding-right: 0.75rem !important;
+  transition: padding 0.2s ease, background-color 0.2s ease, gap 0.2s ease-out;
+  overflow: hidden;
+  gap: 0 !important;
+}
+
+.header-action-text {
+  display: inline-block;
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  transition: max-width 0.2s ease-out, opacity 0.2s ease-out;
+  vertical-align: middle;
+}
+
+.header-action-btn:hover {
+  gap: 0.5rem !important;
+}
+
+.header-action-btn:hover .header-action-text {
+  max-width: 150px;
+  opacity: 1;
+}

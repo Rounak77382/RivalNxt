@@ -25,8 +25,8 @@
     "semantic_hash": "6071b9786822a204f4b00b2d560b6257"
   },
   "core/api/server.py": {
-    "mtime": 1781609861.6030252,
-    "ast_hash": "be3e8c4406e13688812a4a7a4c4da092",
+    "mtime": 1781958023.6390066,
+    "ast_hash": "f39512a9816d99d8b2f0e1979e8248d9",
     "semantic_hash": ""
   },
   "core/api/services/__init__.py": {
@@ -60,9 +60,9 @@
     "semantic_hash": "6139e02c18266773d020679a41c70f2c"
   },
   "core/db/__init__.py": {
-    "mtime": 1776858700.6908448,
-    "ast_hash": "c38c9a70e25e89703ab2289a00685d77",
-    "semantic_hash": "c38c9a70e25e89703ab2289a00685d77"
+    "mtime": 1781796108.307503,
+    "ast_hash": "6cd67961b9dd0d38b30937532f67f0d7",
+    "semantic_hash": ""
   },
   "core/db/conflicts.py": {
     "mtime": 1764001576.8926363,
@@ -70,9 +70,9 @@
     "semantic_hash": "5e016ca3b1cb496df198611b8727f7cb"
   },
   "core/db/db.py": {
-    "mtime": 1781522188.2105956,
-    "ast_hash": "c5a9d489e96d46251e7f9981c270e854",
-    "semantic_hash": "c5a9d489e96d46251e7f9981c270e854"
+    "mtime": 1781817286.3392787,
+    "ast_hash": "d2b8c3b4ff002f12e44dcbbc1cbd1a51",
+    "semantic_hash": ""
   },
   "core/db/migrations/0001_conflicts_materialized.sql": {
     "mtime": 1764001576.8946354,
@@ -155,9 +155,9 @@
     "semantic_hash": "c2b84f1538ff8e782eda9be74504311f"
   },
   "core/db/queries.py": {
-    "mtime": 1765973589.8060932,
-    "ast_hash": "9314aba4820e28a145215bcdd3e72d86",
-    "semantic_hash": "9314aba4820e28a145215bcdd3e72d86"
+    "mtime": 1781796097.4836493,
+    "ast_hash": "77d8d6bb8a676b5195f7601d49f76bed",
+    "semantic_hash": ""
   },
   "core/extraction/__init__.py": {
     "mtime": 1765271078.6817222,
@@ -245,7 +245,7 @@
     "semantic_hash": "fd40d6a57a0f2b01475722c0c9b281d4"
   },
   "extracted_wheel/rust_ue_tools/__init__.py": {
-    "mtime": 1781608534.0,
+    "mtime": 1781938660.0,
     "ast_hash": "3a779a2d66ccbe631b1487543f327a77",
     "semantic_hash": "3a779a2d66ccbe631b1487543f327a77"
   },
@@ -1100,8 +1100,8 @@
     "semantic_hash": "3997abdee9e4784ff5103f017b3dd7f4"
   },
   "src/App.tsx": {
-    "mtime": 1781681631.110649,
-    "ast_hash": "75c85331d168a38cc346aa9ff32e9e78",
+    "mtime": 1781958001.5946429,
+    "ast_hash": "b9fa6e733fec886c11ed058158e9eaec",
     "semantic_hash": ""
   },
   "src/components/ActiveModsPanel.tsx": {
@@ -1120,14 +1120,14 @@
     "semantic_hash": "4c704fe4f15c13d12df373af166776bf"
   },
   "src/components/BackupModal.tsx": {
-    "mtime": 1781471551.983327,
-    "ast_hash": "ef21e419801af1b86becfbf425184019",
-    "semantic_hash": "ef21e419801af1b86becfbf425184019"
+    "mtime": 1781883653.1109726,
+    "ast_hash": "57832813ea602e080d1b910cdf36c0d9",
+    "semantic_hash": ""
   },
   "src/components/BackupRestoreModal.tsx": {
-    "mtime": 1781471551.9919188,
-    "ast_hash": "a12af259dd69c8eae881e58ac2f1a994",
-    "semantic_hash": "a12af259dd69c8eae881e58ac2f1a994"
+    "mtime": 1781883666.535462,
+    "ast_hash": "595da049f7f9f92692aee6c8fb9444e1",
+    "semantic_hash": ""
   },
   "src/components/BrowsePage.tsx": {
     "mtime": 1777136280.60894,
@@ -1135,8 +1135,8 @@
     "semantic_hash": "5a6acec2637177b2a761ee44575f52bf"
   },
   "src/components/CheckForUpdatesModal.tsx": {
-    "mtime": 1781627411.2228742,
-    "ast_hash": "50abb3f014839dcd3c65ac055bed8fc0",
+    "mtime": 1781815530.3205068,
+    "ast_hash": "3343f63d66d0a3caa20a5735ac029d4c",
     "semantic_hash": ""
   },
   "src/components/CollectionsPage.tsx": {
@@ -1150,8 +1150,8 @@
     "semantic_hash": ""
   },
   "src/components/DownloadsSidebar.tsx": {
-    "mtime": 1781683305.2458029,
-    "ast_hash": "d0fb02d7c215fd689a1eee45dd3e80e6",
+    "mtime": 1781985628.1315444,
+    "ast_hash": "6533ae1ce7f59fca664cc6d26dacd7d5",
     "semantic_hash": ""
   },
   "src/components/GameUpdateModal.tsx": {
@@ -1165,8 +1165,8 @@
     "semantic_hash": "a067673314d5da49e6edda76bfe744b7"
   },
   "src/components/InstalledModCard.tsx": {
-    "mtime": 1781625069.0383112,
-    "ast_hash": "93e10bffad8d68c0ab5ff5981306798d",
+    "mtime": 1781771957.7957368,
+    "ast_hash": "c01e89ddb1de208cf45752130c4763d5",
     "semantic_hash": ""
   },
   "src/components/LazyLoad.tsx": {
@@ -1185,8 +1185,8 @@
     "semantic_hash": "f7cb7ad671ee6fcc6ff3aa99d5a4cc0e"
   },
   "src/components/ModModal.tsx": {
-    "mtime": 1781647301.508966,
-    "ast_hash": "4ce3c2143aec852001626b2becec9bf5",
+    "mtime": 1781883683.0695145,
+    "ast_hash": "51524a43caa5c8d06fa0df25a2b00db8",
     "semantic_hash": ""
   },
   "src/components/NSFWFilterProvider.tsx": {
@@ -1230,9 +1230,9 @@
     "semantic_hash": "f414a3f209056fa1dd349ecb40d97c4c"
   },
   "src/components/TabHeader.tsx": {
-    "mtime": 1781522188.1590238,
-    "ast_hash": "c12e8be7a6395d389f96d91d93f3517d",
-    "semantic_hash": "c12e8be7a6395d389f96d91d93f3517d"
+    "mtime": 1781985191.723259,
+    "ast_hash": "ccb68a9f5eae4ddaa6e4f55c7d3a38d6",
+    "semantic_hash": ""
   },
   "src/components/TagList.tsx": {
     "mtime": 1780009369.423454,
@@ -1500,14 +1500,14 @@
     "semantic_hash": "e3f848f1b39f863e6164cf58b5a8e752"
   },
   "src/lib/api.ts": {
-    "mtime": 1781647180.517223,
-    "ast_hash": "7cfa441f1c9ac9e1c9f17b57f0f8ca90",
+    "mtime": 1781957942.2609642,
+    "ast_hash": "f3075af8e663d9e894c08caf27e862f7",
     "semantic_hash": ""
   },
   "src/lib/backupUtils.ts": {
-    "mtime": 1781471552.027244,
-    "ast_hash": "a847b53ec0e37e807ce866efda9aadaf",
-    "semantic_hash": "a847b53ec0e37e807ce866efda9aadaf"
+    "mtime": 1781770867.3807745,
+    "ast_hash": "e17a639c944ddd8c7f9249b43aea4425",
+    "semantic_hash": ""
   },
   "src/lib/categoryUtils.ts": {
     "mtime": 1780009369.4289382,
@@ -1685,8 +1685,28 @@
     "semantic_hash": "69c00f5b1486c86c9e2e6937e170eec2"
   },
   "src/lib/updateUtils.ts": {
-    "mtime": 1781623845.8908708,
-    "ast_hash": "f3f14efa5dddf9c8f7a2e00cdff0a1cd",
+    "mtime": 1781806437.2694206,
+    "ast_hash": "0428c005f9a5513907cb293bdbc7a6e4",
+    "semantic_hash": ""
+  },
+  "tests/test_backup_custom.py": {
+    "mtime": 1781771245.2957652,
+    "ast_hash": "ccf6e6c36d5b9c6257228a77c2d864ae",
+    "semantic_hash": ""
+  },
+  "scratch/test_delete_logic.py": {
+    "mtime": 1781877390.793048,
+    "ast_hash": "170f95f37e7646be9a82885c29528a4f",
+    "semantic_hash": ""
+  },
+  "scratch/test_delete_outdated.py": {
+    "mtime": 1781877177.3824768,
+    "ast_hash": "14cdb083a1c88562703ec30f4829e8ce",
+    "semantic_hash": ""
+  },
+  "scratch/test_variant.py": {
+    "mtime": 1781877213.4106295,
+    "ast_hash": "6d579800fd315f4e193f8e2f48f8aa6f",
     "semantic_hash": ""
   }
 }

@@ -17,7 +17,6 @@ import {
   Download,
   Power,
   ShieldCheck,
-  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -34,7 +33,7 @@ import {
   invokeOpenFileDialog,
   invokeReadTextFile,
 } from "../lib/tauri-utils";
-import { setActivePaks, scanActive, refreshConflicts, getLocalDownload, getModCustomTags, addModCustomTag } from "../lib/api";
+import { setActivePaks, scanActive, refreshConflicts, getLocalDownload, getModCustomTags, addModCustomTag, getModDetails, fetchModImages, updateModDetails, uploadModImagesBase64 } from "../lib/api";
 
 interface BackupModalProps {
   open: boolean;
@@ -60,7 +59,6 @@ export function BackupModal({
   open,
   onClose,
   mods,
-  onToggleMod,
   onBackupCreated,
   onBackupRestored,
 }: BackupModalProps) {
@@ -104,9 +102,28 @@ export function BackupModal({
                   ? -entry.sourceDownloadIds[0]
                   : null;
             if (modId == null) return;
+
+            // Fetch custom tags
             const tags = await getModCustomTags(modId);
             if (tags.length > 0) {
               entry.customTags = tags.map((t) => t.tag);
+            }
+
+            // Fetch description
+            const details = await getModDetails(modId);
+            if (details.mod?.description_bbcode || details.mod?.description) {
+              entry.description = details.mod.description_bbcode || details.mod.description;
+            }
+
+            // Fetch custom images
+            const images = await fetchModImages(modId);
+            const customImgs = images.filter((img) => img.source === "custom");
+            if (customImgs.length > 0) {
+              entry.customImages = customImgs.map(img => ({
+                data: img.data || "",
+                filename: img.filename,
+                mimeType: img.mimeType
+              })).filter(img => img.data);
             }
           } catch {
             // Ignore per-mod failures — tags are best-effort
@@ -245,15 +262,16 @@ export function BackupModal({
         changed++;
       }
 
-      // Step 3 – Restore custom tags for enabled mods (best-effort)
-      for (const mod of toEnable) {
+      // Step 3 – Restore custom user data (tags, description, images)
+      for (const mod of mods) {
         const backupEntry = backup.mods.find(e => {
           if (e.backendModId != null && mod.backendModId != null) return e.backendModId === mod.backendModId;
-          if (e.sourceDownloadIds.length > 0 && Array.isArray(mod.sourceDownloadIds)) return e.sourceDownloadIds.some(id => mod.sourceDownloadIds.includes(id));
+          if (e.sourceDownloadIds.length > 0 && Array.isArray(mod.sourceDownloadIds)) return e.sourceDownloadIds.some((id: number | string) => mod.sourceDownloadIds.includes(id));
           return String(e.modId) === String(mod.id);
         });
-        const savedTags = backupEntry?.customTags || [];
-        if (savedTags.length === 0) continue;
+        
+        if (!backupEntry) continue; // Only process mods that were in the backup
+
         const effectiveModId =
           mod.backendModId != null
             ? mod.backendModId
@@ -261,8 +279,27 @@ export function BackupModal({
               ? -mod.sourceDownloadIds[0]
               : null;
         if (effectiveModId == null) continue;
-        for (const tagName of savedTags) {
-          try { await addModCustomTag(effectiveModId, tagName); } catch { /* already exists or missing mod */ }
+
+        // Restore custom tags
+        const savedTags = backupEntry?.customTags || [];
+        if (savedTags.length > 0) {
+          for (const tagName of savedTags) {
+            try { await addModCustomTag(effectiveModId, tagName); } catch { /* already exists or missing mod */ }
+          }
+        }
+
+        // Restore custom description
+        if (backupEntry?.description) {
+          try {
+            await updateModDetails(effectiveModId, { description: backupEntry.description });
+          } catch { /* best effort */ }
+        }
+
+        // Restore custom images
+        if (backupEntry?.customImages && backupEntry.customImages.length > 0) {
+          try {
+            await uploadModImagesBase64(effectiveModId, backupEntry.customImages);
+          } catch { /* best effort */ }
         }
       }
 

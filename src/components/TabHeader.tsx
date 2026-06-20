@@ -1,7 +1,18 @@
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { Bell, Settings, RefreshCw, Rocket, Play, Archive } from "lucide-react";
+import { Bell, Settings, RefreshCw, Rocket, Play, Archive, PowerOff } from "lucide-react";
 import { open } from "@tauri-apps/plugin-shell";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "./ui/alert-dialog";
 
 interface TabHeaderProps {
   activeTab: "downloads" | "active" | "collections";
@@ -15,6 +26,7 @@ interface TabHeaderProps {
   onOpenSettings?: () => void;
   onOpenBootstrap?: () => void;
   onOpenBackup?: () => void;
+  onDisableAllMods?: () => void;
 }
 
 export function TabHeader({
@@ -29,6 +41,7 @@ export function TabHeader({
   onOpenSettings,
   onOpenBootstrap,
   onOpenBackup,
+  onDisableAllMods,
 }: TabHeaderProps) {
   return (
     <div className="border-b border-border bg-card">
@@ -71,15 +84,18 @@ export function TabHeader({
         <div className="flex items-center gap-6">
 
           <div className="flex items-center gap-2">
+
             {onOpenBootstrap && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={onOpenBootstrap}
-                className="gap-2"
+                className="header-action-btn"
               >
-                <Rocket className="w-4 h-4" />
-                Setup
+                <Rocket className="w-4 h-4 shrink-0" />
+                <span className="header-action-text">
+                  Setup
+                </span>
               </Button>
             )}
             {onOpenBackup && (
@@ -87,37 +103,69 @@ export function TabHeader({
                 variant="outline"
                 size="sm"
                 onClick={onOpenBackup}
-                className="gap-2"
+                className="header-action-btn"
               >
-                <Archive className="w-4 h-4" />
-                Backup
+                <Archive className="w-4 h-4 shrink-0" />
+                <span className="header-action-text">
+                  Backup
+                </span>
               </Button>
             )}
             <Button
               variant="outline"
               size="sm"
               onClick={() => open('steam://rungameid/2767030')}
-              className="gap-2"
+              className="header-action-btn"
             >
-              <Play className="w-4 h-4" />
-              Start Game
+              <Play className="w-4 h-4 shrink-0" />
+              <span className="header-action-text">
+                Start Game
+              </span>
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={onRefresh}
-              className="gap-2"
+              className="header-action-btn"
             >
-              <RefreshCw className="w-4 h-4" />
-              Refresh
+              <RefreshCw className="w-4 h-4 shrink-0" />
+              <span className="header-action-text">
+                Refresh
+              </span>
             </Button>
+
+            {onDisableAllMods && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="sm" className="header-action-btn">
+                    <PowerOff className="w-4 h-4 shrink-0" />
+                    <span className="header-action-text">
+                      Disable All
+                    </span>
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Disable All Mods</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to disable all active mods? Make sure to backup your active mods before disabling them if you want to restore them later.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={onDisableAllMods}>
+                      Disable All
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
             <Button
               variant="outline"
               size="sm"
-              className="gap-2"
               onClick={onOpenSettings}
             >
-              <Settings className="w-4 h-4" />
+              <Settings className="w-4 h-4 shrink-0" />
               Settings
             </Button>
           </div>

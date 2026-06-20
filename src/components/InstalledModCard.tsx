@@ -1,7 +1,6 @@
 import React, { useState, type SyntheticEvent } from "react";
 import { Card, CardContent } from "./ui/card";
 import { Button } from "./ui/button";
-import { Badge } from "./ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Skeleton } from "./ui/skeleton";
 import { LazyLoad } from "./LazyLoad";
@@ -43,7 +42,6 @@ function InstalledModCardInner({
   mod,
   viewMode,
   onUninstall,
-  onUpdate,
   onCheckUpdate,
   onView,
   onFavorite,

@@ -82,7 +82,6 @@ import {
 } from "../lib/api";
 import { toast } from "sonner";
 import React from "react";
-import { isVariantActuallyUpdatable } from "../lib/updateUtils";
 
 type DownloadEntry = {
   id: number;
@@ -806,12 +805,12 @@ export function ModModal({
         }))
         .sort((a, b) => {
           const aNeedsUpdate =
-            isVariantActuallyUpdatable(a.entry, downloadEntries) &&
+            a.entry.needs_update &&
             a.entry.local_version_key != null &&
             a.entry.latest_version_key != null &&
             a.entry.local_version_key < a.entry.latest_version_key;
           const bNeedsUpdate =
-            isVariantActuallyUpdatable(b.entry, downloadEntries) &&
+            b.entry.needs_update &&
             b.entry.local_version_key != null &&
             b.entry.latest_version_key != null &&
             b.entry.local_version_key < b.entry.latest_version_key;
@@ -1389,6 +1388,7 @@ export function ModModal({
         );
         setIsTagDropdownOpen(false);
         setTagSearchValue("");
+        onRefresh?.();
         toast.success(`Tag "${trimmed}" added`);
       } catch (err) {
         toast.error((err as any)?.message || "Failed to add tag");
@@ -1396,7 +1396,7 @@ export function ModModal({
         setIsAddingTag(false);
       }
     },
-    [effectiveModId, customTags, isAddingTag],
+    [effectiveModId, customTags, isAddingTag, onRefresh],
   );
 
   const handleRemoveCustomTag = useCallback(
@@ -1411,6 +1411,7 @@ export function ModModal({
         });
         await removeModCustomTag(effectiveModId, tagId);
         setCustomTags((prev) => prev.filter((ct) => ct.id !== tagId));
+        onRefresh?.();
         toast.success(`Tag "${tagName}" removed`);
       } catch (err) {
         toast.error((err as any)?.message || "Failed to remove tag");
@@ -1422,7 +1423,7 @@ export function ModModal({
         });
       }
     },
-    [effectiveModId],
+    [effectiveModId, onRefresh],
   );
 
   if (!mod) return null;
@@ -2440,12 +2441,11 @@ export function ModModal({
                                   </div>
                                   <div className="flex items-center gap-2">
                                       {(() => {
-                                        const variantNeedsUpdate =
-                                          isVariantActuallyUpdatable(entry, downloadEntries) &&
-                                          entry.local_version_key != null &&
-                                          entry.latest_version_key != null &&
-                                          entry.local_version_key <
-                                            entry.latest_version_key;
+                                          const variantNeedsUpdate =
+                                            entry.needs_update &&
+                                            entry.local_version_key != null &&
+                                            entry.latest_version_key != null &&
+                                            entry.local_version_key < entry.latest_version_key;
 
                                         if (!variantNeedsUpdate) return null;
 

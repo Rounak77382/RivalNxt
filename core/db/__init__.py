@@ -25,6 +25,7 @@ from . import queries as _queries
 from .queries import (
     get_mod,
     get_latest_file,
+    get_file_by_id,
     get_latest_file_by_version,
     list_local_without_remote,
     search_mods,
@@ -55,6 +56,7 @@ __all__ = [
     # queries
     'get_mod',
     'get_latest_file',
+    'get_file_by_id',
     'get_latest_file_by_version',
     'list_local_without_remote',
     'search_mods',

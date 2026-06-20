@@ -20,7 +20,7 @@ interface CheckForUpdatesModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   mods: Mod[];
-  onUpdateMod?: (modId: string, targetFileId?: number) => void;
+  onUpdateMod?: (modId: string, targetFileId?: number) => Promise<void> | void;
   onRefreshMods?: () => void;
   // Controlled state lifted to parent so results survive modal close/reopen
   statuses: Record<string, ModStatus>;
@@ -179,23 +179,25 @@ export function CheckForUpdatesModal({
     });
   }, [installedMods, getDerivedStatus]);
 
-  const handleUpdateAll = useCallback(() => {
+  const handleUpdateAll = useCallback(async () => {
     if (!onUpdateMod) return;
+    
+    toast.success(
+      `Started update for ${modsWithUpdates.length} mod${modsWithUpdates.length !== 1 ? "s" : ""}. Please approve downloads sequentially.`
+    );
+    
     for (const mod of modsWithUpdates) {
       // Use the specific file ID from the first pending variant (from check result),
       // falling back to the grouped mod's latestFileId only if no check was run yet.
       const modStatus = statuses[mod.id];
       if (modStatus?.pendingVersions && modStatus.pendingVersions.length > 0) {
         for (const pending of modStatus.pendingVersions) {
-          onUpdateMod(mod.id, pending.referenceFileId ?? mod.latestFileId ?? undefined);
+          await onUpdateMod(mod.id, pending.referenceFileId ?? mod.latestFileId ?? undefined);
         }
       } else {
-        onUpdateMod(mod.id, mod.latestFileId ?? undefined);
+        await onUpdateMod(mod.id, mod.latestFileId ?? undefined);
       }
     }
-    toast.success(
-      `Started update for ${modsWithUpdates.length} mod${modsWithUpdates.length !== 1 ? "s" : ""}.`,
-    );
   }, [modsWithUpdates, onUpdateMod, statuses]);
 
   // Stats for header

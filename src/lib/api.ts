@@ -792,6 +792,16 @@ export async function uploadModImagesByPath(
   );
 }
 
+export async function uploadModImagesBase64(
+  modId: number,
+  images: { data: string; filename?: string; mimeType?: string }[],
+): Promise<{ ok: boolean; uploaded_count: number; image_ids: number[] }> {
+  return postJson<{ images: any[] }, { ok: boolean; uploaded_count: number; image_ids: number[] }>(
+    `/api/mods/${modId}/images`,
+    { images }
+  );
+}
+
 export async function deleteModImage(
   imageId: number,
 ): Promise<{ ok: boolean; deleted_id: number }> {
@@ -883,7 +893,7 @@ export interface ApiPakAsset {
   assets: string[];
 }
 
-export async function listDownloads(limit = 500): Promise<ApiDownload[]> {
+export async function listDownloads(limit = 2000): Promise<ApiDownload[]> {
   return getJson<ApiDownload[]>(`/api/downloads?limit=${limit}`);
 }
 
@@ -905,6 +915,10 @@ export async function setActivePaks(downloadId: number, active_paks: string[]) {
     `/api/local_downloads/${downloadId}/set-active`,
     { active_paks },
   );
+}
+
+export async function disableAllMods(): Promise<{ ok: boolean }> {
+  return postJson<{}, { ok: boolean }>(`/api/mods/disable-all`, {});
 }
 
 export async function scanActive(): Promise<{ ok: boolean }> {

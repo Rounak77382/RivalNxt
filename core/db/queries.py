@@ -43,6 +43,29 @@ def get_latest_file_by_version(conn: sqlite3.Connection, mod_id: int) -> Optiona
         }
     return None
 
+def get_file_by_id(conn: sqlite3.Connection, mod_id: int, file_id: int) -> Optional[dict]:
+    cur = conn.execute(
+        """
+        SELECT file_id, name, version, category, size_in_bytes, is_primary, uploaded_at, version_key
+        FROM mod_files
+        WHERE mod_id = ? AND file_id = ?;
+        """,
+        (mod_id, file_id),
+    )
+    row = cur.fetchone()
+    if row:
+        return {
+            "file_id": row[0],
+            "file_name": row[1],
+            "file_version": row[2],
+            "file_category": row[3],
+            "file_size_in_bytes": row[4],
+            "is_primary": row[5],
+            "uploaded_at": row[6],
+            "version_key": row[7],
+        }
+    return None
+
 def list_mod_files(conn: sqlite3.Connection, mod_id: int, order_by: str = "version") -> List[dict]:
     if order_by == "version":
         order_clause = "ORDER BY COALESCE(version_key, '' ) DESC, uploaded_at DESC"
