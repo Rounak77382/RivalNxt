@@ -734,10 +734,10 @@ export default function App() {
   };
 
   // Event handlers
-  async function fetchServerMods(limit = 2000): Promise<any[]> {
+  async function fetchServerMods(): Promise<any[]> {
     // Start fetching downloads and favourites in parallel
     const [downloads, favouritedIds] = await Promise.all([
-      listDownloads(limit),
+      listDownloads(),
       fetchFavourites().catch((err) => {
         console.warn("[fetchServerMods] Failed to fetch favourites:", err);
         return [] as number[];
@@ -1384,7 +1384,7 @@ export default function App() {
 
     try {
       await scanActive();
-      const allDownloads = await listDownloads(1000);
+      const allDownloads = await listDownloads();
       const activeDownloads = allDownloads.filter(
         (dl) => dl.active_paks && dl.active_paks.length > 0
       );

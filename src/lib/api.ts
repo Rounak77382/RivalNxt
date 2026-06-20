@@ -893,8 +893,8 @@ export interface ApiPakAsset {
   assets: string[];
 }
 
-export async function listDownloads(limit = 2000): Promise<ApiDownload[]> {
-  return getJson<ApiDownload[]>(`/api/downloads?limit=${limit}`);
+export async function listDownloads(): Promise<ApiDownload[]> {
+  return getJson<ApiDownload[]>(`/api/downloads`);
 }
 
 export type ApiDownloadsSummary = {

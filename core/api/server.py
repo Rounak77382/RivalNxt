@@ -4874,7 +4874,7 @@ def delete_mod_image(image_id: int) -> Dict[str, Any]:
 
 
 @app.get("/api/downloads")
-def list_downloads(limit: int = 2000) -> List[Dict[str, Any]]:
+def list_downloads() -> List[Dict[str, Any]]:
 	"""List local downloads with joined mod info and tags sourced strictly from v_local_downloads_with_tags.
 
 	Returns items like: { id, name, mod_id, version, path, contents[], active_paks[], created_at,
@@ -4919,12 +4919,10 @@ def list_downloads(limit: int = 2000) -> List[Dict[str, Any]]:
 		    AND variant_latest.rn = 1 
 		    AND REPLACE(REPLACE(REPLACE(LOWER(variant_latest.name), ' ', ''), '-', ''), '_', '') = REPLACE(REPLACE(REPLACE(LOWER(l.name), ' ', ''), '-', ''), '_', '')
 		ORDER BY l.created_at DESC
-		LIMIT ?
-		""",
-		(limit,),
+		"""
 	).fetchall()
 	
-	logger.info(f"[list_downloads] Query returned {len(rows)} rows (limit={limit})")
+	logger.info(f"[list_downloads] Query returned {len(rows)} rows")
 	
 	actual_active_filenames = _get_actually_active_filenames(logger)
 	db_updates = []
