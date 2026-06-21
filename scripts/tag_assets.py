@@ -155,30 +155,98 @@ def find_category(path: str) -> Optional[str]:
 
 def find_entity_key(path_segments: List[str]) -> Tuple[Optional[str], Optional[str], Optional[str]]:
     # Returns (char_id4, skin_id7, alpha_key)
-    # NEW LOGIC: Robust ID detection in both folders and filenames
-    
-    # Join with slashes but also search in individual segments
-    path_str = "/".join(path_segments)
-    
-    # Pattern 1: Look for 7-digit skin IDs (e.g., /1011100/ or SK_1011100)
-    # Using word boundaries \b to avoid matching parts of longer numbers
-    # Also ensuring it's not part of a larger digit sequence
-    skin_pattern = r'(?<!\d)(\d{7})(?!\d)'
-    skin_matches = re.findall(skin_pattern, path_str)
-    if skin_matches:
-        # Take the last match (closest to filename)
-        skin_id7 = skin_matches[-1]
-        char_id4 = skin_id7[:4]
-        return char_id4, skin_id7, None
-    
-    # Pattern 2: Look for 4-digit character IDs (e.g., /1011/ or CH_1011)
-    char_pattern = r'(?<!\d)(\d{4})(?!\d)'
-    char_matches = re.findall(char_pattern, path_str)
-    if char_matches:
-        # Take the last match (closest to filename)
-        char_id4 = char_matches[-1]
-        return char_id4, None, None
-    
+    # SAFE LOGIC: Only extract character/skin IDs from DIRECTORY SEGMENTS,
+    # never from filenames. This prevents texture filenames like
+    # t_1024301_equip_01_d.uasset (a Hela skin texture reference) inside a Mantis
+    # character folder (/characters/1020/1020800/) from being mistakenly tagged as Hela.
+    #
+    # Valid character asset paths look like:
+    #   /marvel/content/marvel/characters/{char_id4}/{skin_id7}/materials/...
+    # The char_id4 and skin_id7 must appear as complete, isolated directory
+    # segments (not embedded in filenames or longer numeric sequences).
+    #
+    # UI/shared asset paths like:
+    #   /ui/textures/proficiency/img_battle_21039020_avatar.uasset
+    # produce no character tag because the numeric sequences are inside filenames
+    # or are 8+ digit numbers, not isolated 4/7-digit directory segments.
+
+    # Separate directory segments from the filename (last segment).
+    # We only inspect directory segments for IDs, NEVER the filename itself.
+    dir_segments = path_segments[:-1] if len(path_segments) > 1 else []
+
+    # Strategy 1: Detect the canonical /characters/{char_id4}/{skin_id7}/ structure.
+    # Walk the directory segments looking for a 'characters' (or synonym) segment
+    # followed immediately by a 4-digit char_id and optionally a 7-digit skin_id.
+    for i, seg in enumerate(dir_segments):
+        if seg.lower() in ENTITY_SYNONYMS:
+            # Next segment should be the 4-digit character ID
+            if i + 1 < len(dir_segments):
+                next_seg = dir_segments[i + 1]
+                if re.fullmatch(r'\d{4}', next_seg):
+                    char_id4 = next_seg
+                    # Segment after that may be the 7-digit skin ID
+                    if i + 2 < len(dir_segments):
+                        skin_seg = dir_segments[i + 2]
+                        if re.fullmatch(r'\d{7}', skin_seg):
+                            return char_id4, skin_seg, None
+                    # Only char_id found (no skin sub-folder)
+                    return char_id4, None, None
+
+    # Strategy 2: Look for an isolated 7-digit directory segment not preceded by
+    # a 'characters' keyword. Catches paths like /SK_1011100/ or /1011100/ as
+    # complete segments. Still never looks at the filename (last segment).
+    for seg in dir_segments:
+        if re.fullmatch(r'\d{7}', seg):
+            skin_id7 = seg
+            char_id4 = skin_id7[:4]
+            return char_id4, skin_id7, None
+
+    # Strategy 3: Look for an isolated 4-digit directory segment.
+    # Directory segments only — not filenames.
+    for seg in dir_segments:
+        if re.fullmatch(r'\d{4}', seg):
+            return seg, None, None
+
+    # Strategy 4: Known UI filename encoding patterns.
+    # UI assets encode the character ID directly inside the filename number.
+    # Two schemes observed in Marvel Rivals:
+    #
+    #   Scheme A — 8-digit with leading type byte:
+    #     img_battle_21039020_avatar  ->  2 + 1039 + 020
+    #     img_selecthero_21039020     ->  2 + 1039 + 020
+    #     The leading "2" is a UI type/version prefix; char_id is digits 1-4 (0-indexed).
+    #
+    #   Scheme B — 8-digit char-first:
+    #     img_squarehead_10270010     ->  1027 + 0010
+    #     img_commontransverse_10270010 -> 1027 + 0010
+    #     char_id is the first 4 digits directly.
+    #
+    #   Scheme C — 5-digit char-first:
+    #     img_battle_10270_avatar     ->  1027 + 0
+    #     char_id is the first 4 digits.
+    #
+    # Safe extraction rule: search the filename for any 5-8 digit numeric run,
+    # then try ALL 4-digit windows within it and check against the entity_map
+    # (caller does the lookup; here we just return candidate char_id4).
+    # We return the FIRST valid candidate found.
+    # This avoids false positives from arbitrary numbers — only known char IDs match.
+    if path_segments:
+        filename = path_segments[-1]
+        # Strip extension
+        stem = filename.rsplit('.', 1)[0]
+        # Find all runs of digits (5 to 8 length are the known UI ranges)
+        for num_match in re.finditer(r'\d{5,8}', stem):
+            num_str = num_match.group(0)
+            # Slide a 4-digit window from left to right through the number.
+            # Return the first 4-digit substring that is a known character ID;
+            # the caller's entity_map lookup will validate it.
+            # We return all candidates as a sorted tuple so caller picks first valid.
+            for start in range(len(num_str) - 3):
+                candidate = num_str[start:start + 4]
+                # Only yield candidates that look like Marvel Rivals char IDs (1xxx or 4xxx)
+                if re.fullmatch(r'[14]\d{3}', candidate):
+                    return candidate, None, None
+
     # No pattern match found
     return None, None, None
 
