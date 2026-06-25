@@ -343,7 +343,11 @@ export function BackupRestoreModal({ meta, installedMods, onComplete, onClose }:
                   ? "Restore Failed"
                   : "Restoring Backup"}
               </DialogTitle>
-              <p className="text-sm text-muted-foreground" style={{ marginTop: "2px" }}>
+              <p
+                className="text-sm text-muted-foreground truncate"
+                style={{ marginTop: "2px", maxWidth: "calc(50vw - 120px)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                title={meta?.name}
+              >
                 {meta ? `Applying snapshot: ${meta.name}` : ""}
               </p>
             </div>
@@ -488,6 +492,8 @@ export function BackupRestoreModal({ meta, installedMods, onComplete, onClose }:
                   alignItems: "center",
                   gap: "10px",
                   boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
+                  minWidth: 0,
+                  overflow: "hidden",
                 }}
               >
                 <Loader2
@@ -499,7 +505,17 @@ export function BackupRestoreModal({ meta, installedMods, onComplete, onClose }:
                         : "#f59e0b",
                   }}
                 />
-                <span className="text-sm font-medium text-foreground truncate max-w-full">
+                <span
+                  className="text-sm font-medium text-foreground"
+                  style={{
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    minWidth: 0,
+                    flex: 1,
+                  }}
+                  title={currentModName || "Preparing restore..."}
+                >
                   {currentModName || "Preparing restore..."}
                 </span>
               </div>

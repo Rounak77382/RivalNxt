@@ -64,6 +64,7 @@ export function BackupModal({
 }: BackupModalProps) {
   const [view, setView] = useState<ModalView>("home");
   const [isWorking, setIsWorking] = useState(false);
+  const [creatingStep, setCreatingStep] = useState<"gathering" | "saving">("gathering");
   const [restorePreview, setRestorePreview] = useState<RestorePreview | null>(
     null
   );
@@ -84,6 +85,7 @@ export function BackupModal({
   // ── Create backup ────────────────────────────────────────────────────────
   const handleCreateBackup = async () => {
     setIsWorking(true);
+    setCreatingStep("gathering");
     setView("creating");
     try {
       const name = generateBackupName();
@@ -135,6 +137,7 @@ export function BackupModal({
         .replace(/[: ]/g, "-")
         .replace(/--+/g, "-")}.json`;
 
+      setCreatingStep("saving");
       const path = await invokeSaveFileDialog(defaultFileName, ["json"]);
       if (!path) {
         // User cancelled
@@ -424,7 +427,9 @@ export function BackupModal({
                 {view === "home"
                   ? `${activeMods.length} active mods · ${installedMods.length} installed`
                   : view === "creating"
-                    ? "Choosing save location…"
+                    ? creatingStep === "gathering"
+                      ? `Gathering metadata for ${installedMods.length} mod${installedMods.length !== 1 ? "s" : ""}…`
+                      : "Choosing save location…"
                     : view === "created"
                       ? `${lastSavedMeta?.totalMods ?? 0} mods saved (${lastSavedMeta?.activeMods ?? 0} active)`
                       : view === "restoring"
@@ -560,9 +565,20 @@ export function BackupModal({
 
         {/* ── CREATING VIEW (spinner) ── */}
         {view === "creating" && (
-          <div className="flex flex-col items-center justify-center py-10 gap-4">
+          <div className="flex flex-col items-center justify-center py-10 gap-5">
             <Loader2 className="h-10 w-10 text-violet-400 animate-spin" />
-            <p className="text-sm text-muted-foreground">Opening save dialog…</p>
+            <div className="flex flex-col items-center gap-1.5">
+              <p className="text-sm font-medium text-foreground">
+                {creatingStep === "gathering"
+                  ? "Collecting mod metadata…"
+                  : "Opening save dialog…"}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {creatingStep === "gathering"
+                  ? `Reading tags, descriptions & images for ${installedMods.length} mod${installedMods.length !== 1 ? "s" : ""}`
+                  : "Choose where to save your backup file"}
+              </p>
+            </div>
           </div>
         )}
 
