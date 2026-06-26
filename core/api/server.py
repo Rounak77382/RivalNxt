@@ -6045,18 +6045,36 @@ def disable_all_mods() -> Dict[str, Any]:
 		# 1. Clear ~mods directory
 		mods_dir = _mods_folder_from_env()
 		if mods_dir.exists():
-			import shutil
-			try:
-				shutil.rmtree(mods_dir)
-			except Exception as e:
-				logger.error(f"Failed to clear ~mods: {e}")
+			# Delete all files to clear the active mods
+			for p in mods_dir.rglob("*"):
+				if p.is_file():
+					try:
+						p.unlink()
+					except Exception as e:
+						logger.warning(f"Failed to delete {p}: {e}")
+			# Try to remove empty subdirectories
+			for p in sorted(mods_dir.rglob("*"), key=lambda x: len(str(x)), reverse=True):
+				if p.is_dir():
+					try:
+						p.rmdir()
+					except Exception:
+						pass
 		try:
 			mods_dir.mkdir(parents=True, exist_ok=True)
 		except Exception:
 			pass
 
 		# 2. Update database
-		conn.execute("UPDATE local_downloads SET active_paks = '[]'")
+		from datetime import datetime, timezone
+		now_iso = datetime.now(timezone.utc).isoformat()
+		conn.execute(
+			"""
+			UPDATE local_downloads 
+			SET last_deactivated_at = ?, active_paks = '[]'
+			WHERE active_paks != '[]' AND active_paks IS NOT NULL
+			""",
+			(now_iso,)
+		)
 		conn.commit()
 		_safe_rebuild_conflicts(conn, active_only=True, purpose="disable_all_mods")
 		
