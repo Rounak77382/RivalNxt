@@ -9,12 +9,16 @@
 * 📥 **Drag-and-Drop Image Uploads**: Introduced native Tauri webview listeners to seamlessly handle drag-and-drop actions for mod images. Supports multi-image HTML5 drops directly onto the application UI.
 * 🔄 **Persistent Handoff Tracking**: Downloads and mod handoffs are now persistently tracked using SQLite. The system automatically handles failed downloads, incorporating retry limits and background checking logic to ensure reliability.
 * 🌐 **Dynamic Fandom Wiki Skin Resolver**: Integrated an automated fallback crawler that queries the Marvel Rivals Fandom Wiki API to dynamically resolve unlocalized new skin names at extraction time.
+* 🧠 **Graphify Knowledge Graph Integration**: Implemented a cross-language AST knowledge graph to map project architecture, coupled with AI agent rules to streamline automated code analysis.
+* 🔍 **Custom Tag Search Integration**: Custom tags are now fully indexed for search and have been added to the downloads sidebar filter for deeper organizational control.
+* 🚀 **Unlimited Downloads**: Completely removed artificial download limits and unified the update count source to improve reliability and performance.
 
 ### 🐛 Bug Fixes & Under the Hood
 
 * 🔒 **Nexus SSL Bypass**: Resolved metadata fetching failures by globally disabling SSL certificate verification context for Nexus REST and GraphQL API calls to bypass expired cert issues.
 * 📢 **Accurate Update Banners**: Integrated a strict version normalization comparison to eliminate false-positive update notifications, and added dynamic display of download variant filenames when they differ from the mod name.
-* 💾 **Stable Backup & Restore Layout**: Enforced a stable width boundary (`w-full max-w-lg`) on the `BackupRestoreModal` component, successfully eliminating visual layout-shifting and width fluctuations during the restore process.
+* 💾 **Backup UI & Layout Refinements**: Improved the Backup creation UX by adding precise status indicators (e.g., "Collecting mod metadata") before opening the file dialog. Enforced stable width boundaries to eliminate visual layout shifting and width fluctuations during backup restoration.
+* 🎯 **Robust Character ID Extraction**: Hardened the character ID extraction logic from complex asset paths to prevent metadata resolution failures.
 * ️ **Faster Image Previews**: Optimized mod preview images to load thumbnail versions, reducing dashboard latency and image loading lag.
 
 ### 📥 Installation
