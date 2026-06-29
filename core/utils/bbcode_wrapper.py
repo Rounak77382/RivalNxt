@@ -12,7 +12,7 @@ def _get_parser():
     # Create parser with escape_html=False to prevent double-escaping if we handle sanitization
     # However, for general use, we might want default escaping. 
     # The existing server logic used escape_html=False.
-    parser = bbcode.Parser(escape_html=False, replace_cosmetic=False)
+    parser = bbcode.Parser(escape_html=False, replace_cosmetic=False, replace_links=False)
 
     # --- Custom Formatters ---
 
@@ -89,6 +89,11 @@ def _get_parser():
     parser.add_formatter('spoiler', format_spoiler)
     parser.add_formatter('youtube', format_youtube)
     parser.add_formatter('email', format_email)
+
+    # Disable HTML escaping for ALL tags (builtin and custom) so that things like <br /> are passed through.
+    # The frontend uses DOMPurify to sanitize the resulting HTML.
+    for tag_name, (render_func, tag_options) in parser.recognized_tags.items():
+        tag_options.escape_html = False
 
     _PARSER = parser
     return _PARSER

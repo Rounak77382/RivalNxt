@@ -2828,6 +2828,7 @@ html {
 
 .card-container {
   transition: all 0.4s;
+  will-change: transform, box-shadow;
 }
 
 .card-container:hover {
@@ -2854,6 +2855,7 @@ html {
   transition: padding 0.2s ease, background-color 0.2s ease, gap 0.2s ease-out;
   overflow: hidden;
   gap: 0 !important;
+  will-change: padding, gap;
 }
 
 .header-action-text {
@@ -2864,6 +2866,7 @@ html {
   white-space: nowrap;
   transition: max-width 0.2s ease-out, opacity 0.2s ease-out;
   vertical-align: middle;
+  will-change: max-width, opacity;
 }
 
 .header-action-btn:hover {

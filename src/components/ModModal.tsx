@@ -40,6 +40,9 @@ import {
   X as XIcon,
   RefreshCw,
   AlertTriangle,
+  Link,
+  CheckCircle2,
+  AlertCircle
 } from "lucide-react";
 import type { Mod } from "./ModCard";
 import {
@@ -376,6 +379,7 @@ interface ModModalProps {
   initialTab?: "overview" | "files" | "changelog" | "images" | "assets";
   // NEW: called when user clicks Update on a specific variant
   onUpdate?: (modId: string, downloadId?: number) => void | Promise<void>;
+  onAssignModId?: (modId: string) => void;
 }
 
 export function ModModal({
@@ -388,6 +392,7 @@ export function ModModal({
   onRefresh,
   initialTab,
   onUpdate,
+  onAssignModId,
 }: ModModalProps) {
   const [details, setDetails] = useState<ApiModDetails | null>(null);
   // Files list from server is not needed for toggle UI; using local download contents instead
@@ -1806,6 +1811,25 @@ export function ModModal({
                   />
                   {mod.isFavorited ? "Favorited" : "Add to Favorites"}
                 </Button>
+                {(mod.needsManualModId || mod.backendModId == null) && (
+                  <Button
+                    variant="outline"
+                    className="gap-2 text-amber-400 border-amber-400/40 hover:bg-amber-400/10"
+                    onClick={(e) => { e.stopPropagation(); onAssignModId?.(mod.id); }}
+                  >
+                    <Link className="w-4 h-4" /> Assign Mod ID
+                  </Button>
+                )}
+                {mod.renameStatus === "renamed" && (
+                  <div className="text-xs text-emerald-400 flex items-center gap-1 justify-center py-1">
+                    <CheckCircle2 className="w-3 h-3" /> Renamed to canonical format
+                  </div>
+                )}
+                {mod.renameStatus === "failed" && (
+                  <div className="text-xs text-red-400 flex items-center gap-1 justify-center py-1">
+                    <AlertCircle className="w-3 h-3" /> {mod.renameError}
+                  </div>
+                )}
               </div>
             </div>
           </DialogHeader>

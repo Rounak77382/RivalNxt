@@ -4,7 +4,7 @@ import { Card, CardContent } from "./ui/card";
 import { Button } from "./ui/button";
 // Badge is used by TagList; not needed directly here
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { Download, Star, Eye, Heart, FolderOpen, Power, RefreshCw, Ban } from "lucide-react";
+import { Download, Star, Eye, Heart, FolderOpen, Power, RefreshCw, Ban, Link, CheckCircle2, AlertCircle } from "lucide-react";
 import TagList from "./TagList";
 import { useNsfwFilter } from "./NSFWFilterProvider";
 import { LazyLoad } from "./LazyLoad";
@@ -13,6 +13,10 @@ import { Skeleton } from "./ui/skeleton";
 export interface Mod {
   id: string;
   backendModId?: number | null; // server-side mods.mod_id if available
+  needsManualModId?: boolean;
+  manualModIdOverride?: number | null;
+  renameStatus?: "idle" | "verifying" | "renamed" | "failed";
+  renameError?: string | null;
   // Aggregated local download ids that belong to this mod card (used for activation toggles)
   sourceDownloadIds?: number[];
   // Aggregated Nexus file ids that belong to this mod card (used to map collection variants)
@@ -81,6 +85,7 @@ interface ModCardProps {
   onView?: (mod: Mod) => void;
   onOpenFilesTab: (modId: string) => void;
   onToggleActive?: (modId: string) => void;
+  onAssignModId?: (modId: string) => void;
 }
 
 function ModCardInner({
@@ -89,7 +94,9 @@ function ModCardInner({
   onInstall,
   onFavorite,
   onView,
+  onOpenFilesTab,
   onToggleActive,
+  onAssignModId,
 }: ModCardProps) {
   const formatVersion = (v: string) => {
     if (!v) return "";
@@ -593,6 +600,28 @@ function ModCardInner({
               {actionLabel}
             </Button>
           </div>
+          {(mod.needsManualModId || mod.backendModId == null) && (
+            <div style={{ padding: "0 16px 10px 16px" }}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full gap-2 text-amber-400 border-amber-400/40 hover:bg-amber-400/10"
+                onClick={(e) => { e.stopPropagation(); onAssignModId?.(mod.id); }}
+              >
+                <Link className="w-3 h-3" /> Assign Mod ID
+              </Button>
+            </div>
+          )}
+          {mod.renameStatus === "renamed" && (
+            <div className="px-4 pb-2 text-xs text-emerald-400 flex items-center gap-1">
+              <CheckCircle2 className="w-3 h-3" /> Renamed to canonical format
+            </div>
+          )}
+          {mod.renameStatus === "failed" && (
+            <div className="px-4 pb-2 text-xs text-red-400 flex items-center gap-1">
+              <AlertCircle className="w-3 h-3" /> {mod.renameError}
+            </div>
+          )}
         </CardContent>
       </LazyLoad>
     </Card>
@@ -627,6 +656,10 @@ function modPropsAreEqual(prev: ModCardProps, next: ModCardProps) {
     "isFailed",
     "failureReason",
     "isIncompatible",
+    "needsManualModId",
+    "manualModIdOverride",
+    "renameStatus",
+    "renameError"
   ];
   for (const k of keys) {
     // @ts-ignore - index by dynamic key

@@ -352,8 +352,6 @@ def init_schema(conn: sqlite3.Connection) -> None:
     run_migrations(conn)
     _init_views(conn)
 
-# --- Simple BBCode to HTML converter (minimal, supports common tags) ---
-_SIZE_MAP = {1: 12, 2: 14, 3: 16, 4: 18, 5: 22, 6: 26, 7: 32}
 
 
 def _normalize_datetime_hint(value: Any) -> Optional[str]:
@@ -464,84 +462,7 @@ def _safe_url(href: str) -> str:
         return href
     return "#"
 
-def bbcode_to_html(text: str) -> str:
-    if not text:
-        return ""
-    # Preserve existing <br /> and HTML entities; apply BBCode replacements
-    s = text
-    # Replace [br] with <br />
-    s = re.sub(r"\[br\s*/?\]", "<br />", s, flags=re.IGNORECASE)
-    # Center
-    s = re.sub(r"\[center\](.*?)\[/center\]", r'<div style="text-align:center">\1</div>', s, flags=re.IGNORECASE|re.DOTALL)
-    # Basic styles
-    s = re.sub(r"\[b\](.*?)\[/b\]", r"<strong>\1</strong>", s, flags=re.IGNORECASE|re.DOTALL)
-    s = re.sub(r"\[i\](.*?)\[/i\]", r"<em>\1</em>", s, flags=re.IGNORECASE|re.DOTALL)
-    s = re.sub(r"\[u\](.*?)\[/u\]", r"<u>\1</u>", s, flags=re.IGNORECASE|re.DOTALL)
-    s = re.sub(r"\[s\](.*?)\[/s\]", r"<s>\1</s>", s, flags=re.IGNORECASE|re.DOTALL)
-    # Color [color=#hex]
-    def _re_color(m: re.Match) -> str:
-        color = m.group(1)
-        inner = m.group(2)
-        if isinstance(color, str) and re.fullmatch(r"#[0-9a-fA-F]{3,8}", color):
-            return f'<span style="color:{color}">{inner}</span>'
-        return inner
-    s = re.sub(r"\[color=([^\]]+)\](.*?)\[/color\]", _re_color, s, flags=re.IGNORECASE|re.DOTALL)
-    # Size [size=5]
-    def _re_size(m: re.Match) -> str:
-        raw = m.group(1)
-        inner = m.group(2)
-        try:
-            n = int(str(raw).strip())
-        except Exception:
-            n = 0
-        px = _SIZE_MAP.get(n, 16)
-        return f'<span style="font-size:{px}px">{inner}</span>'
-    s = re.sub(r"\[size=([^\]]+)\](.*?)\[/size\]", _re_size, s, flags=re.IGNORECASE|re.DOTALL)
-    # Font (optional)
-    def _re_font(m: re.Match) -> str:
-        fam = (m.group(1) or '').replace('"', "\"").strip()
-        inner = m.group(2)
-        if fam:
-            return f'<span style="font-family:{fam}">{inner}</span>'
-        return inner
-    s = re.sub(r"\[font=([^\]]+)\](.*?)\[/font\]", _re_font, s, flags=re.IGNORECASE|re.DOTALL)
-    # URL with label
-    def _re_url_labeled(m: re.Match) -> str:
-        href = _safe_url(m.group(1) or "")
-        inner = m.group(2)
-        return f'<a href="{href}" target="_blank" rel="noopener noreferrer">{inner}</a>'
-    s = re.sub(r"\[url=([^\]]+)\](.*?)\[/url\]", _re_url_labeled, s, flags=re.IGNORECASE|re.DOTALL)
-    # Bare URL
-    def _re_url_bare(m: re.Match) -> str:
-        href = _safe_url(m.group(1) or "")
-        return f'<a href="{href}" target="_blank" rel="noopener noreferrer">{href}</a>'
-    s = re.sub(r"\[url\](.*?)\[/url\]", _re_url_bare, s, flags=re.IGNORECASE|re.DOTALL)
-    # Images
-    def _re_img(m: re.Match) -> str:
-        src = _safe_url(m.group(1) or "")
-        return f'<img src="{src}" alt="" loading="lazy" referrerpolicy="no-referrer" />'
-    s = re.sub(r"\[img\](.*?)\[/img\]", _re_img, s, flags=re.IGNORECASE|re.DOTALL)
-    # Quotes [quote]...[/quote] or [quote=Name]...[/quote]
-    def _re_quote(m: re.Match) -> str:
-        cite = m.group(1) or ""
-        inner = m.group(2)
-        if cite:
-            return f'<blockquote><div class="cite">{cite} said:</div>{inner}</blockquote>'
-        return f'<blockquote>{inner}</blockquote>'
-    s = re.sub(r"\[quote=?([^\]]*)\](.*?)\[/quote\]", _re_quote, s, flags=re.IGNORECASE|re.DOTALL)
-    # Lists [list] [*]item ... [/list], and ordered lists [list=1]
-    def _re_list(m: re.Match) -> str:
-        kind = (m.group(1) or "").strip()
-        inner = m.group(2)
-        # Split items by [*]
-        items = re.split(r"\[\*\]", inner)
-        # Remove empty leading text
-        items = [it.strip() for it in items if it.strip()]
-        lis = ''.join(f"<li>{it}</li>" for it in items)
-        tag = 'ol' if kind and kind != '' else 'ul'
-        return f'<{tag}>{lis}</{tag}>'
-    s = re.sub(r"\[list(?:=([^\]]+))?\](.*?)\[/list\]", _re_list, s, flags=re.IGNORECASE|re.DOTALL)
-    return s
+from core.utils.bbcode_wrapper import bbcode_to_html
 
 def sanitize_html(html: str) -> str:
     """Very basic server-side sanitizer: strip scripts/styles and event handlers,

@@ -25,6 +25,7 @@ interface ActiveModsViewProps {
   onViewModeChange: (mode: "grid" | "list") => void;
   onRefresh?: () => void;
   selectedCustomTags?: string[];
+  onAssignModId?: (modId: string) => void;
 }
 
 export function ActiveModsView({
@@ -40,6 +41,7 @@ export function ActiveModsView({
   onViewModeChange,
   onRefresh,
   selectedCustomTags = [],
+  onAssignModId,
 }: ActiveModsViewProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<string>("Recent");
@@ -413,6 +415,7 @@ export function ActiveModsView({
                       }}
                       onFavorite={onFavorite}
                       onOpenFilesTab={handleOpenFilesTab}
+                      onAssignModId={onAssignModId}
                     />
                   ))}
                 </div>
@@ -447,6 +450,7 @@ export function ActiveModsView({
                       }}
                       onFavorite={onFavorite}
                       onOpenFilesTab={handleOpenFilesTab}
+                      onAssignModId={onAssignModId}
                     />
                   ))}
                 </div>
@@ -482,6 +486,7 @@ export function ActiveModsView({
           onRefresh={onRefresh}
           initialTab={modalInitialTab}
           onUpdate={onUpdate}
+          onAssignModId={onAssignModId}
         />
       )}
     </>

@@ -15,7 +15,7 @@ except AttributeError:
 BASE_URL = "https://api.nexusmods.com/v1"
 DEFAULT_GAME = "marvelrivals"
 APP_NAME = "Project_ModManager_Rivals"
-APP_VERSION = "0.7.2"
+APP_VERSION = "0.8.0"
 
 def _coerce_key(raw: str | None) -> str:
     return raw.strip() if raw else ""
@@ -72,6 +72,10 @@ def get_mod_file_download_link(api_key: str, game: str, mod_id: int, file_id: in
     """Retrieve the temporary download link metadata for a specific mod file."""
     return _get(api_key, f"/games/{game}/mods/{mod_id}/files/{file_id}/download_link.json")
 
+def get_mod_by_md5(api_key: str, game: str, md5_hash: str) -> Tuple[int, Any]:
+    """Look up a mod by a file's MD5 hash."""
+    return _get(api_key, f"/games/{game}/mods/md5_search/{md5_hash}.json")
+
 
 def collect_all_for_mod(api_key: str, game: str, mod_id: int) -> Dict[str, Any]:
     out: Dict[str, Any] = {"game": game, "mod_id": mod_id}
@@ -84,5 +88,5 @@ def collect_all_for_mod(api_key: str, game: str, mod_id: int) -> Dict[str, Any]:
     return out
 
 __all__ = [
-    'DEFAULT_GAME','get_api_key','collect_all_for_mod','get_mod_files','get_mod_info','get_mod_changelogs','get_mod_file_download_link'
+    'DEFAULT_GAME','get_api_key','collect_all_for_mod','get_mod_files','get_mod_info','get_mod_changelogs','get_mod_file_download_link', 'get_mod_by_md5'
 ]

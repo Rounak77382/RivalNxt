@@ -21,6 +21,9 @@ import {
   Heart,
   AlertTriangle,
   CheckCircle,
+  Link,
+  CheckCircle2,
+  AlertCircle
 } from "lucide-react";
 import type { Mod } from "./ModCard";
 import { computeTagDisplay } from "../lib/tagDisplay";
@@ -36,6 +39,7 @@ interface InstalledModCardProps {
   onView: (mod: Mod) => void;
   onFavorite: (modId: string) => void;
   onOpenFilesTab: (modId: string) => void;
+  onAssignModId?: (modId: string) => void;
 }
 
 function InstalledModCardInner({
@@ -46,6 +50,7 @@ function InstalledModCardInner({
   onView,
   onFavorite,
   onOpenFilesTab,
+  onAssignModId,
 }: InstalledModCardProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isUninstalling, setIsUninstalling] = useState(false);
@@ -278,6 +283,28 @@ function InstalledModCardInner({
                   </Button>
                 </div>
               </div>
+              {(mod.needsManualModId || mod.backendModId == null) && (
+                <div className="mt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full sm:w-auto gap-2 text-amber-400 border-amber-400/40 hover:bg-amber-400/10"
+                    onClick={(e) => { e.stopPropagation(); onAssignModId?.(mod.id); }}
+                  >
+                    <Link className="w-3 h-3" /> Assign Mod ID
+                  </Button>
+                </div>
+              )}
+              {mod.renameStatus === "renamed" && (
+                <div className="mt-1 text-xs text-emerald-400 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" /> Renamed to canonical format
+                </div>
+              )}
+              {mod.renameStatus === "failed" && (
+                <div className="mt-1 text-xs text-red-400 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" /> {mod.renameError}
+                </div>
+              )}
             </div>
           </div>
         </LazyLoad>
@@ -535,7 +562,16 @@ function InstalledModCardInner({
                     }`}
                   />
                 </Button>
-                {mod.hasUpdate || mod.isUpdating ? (
+                {(mod.needsManualModId || mod.backendModId == null) ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 gap-2 px-[5px] text-amber-400 border-amber-400/40 hover:bg-amber-400/10"
+                    onClick={(e) => { e.stopPropagation(); onAssignModId?.(mod.id); }}
+                  >
+                    <Link className="w-3 h-3" /> Assign Mod ID
+                  </Button>
+                ) : mod.hasUpdate || mod.isUpdating ? (
                   <Button
                     variant="default"
                     size="sm"
@@ -583,6 +619,17 @@ function InstalledModCardInner({
                   {mod.updateError}
                 </div>
               )}
+
+              {mod.renameStatus === "renamed" && (
+                <div className="mt-2 text-xs text-emerald-400 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" /> Renamed to canonical format
+                </div>
+              )}
+              {mod.renameStatus === "failed" && (
+                <div className="mt-2 text-xs text-red-400 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" /> {mod.renameError}
+                </div>
+              )}
             </div>
           </div>
         </CardContent>
@@ -610,6 +657,10 @@ function installedModPropsAreEqual(
     "name",
     "latestVersion",
     "updateError",
+    "needsManualModId",
+    "manualModIdOverride",
+    "renameStatus",
+    "renameError"
   ];
   for (const k of keys) {
     // @ts-ignore

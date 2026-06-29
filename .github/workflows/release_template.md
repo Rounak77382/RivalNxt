@@ -1,4 +1,4 @@
-## 🎉 Version 0.7.2 – What's New
+## 🎉 Version 0.8.0 – What's New
 
 ### 🚀 New Features
 

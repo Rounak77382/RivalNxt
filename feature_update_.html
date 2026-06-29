@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>RivalNxt – Mod ID Sync Workflow</title>
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet"/>
+<style>
+:root,[data-theme="light"]{
+  --color-bg:#f7f6f2;--color-surface:#f9f8f5;--color-surface-2:#fbfbf9;
+  --color-surface-offset:#f3f0ec;--color-border:#d4d1ca;--color-divider:#dcd9d5;
+  --color-text:#28251d;--color-text-muted:#7a7974;--color-text-faint:#bab9b4;
+  --color-primary:#01696f;--color-primary-hover:#0c4e54;
+  --color-success:#437a22;--color-warning:#964219;--color-error:#a12c7b;
+  --color-orange:#da7101;--color-gold:#d19900;
+  --shadow-md:0 4px 12px oklch(0.2 0.01 80/0.08);
+  --radius-md:0.5rem;--radius-lg:0.75rem;
+  --font-body:'Satoshi',sans-serif;
+  --text-xs:clamp(.75rem,.7rem + .25vw,.875rem);
+  --text-sm:clamp(.875rem,.8rem + .35vw,1rem);
+  --text-base:clamp(1rem,.95rem + .25vw,1.125rem);
+  --text-lg:clamp(1.125rem,1rem + .75vw,1.5rem);
+  --text-xl:clamp(1.5rem,1.2rem + 1.25vw,2.25rem);
+}
+[data-theme="dark"]{
+  --color-bg:#171614;--color-surface:#1c1b19;--color-surface-2:#201f1d;
+  --color-surface-offset:#1d1c1a;--color-border:#393836;--color-divider:#262523;
+  --color-text:#cdccca;--color-text-muted:#797876;--color-text-faint:#5a5957;
+  --color-primary:#4f98a3;--color-primary-hover:#227f8b;
+  --color-success:#6daa45;--color-warning:#bb653b;--color-error:#d163a7;
+  --color-orange:#fdab43;--color-gold:#e8af34;
+  --shadow-md:0 4px 12px oklch(0 0 0/0.3);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased;scroll-behavior:smooth}
+body{font-family:var(--font-body);background:var(--color-bg);color:var(--color-text);font-size:var(--text-sm);line-height:1.6;min-height:100dvh}
+
+/* ─── Header ─── */
+header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:1rem 2rem;border-bottom:1px solid var(--color-border);
+  position:sticky;top:0;z-index:100;background:var(--color-bg);
+  backdrop-filter:blur(8px);
+}
+.logo{display:flex;align-items:center;gap:.5rem;font-weight:700;font-size:var(--text-base);color:var(--color-primary)}
+.logo svg{width:28px;height:28px}
+button.theme-toggle{
+  background:none;border:1px solid var(--color-border);border-radius:var(--radius-md);
+  padding:.35rem .6rem;cursor:pointer;color:var(--color-text-muted);
+  display:flex;align-items:center;transition:all 150ms
+}
+button.theme-toggle:hover{border-color:var(--color-primary);color:var(--color-primary)}
+
+/* ─── Main ─── */
+main{max-width:1100px;margin:0 auto;padding:2rem 1.5rem 4rem}
+h1{font-size:var(--text-xl);font-weight:700;margin-bottom:.5rem}
+.subtitle{color:var(--color-text-muted);font-size:var(--text-sm);margin-bottom:2.5rem;max-width:65ch}
+
+/* ─── Section headers ─── */
+.section-title{font-size:var(--text-base);font-weight:700;color:var(--color-text);margin:2rem 0 1rem;display:flex;align-items:center;gap:.5rem}
+.pill{display:inline-block;background:color-mix(in oklch,var(--color-primary) 15%,var(--color-surface));color:var(--color-primary);border-radius:9999px;padding:.15rem .65rem;font-size:var(--text-xs);font-weight:600}
+
+/* ─── Flow diagram ─── */
+.flow-wrap{overflow-x:auto;padding-bottom:1rem}
+svg.flow{min-width:860px;width:100%}
+
+/* Node styles in SVG are inline, defined below via JS */
+
+/* ─── Phase legend ─── */
+.legend{display:flex;flex-wrap:wrap;gap:.75rem 1.5rem;margin:1.25rem 0 2rem}
+.legend-item{display:flex;align-items:center;gap:.4rem;font-size:var(--text-xs);color:var(--color-text-muted)}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+
+/* ─── Cards ─── */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr));gap:1rem;margin-bottom:2rem}
+.card{
+  background:var(--color-surface);border:1px solid var(--color-border);
+  border-radius:var(--radius-lg);padding:1rem 1.25rem;
+  box-shadow:var(--shadow-md);
+}
+.card-label{font-size:var(--text-xs);font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--color-text-faint);margin-bottom:.5rem}
+.card h3{font-size:var(--text-sm);font-weight:700;margin-bottom:.35rem}
+.card p{font-size:var(--text-xs);color:var(--color-text-muted);line-height:1.55}
+.card ul{padding-left:1rem;font-size:var(--text-xs);color:var(--color-text-muted);line-height:1.7}
+.card-accent{border-left:2px solid var(--color-primary)}
+
+/* color-coded phase lines */
+.card-ingestion{border-left:2px solid var(--color-success)}
+.card-mismatch{border-left:2px solid var(--color-warning)}
+.card-manual{border-left:2px solid var(--color-orange)}
+.card-update{border-left:2px solid var(--color-gold)}
+
+/* ─── Code block ─── */
+pre{
+  background:var(--color-surface-offset);border:1px solid var(--color-border);
+  border-radius:var(--radius-md);padding:1rem 1.25rem;
+  font-size:var(--text-xs);overflow-x:auto;line-height:1.7;
+  color:var(--color-text);
+}
+code{font-family:'JetBrains Mono','Fira Code',monospace}
+.kw{color:var(--color-primary)}
+.str{color:var(--color-success)}
+.cm{color:var(--color-text-faint)}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">
+    <svg viewBox="0 0 28 28" fill="none" aria-label="RivalNxt">
+      <circle cx="14" cy="14" r="13" stroke="currentColor" stroke-width="1.5"/>
+      <path d="M8 10l6-4 6 4v8l-6 4-6-4V10z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+      <path d="M14 6v16M8 10l12 8M20 10L8 18" stroke="currentColor" stroke-width="1" opacity=".45"/>
+    </svg>
+    RivalNxt · Mod-ID Sync Workflow
+  </div>
+  <button class="theme-toggle" data-theme-toggle aria-label="Switch theme">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  </button>
+</header>
+
+<main>
+  <h1>Nexus Mod-ID Sync — Feature Workflow</h1>
+  <p class="subtitle">End-to-end flow covering initial ingestion auto-rename, mismatch detection, manual mod-ID assignment, and update path. Based on <strong>ModCard.tsx</strong> in the RivalNxt repository.</p>
+
+  <!-- ─── FLOW DIAGRAM ─── -->
+  <div class="section-title">🔀 Full Workflow Graph</div>
+  <div class="legend">
+    <span class="legend-item"><span class="legend-dot" style="background:#6daa45"></span>Ingestion / Auto-rename</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#bb653b"></span>Mismatch Detection</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#fdab43"></span>Manual Assign</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#e8af34"></span>Update Path</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#4f98a3"></span>Terminal / OK</span>
+  </div>
+
+  <div class="flow-wrap">
+    <svg class="flow" viewBox="0 0 880 820" xmlns="http://www.w3.org/2000/svg" id="flowSvg"></svg>
+  </div>
+
+  <!-- ─── PHASES ─── -->
+  <div class="section-title">📋 Phase Breakdown</div>
+  <div class="cards">
+    <div class="card card-ingestion">
+      <div class="card-label">Phase 1 · Auto-rename on Ingestion</div>
+      <h3>Initial Download</h3>
+      <p>When a mod archive lands in the downloads folder, the ingestion pipeline immediately checks the filename against the Nexus API response.</p>
+      <ul>
+        <li>Build expected name: <code>&lt;name&gt;-&lt;modid&gt;-&lt;version&gt;-&lt;timestamp&gt;.&lt;ext&gt;</code></li>
+        <li>If filename matches → store as-is</li>
+        <li>If it matches the <em>contents</em> but not the name → rename silently</li>
+        <li>If contents don't match → mark as <code>needsManualId</code></li>
+      </ul>
+    </div>
+    <div class="card card-mismatch">
+      <div class="card-label">Phase 2 · Mismatch Detection</div>
+      <h3>Convention Check</h3>
+      <p>After ingestion (and on every subsequent load), the app evaluates whether each ModCard has a confirmed <code>backendModId</code> linkage.</p>
+      <ul>
+        <li>Parse filename → extract segments by <code>-</code> delimiter</li>
+        <li>Validate segment 2 as a numeric Nexus mod ID</li>
+        <li>Query <code>/v1/games/:game/mods/:id/files</code> for confirmation</li>
+        <li>No match → show "Assign Mod ID" badge on card</li>
+      </ul>
+    </div>
+    <div class="card card-manual">
+      <div class="card-label">Phase 3 · Manual Assignment</div>
+      <h3>User Override</h3>
+      <p>User clicks "Assign Mod ID" on a card. A modal/inline input appears, the user types or pastes the Nexus mod ID.</p>
+      <ul>
+        <li>Fetch Nexus API to validate the supplied mod ID</li>
+        <li>Compare API's file list against local file contents hash</li>
+        <li>If match found → rename local file(s) to canonical format</li>
+        <li>Persist mapping in local DB (<code>mod_id_overrides</code> table)</li>
+      </ul>
+    </div>
+    <div class="card card-update">
+      <div class="card-label">Phase 4 · Update Path</div>
+      <h3>Same Logic on Update</h3>
+      <p>When <code>hasUpdate</code> is true and the user triggers an update download, the same rename pipeline runs on the newly downloaded file.</p>
+      <ul>
+        <li>Re-use stored <code>backendModId</code> from DB override if present</li>
+        <li>Fetch latest file entry from Nexus API</li>
+        <li>Rename incoming archive to canonical convention</li>
+        <li>Replace old file; update <code>localVersionKey</code></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ─── PROP CHANGES ─── -->
+  <div class="section-title">🧩 Mod Interface — New Fields</div>
+  <pre><code><span class="cm">// Inside the Mod interface (ModCard.tsx)</span>
+<span class="kw">interface</span> Mod {
+  <span class="cm">// ... existing fields ...</span>
+
+  <span class="cm">/** true when filename doesn't follow naming convention AND no override exists */</span>
+  needsManualModId?: <span class="kw">boolean</span>;
+
+  <span class="cm">/** User-supplied override for the Nexus mod ID when auto-detection fails */</span>
+  manualModIdOverride?: <span class="kw">number</span> | <span class="kw">null</span>;
+
+  <span class="cm">/** Status of the rename operation: idle | verifying | renamed | failed */</span>
+  renameStatus?: <span class="str">"idle"</span> | <span class="str">"verifying"</span> | <span class="str">"renamed"</span> | <span class="str">"failed"</span>;
+
+  <span class="cm">/** Error reason if rename or verification failed */</span>
+  renameError?: <span class="kw">string</span> | <span class="kw">null</span>;
+}</code></pre>
+
+  <!-- ─── NAMING UTIL ─── -->
+  <div class="section-title">🔧 Canonical Filename Utility</div>
+  <pre><code><span class="cm">/**
+ * Build the canonical Nexus filename for a mod file.
+ * Convention: {name}-{modId}-{version}-{timestamp}.{ext}
+ */</span>
+<span class="kw">function</span> buildCanonicalFilename(
+  modName: <span class="kw">string</span>,
+  modId: <span class="kw">number</span>,
+  version: <span class="kw">string</span>,
+  uploadedTimestamp: <span class="kw">number</span>,  <span class="cm">// unix epoch from Nexus API</span>
+  ext: <span class="kw">string</span>                   <span class="cm">// "zip" | "7z" | "rar" | ""</span>
+): <span class="kw">string</span> {
+  <span class="kw">const</span> safeName = modName
+    .toLowerCase()
+    .replace(<span class="str">/[^a-z0-9]+/g</span>, <span class="str">"-"</span>)
+    .replace(<span class="str">/^-|-$/g</span>, <span class="str">""</span>);
+  <span class="kw">const</span> suffix = ext ? <span class="str">`.${ext}`</span> : <span class="str">""</span>;
+  <span class="kw">return</span> <span class="str">`${safeName}-${modId}-${version}-${uploadedTimestamp}${suffix}`</span>;
+}
+
+<span class="cm">/**
+ * Check if a local filename already matches canonical convention.
+ * Returns the extracted modId if it does, null otherwise.
+ */</span>
+<span class="kw">function</span> extractModIdFromFilename(filename: <span class="kw">string</span>): <span class="kw">number</span> | <span class="kw">null</span> {
+  <span class="cm">// strip extension, split by "-", segment[1] should be numeric modId</span>
+  <span class="kw">const</span> base = filename.replace(<span class="str">/\.[^.]+$/</span>, <span class="str">""</span>);
+  <span class="kw">const</span> parts = base.split(<span class="str">"-"</span>);
+  <span class="kw">if</span> (parts.length &lt; 4) <span class="kw">return null</span>;
+  <span class="kw">const</span> maybeId = Number(parts[1]);
+  <span class="kw">return</span> Number.isFinite(maybeId) &amp;&amp; maybeId &gt; 0 ? maybeId : <span class="kw">null</span>;
+}</code></pre>
+
+  <!-- ─── MODCARD BADGE ─── -->
+  <div class="section-title">🃏 ModCard UI — "Assign Mod ID" Badge</div>
+  <pre><code><span class="cm">// Inside ModCardInner JSX — add below the action button</span>
+{mod.needsManualModId &amp;&amp; (
+  &lt;div style={{ padding: <span class="str">"0 16px 10px 16px"</span> }}&gt;
+    &lt;Button
+      variant=<span class="str">"outline"</span>
+      size=<span class="str">"sm"</span>
+      className=<span class="str">"w-full gap-2 text-amber-400 border-amber-400/40 hover:bg-amber-400/10"</span>
+      onClick={(e) =&gt; {
+        e.stopPropagation();
+        onAssignModId?.(mod.id);  <span class="cm">// new prop callback</span>
+      }}
+    &gt;
+      &lt;Link className=<span class="str">"w-3 h-3"</span> /&gt;   <span class="cm">// lucide-react icon</span>
+      Assign Nexus Mod ID
+    &lt;/Button&gt;
+  &lt;/div&gt;
+)}
+
+{mod.renameStatus === <span class="str">"renamed"</span> &amp;&amp; (
+  &lt;div className=<span class="str">"px-4 pb-2 text-xs text-emerald-400 flex items-center gap-1"</span>&gt;
+    &lt;CheckCircle2 className=<span class="str">"w-3 h-3"</span> /&gt; Renamed to canonical format
+  &lt;/div&gt;
+)}
+
+{mod.renameStatus === <span class="str">"failed"</span> &amp;&amp; (
+  &lt;div className=<span class="str">"px-4 pb-2 text-xs text-red-400 flex items-center gap-1"</span>&gt;
+    &lt;AlertCircle className=<span class="str">"w-3 h-3"</span> /&gt; {mod.renameError}
+  &lt;/div&gt;
+)}</code></pre>
+
+  <!-- ─── PROPS CHANGE ─── -->
+  <div class="section-title">⚙️ ModCardProps — New Callback</div>
+  <pre><code><span class="kw">interface</span> ModCardProps {
+  mod: Mod;
+  viewMode: <span class="str">"grid"</span> | <span class="str">"list"</span>;
+  onInstall: (modId: <span class="kw">string</span>) =&gt; <span class="kw">void</span>;
+  onFavorite: (modId: <span class="kw">string</span>) =&gt; <span class="kw">void</span>;
+  onView?: (mod: Mod) =&gt; <span class="kw">void</span>;
+  onOpenFilesTab: (modId: <span class="kw">string</span>) =&gt; <span class="kw">void</span>;
+  onToggleActive?: (modId: <span class="kw">string</span>) =&gt; <span class="kw">void</span>;
+
+  <span class="cm">/** NEW — opens the "Assign Nexus Mod ID" modal for this card */</span>
+  onAssignModId?: (modId: <span class="kw">string</span>) =&gt; <span class="kw">void</span>;
+}</code></pre>
+
+</main>
+
+<script>
+// ── Theme toggle ──
+(function(){
+  const t=document.querySelector('[data-theme-toggle]'),r=document.documentElement;
+  let d=matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';
+  r.setAttribute('data-theme',d);
+  if(t) t.addEventListener('click',()=>{
+    d=d==='dark'?'light':'dark';
+    r.setAttribute('data-theme',d);
+    t.innerHTML=d==='dark'
+      ?'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>'
+      :'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>';
+  });
+})();
+
+// ── Flow diagram builder ──
+(function(){
+  const svg = document.getElementById('flowSvg');
+  const isDark = () => document.documentElement.getAttribute('data-theme') === 'dark';
+
+  // Color palette per phase
+  const C = {
+    ingestion: {fill:'#6daa45',stroke:'#3a7015',text:'#fff'},
+    mismatch:  {fill:'#bb653b',stroke:'#7a3d1a',text:'#fff'},
+    manual:    {fill:'#c07520',stroke:'#7a4800',text:'#fff'},
+    update:    {fill:'#b08000',stroke:'#7a5800',text:'#fff'},
+    ok:        {fill:'#4f98a3',stroke:'#1a626b',text:'#fff'},
+    decision:  {fill:'#5a5775',stroke:'#3a3555',text:'#fff'},
+  };
+
+  // Node definitions: [id, x, y, w, h, label, phase, shape]
+  const nodes = [
+    // Column 1 — Ingestion
+    ['start',    80, 30,  180, 40, 'Mod Download Triggered', 'ingestion', 'rect'],
+    ['ingest',   80,100,  180, 40, 'Ingestion Pipeline', 'ingestion', 'rect'],
+    ['parseFile',80,170,  180, 40, 'Parse Filename Segments', 'ingestion', 'rect'],
+    ['checkConv',80,240,  180, 44, 'Follows naming convention?', 'decision', 'diamond'],
+    ['storeOk',  80,320,  180, 40, 'Store & Link backendModId', 'ok', 'rect'],
+
+    // Column 2 — Mismatch / manual
+    ['hashCheck',340,240,180, 40, 'Hash-match file contents\nvs Nexus API files', 'mismatch', 'rect'],
+    ['hashOk',   340,320,180, 44, 'Content match found?', 'decision', 'diamond'],
+    ['autoRename',340,410,180, 40, 'Auto-rename → canonical\nformat silently', 'ingestion', 'rect'],
+    ['markNeeds',340,490,180, 40, 'Mark needsManualModId\non ModCard', 'mismatch', 'rect'],
+    ['badge',    340,570,180, 40, 'Show "Assign Mod ID"\nbadge on ModCard', 'mismatch', 'rect'],
+
+    // Column 3 — Manual flow
+    ['modal',    620,490,180, 40, 'User enters Nexus\nMod ID in modal', 'manual', 'rect'],
+    ['validate', 620,570,180, 40, 'Validate via\nNexus API', 'manual', 'rect'],
+    ['valOk',    620,645,180, 44, 'API confirms\nmatch?', 'decision', 'diamond'],
+    ['persist',  620,730,180, 40, 'Rename + persist\nmod_id_overrides', 'ok', 'rect'],
+    ['valFail',  620,490, 0,  0,  '',  'ok', 'none'],  // phantom
+
+    // Update path
+    ['updateTrig',340,660,180, 40, 'Update Available\n(hasUpdate = true)', 'update', 'rect'],
+    ['updateDl',  340,740,180, 40, 'Download latest\nfrom Nexus', 'update', 'rect'],
+    ['updateRename',340,790,180, 40, 'Rename via stored\nbackendModId', 'update', 'rect'],
+  ];
+
+  // Arrow definitions: [from, to, label?, style?]
+  const arrows = [
+    ['start','ingest'],
+    ['ingest','parseFile'],
+    ['parseFile','checkConv'],
+    ['checkConv','storeOk','Yes ✓','ok'],
+    ['checkConv','hashCheck','No ✗','mismatch'],
+    ['hashCheck','hashOk'],
+    ['hashOk','autoRename','Yes ✓','ok'],
+    ['hashOk','markNeeds','No ✗','mismatch'],
+    ['autoRename','storeOk'],
+    ['markNeeds','badge'],
+    ['badge','modal','User clicks badge →'],
+    ['modal','validate'],
+    ['validate','valOk'],
+    ['valOk','persist','Yes ✓','ok'],
+    ['valOk','badge','No – show error','mismatch'],
+    ['storeOk','updateTrig','Later…','update'],
+    ['updateTrig','updateDl'],
+    ['updateDl','updateRename'],
+    ['updateRename','storeOk'],
+  ];
+
+  function getNodeCenter(id) {
+    const n = nodes.find(n=>n[0]===id);
+    if (!n) return [0,0];
+    return [n[1]+n[3]/2, n[2]+n[4]/2];
+  }
+
+  function buildSVG() {
+    const dark = isDark();
+    const textColor = dark ? '#cdccca' : '#28251d';
+    const mutedColor = dark ? '#797876' : '#7a7974';
+    const bgColor = dark ? '#1c1b19' : '#f9f8f5';
+    const borderColor = dark ? '#393836' : '#d4d1ca';
+
+    let out = `<defs>
+      <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 Z" fill="${mutedColor}"/>
+      </marker>
+      <marker id="arr-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 Z" fill="#6daa45"/>
+      </marker>
+      <marker id="arr-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 Z" fill="#bb653b"/>
+      </marker>
+      <marker id="arr-upd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 Z" fill="#b08000"/>
+      </marker>
+    </defs>`;
+
+    // Draw nodes
+    for (const [id, x, y, w, h, label, phase, shape] of nodes) {
+      if (shape === 'none') continue;
+      const c = C[phase];
+      const lines = label.split('\n');
+      const lineH = 14;
+      const textY = y + h/2 - (lines.length-1)*lineH/2;
+
+      if (shape === 'diamond') {
+        const cx = x+w/2, cy = y+h/2;
+        out += `<polygon points="${cx},${y} ${x+w},${cy} ${cx},${y+h} ${x},${cy}"
+          fill="${c.fill}" stroke="${c.stroke}" stroke-width="1.5" opacity="0.9"/>`;
+      } else {
+        out += `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="7" ry="7"
+          fill="${c.fill}" stroke="${c.stroke}" stroke-width="1.5" opacity="0.9"/>`;
+      }
+      lines.forEach((line, i) => {
+        out += `<text x="${x+w/2}" y="${textY + i*lineH}" text-anchor="middle" dominant-baseline="central"
+          font-family="Satoshi,sans-serif" font-size="11" fill="${c.text}" font-weight="500">${line}</text>`;
+      });
+    }
+
+    // Draw arrows
+    for (const [from, to, label, style] of arrows) {
+      const [fx, fy] = getNodeCenter(from);
+      const [tx, ty] = getNodeCenter(to);
+      const markerId = style === 'ok' ? 'arr-ok' : style === 'mismatch' ? 'arr-bad' : style === 'update' ? 'arr-upd' : 'arr';
+      const strokeColor = style === 'ok' ? '#6daa45' : style === 'mismatch' ? '#bb653b' : style === 'update' ? '#b08000' : mutedColor;
+      const strokeDash = style === 'update' ? '5,3' : 'none';
+
+      // Simple straight line (with a slight curve via quadratic)
+      const mx = (fx+tx)/2;
+      const my = (fy+ty)/2;
+      out += `<line x1="${fx}" y1="${fy}" x2="${tx}" y2="${ty}"
+        stroke="${strokeColor}" stroke-width="1.5" stroke-dasharray="${strokeDash}"
+        marker-end="url(#${markerId})"/>`;
+
+      if (label) {
+        out += `<rect x="${mx-28}" y="${my-8}" width="56" height="14" rx="4" fill="${bgColor}" opacity="0.85"/>`;
+        out += `<text x="${mx}" y="${my+1}" text-anchor="middle" dominant-baseline="central"
+          font-family="Satoshi,sans-serif" font-size="9" fill="${strokeColor}" font-weight="600">${label}</text>`;
+      }
+    }
+
+    // Phase labels on left
+    const phases = [
+      [20, 55,  'Phase 1\nIngestion', '#6daa45'],
+      [20, 260, 'Phase 2\nDetect', '#bb653b'],
+      [20, 430, 'Phase 3\nManual', '#fdab43'],
+      [20, 700, 'Phase 4\nUpdate', '#e8af34'],
+    ];
+    for (const [x, y, label, color] of phases) {
+      label.split('\n').forEach((l, i) => {
+        out += `<text x="${x}" y="${y + i*14}" font-family="Satoshi,sans-serif" font-size="9"
+          fill="${color}" font-weight="700" opacity="0.8">${l}</text>`;
+      });
+    }
+
+    svg.innerHTML = out;
+  }
+
+  buildSVG();
+  const observer = new MutationObserver(buildSVG);
+  observer.observe(document.documentElement, {attributes:true, attributeFilter:['data-theme']});
+})();
+</script>
+</body>
+</html>

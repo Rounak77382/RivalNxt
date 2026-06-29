@@ -44,7 +44,7 @@ export function TabHeader({
   onDisableAllMods,
 }: TabHeaderProps) {
   return (
-    <div className="border-b border-border bg-card">
+    <div className="border-b border-border bg-card" style={{ contain: 'layout paint' }}>
       <div className="flex items-center p-4 justify-between">
         <div className="flex gap-1">
           <Button

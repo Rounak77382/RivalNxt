@@ -23,6 +23,7 @@ interface DownloadsPageProps {
   onViewModeChange: (mode: "grid" | "list") => void;
   onRefresh?: () => void;
   selectedCustomTags?: string[];
+  onAssignModId?: (modId: string) => void;
 }
 
 export function DownloadsPage({
@@ -39,6 +40,7 @@ export function DownloadsPage({
   onViewModeChange,
   onRefresh,
   selectedCustomTags = [],
+  onAssignModId,
 }: DownloadsPageProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<string>("Recent");
@@ -404,6 +406,7 @@ export function DownloadsPage({
                     }}
                     onFavorite={onFavorite}
                     onOpenFilesTab={handleOpenFilesTab}
+                    onAssignModId={onAssignModId}
                   />
                 ))}
               </div>
@@ -432,6 +435,7 @@ export function DownloadsPage({
           onRefresh={onRefresh}
           initialTab={modalInitialTab}
           onUpdate={onUpdate}
+          onAssignModId={onAssignModId}
         />
       )}
     </>

@@ -25,8 +25,8 @@
     "semantic_hash": "6071b9786822a204f4b00b2d560b6257"
   },
   "core/api/server.py": {
-    "mtime": 1782135646.6998334,
-    "ast_hash": "23ae77b0542de76e8782c9537ca2950a",
+    "mtime": 1782681877.9272768,
+    "ast_hash": "7d8fa06c8f4d6d3943d8e9df657a5a10",
     "semantic_hash": ""
   },
   "core/api/services/__init__.py": {
@@ -70,8 +70,8 @@
     "semantic_hash": "5e016ca3b1cb496df198611b8727f7cb"
   },
   "core/db/db.py": {
-    "mtime": 1781817286.3392787,
-    "ast_hash": "d2b8c3b4ff002f12e44dcbbc1cbd1a51",
+    "mtime": 1782513548.0758164,
+    "ast_hash": "3bd286c6179c66d9c26ec2972ec0e40d",
     "semantic_hash": ""
   },
   "core/db/migrations/0001_conflicts_materialized.sql": {
@@ -195,8 +195,8 @@
     "semantic_hash": ""
   },
   "core/nexus/nexus_api.py": {
-    "mtime": 1781609861.6093893,
-    "ast_hash": "b8d36c91c58552ce791508d79d6ab17d",
+    "mtime": 1782681881.163668,
+    "ast_hash": "b0f5424df497a70771e73ce4f89d68b1",
     "semantic_hash": ""
   },
   "core/nexus/nxm.py": {
@@ -260,9 +260,9 @@
     "semantic_hash": "e738339166a4245e868f057f6a4fac75"
   },
   "package.json": {
-    "mtime": 1781522388.6026893,
-    "ast_hash": "bf982340c4016c7f35bfd19248413e6e",
-    "semantic_hash": "bf982340c4016c7f35bfd19248413e6e"
+    "mtime": 1782681883.208128,
+    "ast_hash": "f3d24d6d101b6cf79fbb8abd4dcd6a21",
+    "semantic_hash": ""
   },
   "scratch/ast_extraction.py": {
     "mtime": 1781449401.6547182,
@@ -1095,13 +1095,13 @@
     "semantic_hash": "3f27e894cc71234ceea564177be45b3f"
   },
   "src-tauri/tauri.conf.json": {
-    "mtime": 1781522459.672426,
-    "ast_hash": "3997abdee9e4784ff5103f017b3dd7f4",
-    "semantic_hash": "3997abdee9e4784ff5103f017b3dd7f4"
+    "mtime": 1782681885.2547994,
+    "ast_hash": "8aa0f8beea02e21c465f4006a09d24b1",
+    "semantic_hash": ""
   },
   "src/App.tsx": {
-    "mtime": 1781995534.1120298,
-    "ast_hash": "1030e9327a5bad8719919b9979fee0f3",
+    "mtime": 1782515019.4115632,
+    "ast_hash": "1021de74ee796e2474b0fb993444e3ac",
     "semantic_hash": ""
   },
   "src/components/ActiveModsPanel.tsx": {
@@ -1110,8 +1110,8 @@
     "semantic_hash": "d8ec23473a668b6e33f049bb8726620f"
   },
   "src/components/ActiveModsView.tsx": {
-    "mtime": 1781681684.112071,
-    "ast_hash": "bae4ceadf88369832667b2ec3d20541f",
+    "mtime": 1782515261.9037452,
+    "ast_hash": "de2accc2f457ea4b7412dae178742a39",
     "semantic_hash": ""
   },
   "src/components/AddModModal.tsx": {
@@ -1145,8 +1145,8 @@
     "semantic_hash": "4e312505cce9724b2453adb42457422e"
   },
   "src/components/DownloadsPage.tsx": {
-    "mtime": 1781681666.0294302,
-    "ast_hash": "e5d196aaf27882317fe3d2a713b7718e",
+    "mtime": 1782515254.325388,
+    "ast_hash": "3f6262421ce9498527e95f6eff3e2848",
     "semantic_hash": ""
   },
   "src/components/DownloadsSidebar.tsx": {
@@ -1165,8 +1165,8 @@
     "semantic_hash": "a067673314d5da49e6edda76bfe744b7"
   },
   "src/components/InstalledModCard.tsx": {
-    "mtime": 1781771957.7957368,
-    "ast_hash": "c01e89ddb1de208cf45752130c4763d5",
+    "mtime": 1782680929.6894484,
+    "ast_hash": "e0362e37f2797f440657fdfadc031772",
     "semantic_hash": ""
   },
   "src/components/LazyLoad.tsx": {
@@ -1175,8 +1175,8 @@
     "semantic_hash": "87b9a8c6c2642b55a2e7884b878f5fa1"
   },
   "src/components/ModCard.tsx": {
-    "mtime": 1781625301.5282822,
-    "ast_hash": "24aaa1754223f7795ed1b0c5a013fde6",
+    "mtime": 1782678844.360048,
+    "ast_hash": "db3e0d2349aa4edc0f29008d62106d3f",
     "semantic_hash": ""
   },
   "src/components/ModConflictModal.tsx": {
@@ -1185,8 +1185,8 @@
     "semantic_hash": "f7cb7ad671ee6fcc6ff3aa99d5a4cc0e"
   },
   "src/components/ModModal.tsx": {
-    "mtime": 1781989721.8680866,
-    "ast_hash": "74ef4ab43c3459300d9280d523ed81de",
+    "mtime": 1782678837.113273,
+    "ast_hash": "a45a89df9843ee683bf410c925eda4c7",
     "semantic_hash": ""
   },
   "src/components/NSFWFilterProvider.tsx": {
@@ -1500,8 +1500,8 @@
     "semantic_hash": "e3f848f1b39f863e6164cf58b5a8e752"
   },
   "src/lib/api.ts": {
-    "mtime": 1781995542.3214374,
-    "ast_hash": "6ef2a820fd1400a0bd5004cf07d39cfa",
+    "mtime": 1782513828.9581544,
+    "ast_hash": "a3c4ef0652b4a9d2c302ee6f546b5447",
     "semantic_hash": ""
   },
   "src/lib/backupUtils.ts": {
@@ -1520,9 +1520,9 @@
     "semantic_hash": "8e7d28685ecec43a20f22ff72343702b"
   },
   "src/lib/logSummary.ts": {
-    "mtime": 1765545367.8722284,
-    "ast_hash": "9bcfda4f55659621b22b2039cf8c2e3b",
-    "semantic_hash": "9bcfda4f55659621b22b2039cf8c2e3b"
+    "mtime": 1782509727.4812644,
+    "ast_hash": "9bbea2632de3834fb4c48556580c227c",
+    "semantic_hash": ""
   },
   "src/lib/nexusSso.ts": {
     "mtime": 1769343686.8063042,
@@ -1717,6 +1717,26 @@
   "src-tauri/src/rust-ue-tools/pyproject.toml": {
     "mtime": 1764022694.823096,
     "ast_hash": "f8cd9fff15875f11fb7158187b044d8f",
+    "semantic_hash": ""
+  },
+  "core/db/migrations/0016_mod_id_overrides.sql": {
+    "mtime": 1782513546.030875,
+    "ast_hash": "cf8b6d32a9fd8808a8df495bf0eeb28f",
+    "semantic_hash": ""
+  },
+  "core/utils/normalize_mod_filename.py": {
+    "mtime": 1782597034.4871638,
+    "ast_hash": "0a064d24360ff9e955ea763284301a87",
+    "semantic_hash": ""
+  },
+  "src/components/AssignModIdModal.tsx": {
+    "mtime": 1782678859.360943,
+    "ast_hash": "d60949f52ab701f193c1f720cd5c482f",
+    "semantic_hash": ""
+  },
+  "core/db/migrations/0017_file_md5.sql": {
+    "mtime": 1782597002.391405,
+    "ast_hash": "a6565d56551c9e3c726def6cd2bb4b13",
     "semantic_hash": ""
   }
 }

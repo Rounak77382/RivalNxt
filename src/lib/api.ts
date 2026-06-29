@@ -650,6 +650,16 @@ export async function getLastNxmUrl(): Promise<LastNxmUrl> {
   return getJson<LastNxmUrl>("/api/nxm/last-received");
 }
 
+export async function assignModId(payload: { local_paths: string[], nexus_mod_id: number, game: string }): Promise<{ ok: boolean; error?: string; renamed_count?: number }> {
+  const url = await getBaseUrl();
+  const res = await fetch(`${url}/api/mods/assign-mod-id`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return res.json();
+}
+
 // Mod details
 export type ApiModDetails = {
   mod?: {

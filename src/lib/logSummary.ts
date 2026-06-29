@@ -54,6 +54,14 @@ export function summarizeTaskOutput(
     return summarizeSync(trimmed);
   }
 
+  if (task === "delete_outdated_versions") {
+    return summarizeDeleteOutdated(trimmed);
+  }
+
+  if (task === "rebuild_character_data") {
+    return summarizeCharacterData(trimmed);
+  }
+
   return { supported: false, steps: [] };
 }
 
@@ -217,14 +225,25 @@ function summarizeBootstrap(raw: string): ParsedSummary {
     if (
       matches(
         line,
-        /rebuilding (asset_tags|pak_tags)|tagged \d+|tag rebuild complete|tag artifacts rebuilt/i
+        /rebuilding (asset_tags|pak_tags)|tagged \d+|tag rebuild complete|tag artifacts rebuilt|upserted tags for \d+/i
       )
     ) {
-      tagsStatus = /tag rebuild complete|tag artifacts rebuilt/i.test(line)
-        ? "done"
-        : tagsStatus === "pending"
-        ? "active"
-        : tagsStatus;
+      tagsStatus =
+        /tag rebuild complete|tag artifacts rebuilt|upserted tags for \d+/i.test(line)
+          ? "done"
+          : tagsStatus === "pending"
+          ? "active"
+          : tagsStatus;
+      return;
+    }
+
+    // Catch-all: if the task log itself says it finished with exit code 0, mark everything in-progress as done
+    if (matches(line, /task '.+' finished with exit code 0/i)) {
+      if (tagsStatus === "active") tagsStatus = "done";
+      if (conflictsStatus === "active") conflictsStatus = "done";
+      if (syncStatus === "active") syncStatus = "done";
+      if (extractionStatus === "active") extractionStatus = "done";
+      if (ueExtractionStatus === "active") ueExtractionStatus = "done";
       return;
     }
 
@@ -550,25 +569,26 @@ function summarizeConflicts(raw: string): ParsedSummary {
       counts = mergeConflictCounts(counts, extractConflictCounts(line));
       return;
     }
-    // Newer output prints asset_conflicts counts on separate lines; capture them
+    // Standalone _task_rebuild_conflicts prints e.g. "asset_conflicts: 42"
+    // After collecting those counts, the next print is the completion line.
     if (
       matches(line, /asset_conflicts\s*:\s*\d+/i) ||
       matches(line, /asset_conflicts_active\s*:\s*\d+/i)
     ) {
       counts = mergeConflictCounts(counts, extractConflictCounts(line));
+      // The presence of these count lines means the rebuild ran and completed
+      status = "done";
       return;
     }
-    // Mark done when the task prints a finished line with exit code 0
+    // Standalone task: "Rebuild conflicts completed with no reported changes."
+    if (matches(line, /rebuild conflicts completed/i)) {
+      status = "done";
+      return;
+    }
+    // Mark done when the task prints a finished line with any exit code
     const finishedMatch = line.match(/finished with exit code\s*(\d+)/i);
     if (finishedMatch) {
-      const code = parseInt(finishedMatch[1] ?? "", 10);
-      if (Number.isFinite(code) && code === 0) {
-        status = "done";
-      } else {
-        // non-zero exit still indicates task finished; mark active -> done so UI stops spinner
-        status = "done";
-      }
-      // try to extract counts from the same line if present
+      status = "done";
       counts = mergeConflictCounts(counts, extractConflictCounts(line));
       return;
     }
@@ -607,22 +627,304 @@ function summarizeConflicts(raw: string): ParsedSummary {
 
 function summarizeTags(raw: string): ParsedSummary {
   const lines = splitLines(raw);
-  const tagged = lines.find((line) => matches(line, /tagged \d+/i));
-  if (!tagged) {
+
+  // Walk all lines to derive the most specific label and status
+  let assetCount: number | null = null;
+  let pakCount: number | null = null;
+  let isDone = false;
+  let hasStarted = false;
+
+  for (const line of lines) {
+    // Asset tag count: "Tagged N asset path(s)."
+    const assetMatch = matchNumber(line, /tagged\s+(\d+)\s+asset/i);
+    if (assetMatch !== null) {
+      assetCount = assetMatch;
+      hasStarted = true;
+      continue;
+    }
+    // Pak tag count: "Upserted tags for N paks."
+    const pakMatch = matchNumber(line, /upserted tags for\s+(\d+)/i);
+    if (pakMatch !== null) {
+      pakCount = pakMatch;
+      hasStarted = true;
+      continue;
+    }
+    if (matches(line, /rebuilding (asset_tags|pak_tags)|rebuilding pak_tags_json/i)) {
+      hasStarted = true;
+      continue;
+    }
+    if (
+      matches(line, /tag rebuild complete|tag artifacts rebuilt/i) ||
+      matches(line, /task '.+' finished with exit code 0/i)
+    ) {
+      isDone = true;
+      hasStarted = true;
+      continue;
+    }
+  }
+
+  // Only treat as "done" when we saw either the explicit completion line OR the asset+pak counts
+  if (assetCount !== null || pakCount !== null) {
+    isDone = true;
+  }
+
+  if (!hasStarted) {
     return { supported: false, steps: [] };
   }
-  const count = matchNumber(tagged, /tagged\s+(\d+)/i);
+
+  const status: StepStatus = isDone ? "done" : "active";
+  const label = (() => {
+    if (assetCount !== null && pakCount !== null) {
+      return `Tagged ${assetCount} asset path(s), ${pakCount} pak(s)`;
+    }
+    if (assetCount !== null) return `Tagged ${assetCount} asset path(s)`;
+    if (pakCount !== null) return `Upserted tags for ${pakCount} pak(s)`;
+    return isDone ? "Tags rebuilt" : "Building tags";
+  })();
+
   return {
     supported: true,
-    steps: [
-      {
-        id: "tags",
-        label:
-          count !== null ? `Tagged ${count} asset path(s)` : "Building tags",
-        status: "done",
-      },
-    ],
+    steps: [{ id: "tags", label, status }],
   };
+}
+
+function summarizeDeleteOutdated(raw: string): ParsedSummary {
+  const lines = splitLines(raw);
+  if (lines.length === 0) return { supported: false, steps: [] };
+
+  let outdatedStatus: StepStatus = "pending";
+  let outdatedCount: number | null = null;
+  let filesCount: number | null = null;
+
+  let orphanStatus: StepStatus = "pending";
+  let orphanCount: number | null = null;
+
+  let tagsStatus: StepStatus = "pending";
+  let conflictsStatus: StepStatus = "pending";
+
+  for (const line of lines) {
+    if (!line) continue;
+
+    // Detecting outdated variants
+    if (matches(line, /queueing outdated version for deletion/i)) {
+      outdatedStatus = "active";
+      const n = matchNumber(line, /id:\s*(\d+)/i);
+      if (n !== null) outdatedCount = (outdatedCount ?? 0) + 1;
+      continue;
+    }
+    if (matches(line, /no outdated tracked versions found/i)) {
+      outdatedStatus = "done";
+      outdatedCount = 0;
+      continue;
+    }
+    const removedMatch = matchNumber(line, /successfully removed\s+(\d+)\s+outdated/i);
+    if (removedMatch !== null) {
+      outdatedStatus = "done";
+      outdatedCount = removedMatch;
+      const f = matchNumber(line, /(\d+)\s+files? deleted/i);
+      if (f !== null) filesCount = f;
+      continue;
+    }
+
+    // Orphan scanning
+    if (matches(line, /scanning for untracked\/orphaned/i)) {
+      orphanStatus = "active";
+      continue;
+    }
+    if (matches(line, /deleted orphaned file/i)) {
+      orphanStatus = "active";
+      continue;
+    }
+    if (matches(line, /successfully deleted\s+\d+\s+untracked/i)) {
+      orphanStatus = "done";
+      orphanCount = matchNumber(line, /deleted\s+(\d+)\s+untracked/i);
+      continue;
+    }
+    if (matches(line, /no untracked mod files found/i)) {
+      orphanStatus = "done";
+      orphanCount = 0;
+      continue;
+    }
+
+    // Tags rebuilt after deletion
+    if (matches(line, /rebuilding (asset_tags|pak_tags)|rebuild.*tags/i)) {
+      tagsStatus = "active";
+      continue;
+    }
+    if (
+      matches(line, /upserted tags for \d+|tag rebuild complete|tag artifacts rebuilt/i) ||
+      matches(line, /tagged \d+ asset/i)
+    ) {
+      tagsStatus = "done";
+      continue;
+    }
+
+    // Conflicts
+    if (matches(line, /rebuild.*conflicts|examining conflicts/i)) {
+      conflictsStatus = "active";
+      continue;
+    }
+    if (matches(line, /conflict tables rebuilt|rebuild results/i)) {
+      conflictsStatus = "done";
+      continue;
+    }
+
+    // Catch-all: task finished with exit code 0
+    if (matches(line, /task '.+' finished with exit code 0/i)) {
+      if (outdatedStatus === "active") outdatedStatus = "done";
+      if (orphanStatus === "active") orphanStatus = "done";
+      if (tagsStatus === "active") tagsStatus = "done";
+      if (conflictsStatus === "active") conflictsStatus = "done";
+      continue;
+    }
+  }
+
+  const steps: ParsedStep[] = [];
+
+  if (outdatedStatus !== "pending") {
+    const detail = (() => {
+      if (outdatedCount === 0) return "No outdated versions found";
+      if (outdatedCount !== null && filesCount !== null)
+        return `Removed ${outdatedCount} variant(s), ${filesCount} file(s) deleted`;
+      if (outdatedCount !== null) return `Removed ${outdatedCount} outdated variant(s)`;
+      return undefined;
+    })();
+    steps.push({
+      id: "outdated",
+      label: outdatedStatus === "done" ? "Outdated versions cleaned" : "Scanning for outdated versions",
+      status: outdatedStatus,
+      detail,
+    });
+  }
+
+  if (orphanStatus !== "pending") {
+    const detail = (() => {
+      if (orphanCount === 0) return "No orphaned files found";
+      if (orphanCount !== null) return `Deleted ${orphanCount} orphaned file(s)`;
+      return undefined;
+    })();
+    steps.push({
+      id: "orphans",
+      label: orphanStatus === "done" ? "Orphaned files cleaned" : "Scanning for orphaned files",
+      status: orphanStatus,
+      detail,
+    });
+  }
+
+  if (tagsStatus !== "pending") {
+    steps.push({
+      id: "tags",
+      label: tagsStatus === "done" ? "Tags rebuilt" : "Rebuilding tags",
+      status: tagsStatus,
+    });
+  }
+
+  if (conflictsStatus !== "pending") {
+    steps.push({
+      id: "conflicts",
+      label: conflictsStatus === "done" ? "Conflicts rebuilt" : "Rebuilding conflicts",
+      status: conflictsStatus,
+    });
+  }
+
+  // If no specific steps parsed yet, but we have raw output → show as active/done
+  if (steps.length === 0 && lines.length > 0) {
+    const finished = lines.some((l) =>
+      matches(l, /task '.+' finished with exit code 0|no outdated tracked versions found/i)
+    );
+    steps.push({
+      id: "scan",
+      label: finished ? "Cleanup complete" : "Running cleanup",
+      status: finished ? "done" : "active",
+    });
+  }
+
+  return { supported: steps.length > 0, steps };
+}
+
+function summarizeCharacterData(raw: string): ParsedSummary {
+  const lines = splitLines(raw);
+  if (lines.length === 0) return { supported: false, steps: [] };
+
+  let step1: StepStatus = "pending";
+  let step2: StepStatus = "pending";
+  let step3: StepStatus = "pending";
+  let step4: StepStatus = "pending";
+  let isDone = false;
+  let hasStarted = false;
+
+  for (const line of lines) {
+    if (!line) continue;
+    // Top-level wrapper message from _task_rebuild_character_data()
+    if (matches(line, /extracting character and skin data from pak files/i)) {
+      hasStarted = true;
+      step1 = "active";
+      continue;
+    }
+    // Step markers from core/extraction/service.py extract_character_and_skin_data()
+    if (matches(line, /\[1\/4\]|extracting character names/i)) {
+      step1 = "active"; hasStarted = true; continue;
+    }
+    if (matches(line, /\[2\/4\]|extracting skin ids/i)) {
+      step1 = "done"; step2 = "active"; hasStarted = true; continue;
+    }
+    if (matches(line, /\[3\/4\]|extracting skin names/i)) {
+      step2 = "done"; step3 = "active"; hasStarted = true; continue;
+    }
+    if (matches(line, /\[4\/4\]|building final database/i)) {
+      step3 = "done"; step4 = "active"; hasStarted = true; continue;
+    }
+    // Completion markers
+    if (matches(line, /extraction and ingestion complete!|total characters:|success! extracted/i)) {
+      if (step1 !== "pending") step1 = "done";
+      if (step2 !== "pending") step2 = "done";
+      if (step3 !== "pending") step3 = "done";
+      step4 = "done"; isDone = true; hasStarted = true; continue;
+    }
+    // Wrapper-level completion: "Character data rebuild complete!"
+    if (matches(line, /character data rebuild complete/i)) {
+      if (step1 === "active") step1 = "done";
+      if (step2 === "active") step2 = "done";
+      if (step3 === "active") step3 = "done";
+      if (step4 === "active") step4 = "done";
+      isDone = true; hasStarted = true; continue;
+    }
+    // Catch-all
+    if (matches(line, /task '.+' finished with exit code 0/i)) {
+      if (step1 === "active") step1 = "done";
+      if (step2 === "active") step2 = "done";
+      if (step3 === "active") step3 = "done";
+      if (step4 === "active") step4 = "done";
+      isDone = true;
+      continue;
+    }
+  }
+
+  if (!hasStarted) {
+    return { supported: false, steps: [] };
+  }
+
+  const steps: ParsedStep[] = [];
+
+  // If we only saw top-level wrapper messages (no [1/4] steps), show a single step
+  if (step1 === "pending" && step2 === "pending" && step3 === "pending" && step4 === "pending") {
+    steps.push({
+      id: "extract",
+      label: isDone ? "Character data rebuilt" : "Extracting character data",
+      status: isDone ? "done" : "active",
+    });
+  } else {
+    if (step1 !== "pending") steps.push({ id: "step1", label: "Extracting character names", status: step1 });
+    if (step2 !== "pending") steps.push({ id: "step2", label: "Scanning skin variants", status: step2 });
+    if (step3 !== "pending") steps.push({ id: "step3", label: "Reading localization", status: step3 });
+    if (step4 !== "pending") steps.push({ id: "step4", label: "Finalizing database", status: step4 });
+  }
+
+  if (isDone && steps.length === 0) {
+    steps.push({ id: "done", label: "Character data rebuilt", status: "done" });
+  }
+
+  return { supported: steps.length > 0, steps };
 }
 
 function summarizeSync(raw: string): ParsedSummary {
@@ -630,22 +932,50 @@ function summarizeSync(raw: string): ParsedSummary {
   let total: number | null = null;
   let current = 0;
   const seen = new Set<string>();
+  let nothingToSync = false;
 
   lines.forEach((line) => {
-    const summary = matchNumber(line, /synced\s+(\d+)\s+mod\(s\)/i);
-    if (summary !== null) {
-      total = summary;
+    // Server-level summary: "Synced N mod(s) from Nexus API."
+    const serverSummary = matchNumber(line, /synced\s+(\d+)\s+mod\(s\)/i);
+    if (serverSummary !== null) {
+      total = serverSummary;
       current = Math.max(current, total);
       return;
     }
+    // Per-mod line: "Synced mod 12345: info=200 ..."
     if (matches(line, /synced mod\s+[0-9]+/i)) {
       const id = extractMatch(line, /synced mod\s+([0-9]+)/i);
       if (id && !seen.has(id)) {
         seen.add(id);
         current = seen.size;
       }
+      return;
+    }
+    // 0-mods case: "No Nexus-linked mods found; nothing to sync."
+    if (matches(line, /no nexus-linked mods found|nothing to sync/i)) {
+      nothingToSync = true;
+      return;
+    }
+    // Nexus API key not configured
+    if (matches(line, /nexus api key not configured/i)) {
+      nothingToSync = true;
+      return;
     }
   });
+
+  if (nothingToSync) {
+    return {
+      supported: true,
+      steps: [
+        {
+          id: "sync",
+          label: "No mods to sync",
+          status: "done",
+          detail: "No Nexus-linked mods found in database",
+        },
+      ],
+    };
+  }
 
   if (current === 0 && total === null) {
     return { supported: false, steps: [] };

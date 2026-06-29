@@ -11,6 +11,7 @@ import { DownloadsPage } from "./components/DownloadsPage";
 import { ActiveModsView } from "./components/ActiveModsView";
 import { CollectionsPage } from "./components/CollectionsPage";
 import { BackupModal } from "./components/BackupModal";
+import { AssignModIdModal } from "./components/AssignModIdModal";
 import { ServerStartupOverlay } from "./components/ServerStartupOverlay";
 import { NxmBackgroundListener } from "./components/NxmBackgroundListener";
 import { GameUpdateModal, type GameUpdateStep, type GameUpdatePhase } from "./components/GameUpdateModal";
@@ -141,6 +142,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<
     "downloads" | "active" | "collections"
   >("downloads");
+  const [assignModIdTarget, setAssignModIdTarget] = useState<any | null>(null);
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedCharacters, setSelectedCharacters] = useState<string[]>([]);
   const [selectedCustomTags, setSelectedCustomTags] = useState<string[]>([]);
@@ -1319,6 +1321,7 @@ export default function App() {
     );
   };
 
+
   const handleToggleMod = async (modId: string) => {
     const mod = mods.find((m) => m.id === modId);
     if (!mod || !mod.isInstalled) return;
@@ -1476,6 +1479,18 @@ export default function App() {
       }
     }
   };
+
+  // -- Mod ID Assignment Handlers --
+  const handleAssignModId = useCallback((modId: string) => {
+    const mod = mods.find(m => m.id === modId);
+    if (mod) {
+      setAssignModIdTarget(mod);
+    }
+  }, [mods]);
+
+  const handleAssignModIdSuccess = useCallback((modId: string, newNexusId: number) => {
+    refreshMods({ quiet: true });
+  }, [refreshMods]);
 
   const handleBootstrapTask = useCallback(async (): Promise<boolean> => {
     const sleep = (ms: number) =>
@@ -1858,6 +1873,9 @@ export default function App() {
       isUpdating: false,
       updateError: null,
       containsAdultContent: Boolean(d.contains_adult_content),
+      needsManualModId: Boolean(d.needs_manual_mod_id),
+      renameStatus: d.rename_status as "idle" | "verifying" | "renamed" | "failed" | undefined,
+      renameError: d.rename_error ?? null,
     } as any;
   }
 
@@ -2291,6 +2309,7 @@ export default function App() {
                     viewMode={viewMode}
                     onViewModeChange={setViewMode}
                     onRefresh={handleRefresh}
+                    onAssignModId={handleAssignModId}
                   />
                 ) : activeTab === "active" ? (
                   <ActiveModsView
@@ -2309,6 +2328,7 @@ export default function App() {
                     viewMode={viewMode}
                     onViewModeChange={setViewMode}
                     onRefresh={handleRefresh}
+                    onAssignModId={handleAssignModId}
                   />
                 ) : (
                   <CollectionsPage
@@ -2404,6 +2424,14 @@ export default function App() {
             onToggleMod={handleToggleMod}
             onBackupCreated={() => setBackupsRefreshTrigger((t) => t + 1)}
             onBackupRestored={() => refreshMods({ quiet: true, includeConflicts: true })}
+          />
+          <AssignModIdModal
+            open={!!assignModIdTarget}
+            onOpenChange={(open) => {
+              if (!open) setAssignModIdTarget(null);
+            }}
+            mod={assignModIdTarget}
+            onSuccess={handleAssignModIdSuccess}
           />
         </div>
       </ThemeProvider>

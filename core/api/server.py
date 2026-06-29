@@ -103,7 +103,7 @@ from field_prefs import filter_aggregate_payload, load_prefs
 # Global cache for Nexus preferences
 _NEXUS_PREFS_CACHE = None
 
-app = FastAPI(title="Mod Manager Backend", version="0.7.2")
+app = FastAPI(title="Mod Manager Backend", version="0.8.0")
 
 # Register character API routes
 from core.api.characters import router as characters_router
@@ -215,6 +215,83 @@ if _RIVALNXT_PID:
 else:
 	logger.info("[PID Monitor] No RIVALNXT_PID environment variable found - monitor not started")
 # =============================================================================
+
+
+# =============================================================================
+# Background MD5 Backfill — compute and store hashes for existing unlinked mods
+# =============================================================================
+def _md5_backfill_worker() -> None:
+	"""Daemon thread: compute MD5 hashes for all non-conforming mods in local_downloads
+	that are missing a hash and don't yet have a mod_id.
+	Runs once on startup with small sleeps so it doesn't block normal app usage.
+	"""
+	import hashlib as _hashlib
+
+	logger.info("[MD5 Backfill] Starting background MD5 backfill for unlinked mods...")
+	try:
+		from core.api.dependencies import get_db
+		from core.config.settings import SETTINGS as _SETTINGS
+
+		downloads_root = Path(_SETTINGS.marvel_rivals_local_downloads_root)
+		conn = get_db()
+		cur = conn.cursor()
+
+		rows = cur.execute(
+			"""
+			SELECT path FROM local_downloads
+			WHERE (mod_id IS NULL OR needs_manual_mod_id = 1)
+			  AND (file_md5 IS NULL OR file_md5 = '')
+			  AND (path LIKE '%.zip' OR path LIKE '%.rar' OR path LIKE '%.7z')
+			"""
+		).fetchall()
+
+		logger.info(f"[MD5 Backfill] Found {len(rows)} file(s) to hash.")
+
+		for (rel_path,) in rows:
+			try:
+				abs_path = downloads_root / rel_path
+				if not abs_path.exists():
+					abs_path_check = Path(rel_path)
+					if abs_path_check.exists():
+						abs_path = abs_path_check
+					else:
+						continue
+
+				with open(abs_path, "rb") as fh:
+					file_hash = _hashlib.md5(fh.read()).hexdigest()
+
+				cur.execute(
+					"UPDATE local_downloads SET file_md5 = ? WHERE path = ?",
+					(file_hash, rel_path),
+				)
+				conn.commit()
+				logger.debug(f"[MD5 Backfill] Hashed {rel_path} -> {file_hash}")
+				time.sleep(0.05)
+
+			except Exception as e:
+				logger.debug(f"[MD5 Backfill] Skipped {rel_path}: {e}")
+				continue
+
+		logger.info("[MD5 Backfill] Backfill complete.")
+		try:
+			conn.close()
+		except Exception:
+			pass
+
+	except Exception as e:
+		logger.warning(f"[MD5 Backfill] Worker failed: {e}")
+
+
+_md5_backfill_thread = threading.Thread(
+	target=_md5_backfill_worker,
+	daemon=True,
+	name="MD5BackfillThread",
+)
+_md5_backfill_thread.start()
+logger.info("[MD5 Backfill] Backfill thread launched.")
+# =============================================================================
+
+
 
 
 def _safe_rebuild_conflicts(
@@ -730,6 +807,7 @@ def _task_delete_outdated_versions() -> int:
 		deleted_count = 0
 		if to_delete_ids:
 			# 1. Use the main DB deletion function which handles deactivation and cascading
+			print(f"Deleting {len(to_delete_ids)} outdated variant(s) from database...")
 			deleted_count, removed_mod_ids, source_paths = delete_local_downloads(conn, to_delete_ids)
 			
 			# Also remove these from tracked_paths so we don't think they are still tracked
@@ -742,6 +820,7 @@ def _task_delete_outdated_versions() -> int:
 						pass
 			
 			# 2. Delete physical files securely
+			print("Deleting physical files...")
 			downloads_root = _downloads_root_from_env().resolve()
 			removed_files = []
 			seen_paths = set()
@@ -824,14 +903,18 @@ def _task_delete_outdated_versions() -> int:
 		# 3. Rebuild tags and conflicts (fast) rather than full ingest
 		if to_delete_ids or orphaned_count > 0:
 			try:
+				print("Rebuilding tags after cleanup...")
 				from scripts import build_asset_tags as _bat  # type: ignore
 				from scripts import build_pak_tags as _bpt  # type: ignore
 				_bat.main([])
 				_bpt.main([])
+				print("Tag rebuild complete.")
 			except Exception as e:
 				print(f"Warning: Failed to rebuild tags: {e}")
 				
+			print("Rebuilding conflicts after cleanup...")
 			_safe_rebuild_conflicts(conn, active_only=None, purpose="delete_outdated_versions")
+			print("Conflict tables rebuilt.")
 			
 		return 0
 	except Exception as e:
@@ -1687,10 +1770,53 @@ def _ingest_resolved_download(
 			created_at_hints.append(created_at_hint)
 		created_at_iso = resolve_created_at(path=path, hints=created_at_hints)
 
+		try:
+			from core.config import settings
+			from core.nexus.nexus_api import get_api_key
+			from core.utils.normalize_mod_filename import normalize_mod_filename
+			game_domain = getattr(settings.SETTINGS, "nexus_game", "marvelrivals")
+			api_key = get_api_key()
+			norm_res = normalize_mod_filename(
+				file_path=path,
+				game_domain=game_domain,
+				api_key=api_key or "",
+				db_conn=conn,
+				known_mod_id=mod_id
+			)
+			if norm_res["renamed"]:
+				path = norm_res["canonical_path"]
+				normalized_path = str(path.resolve())
+				mod_id = norm_res["backendModId"]
+				rename_status = "renamed"
+			else:
+				rename_status = "idle"
+			needs_manual = 1 if norm_res["needsManualModId"] else 0
+			
+			if norm_res["version"]:
+				version = norm_res["version"]
+			
+			if norm_res["backendModId"] is not None:
+				mod_id = norm_res["backendModId"]
+				
+			# Capture MD5 if it was computed (for non-conforming files)
+			file_md5 = norm_res.get("file_md5")
+
+			# If normalization successfully discovered a Mod ID and renamed it, 
+			# we should aggressively sync the metadata right now!
+			if norm_res["backendModId"] is not None and not needs_manual:
+				# Trigger background sync or inline sync (inline is fine during ingest)
+				_sync_mod_metadata(conn, mod_id=mod_id, mod_name=None)
+				
+		except Exception as e:
+			logger.warning(f"[_ingest_resolved_download] normalization failed: {e}")
+			rename_status = "idle"
+			needs_manual = 0
+			file_md5 = None
+
 		cur.execute(
 			"""
-			INSERT OR REPLACE INTO local_downloads(path, id, name, mod_id, version, contents, active_paks, created_at)
-			VALUES(?, ?, ?, ?, ?, ?, ?, ?)
+			INSERT OR REPLACE INTO local_downloads(path, id, name, mod_id, version, contents, active_paks, created_at, needs_manual_mod_id, rename_status, file_md5)
+			VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 			""",
 			(
 				normalized_path,
@@ -1701,6 +1827,9 @@ def _ingest_resolved_download(
 				json.dumps(contents, ensure_ascii=False),
 				json.dumps([], ensure_ascii=False),
 				created_at_iso,
+				needs_manual,
+				rename_status,
+				file_md5,
 			),
 		)
 		conn.commit()
@@ -5281,7 +5410,7 @@ def _search_mod_id_remote(name: str, api_key: str, game: str = DEFAULT_GAME) -> 
 	url = f"https://api.nexusmods.com/v1/games/{game}/mods.json?{params}"
 	headers = {
 		"apikey": api_key,
-		"User-Agent": "Project_ModManager_Rivals/0.7.2",
+		"User-Agent": "Project_ModManager_Rivals/0.8.0",
 		"Application-Name": "Project_ModManager_Rivals",
 	}
 	req = urllib.request.Request(url, headers=headers, method="GET")
@@ -5584,7 +5713,7 @@ def _resolve_nexus_download_candidates(
 	if api_key:
 		headers["apikey"] = api_key
 		headers["Application-Name"] = "MarvelRivalsModManager"
-		headers["Application-Version"] = "0.7.2"
+		headers["Application-Version"] = "0.8.0"
 	req = urllib.request.Request(api_url, headers=headers, method="GET")
 	try:
 		with urllib.request.urlopen(req, timeout=30) as resp:
@@ -7372,6 +7501,118 @@ def update_mod_file_state(collection_id: int, file_id: int, body: Dict[str, Any]
 		)
 		conn.commit()
 		return {"ok": True}
+	finally:
+		try:
+			conn.close()
+		except Exception:
+			pass
+@app.post("/api/mods/assign-mod-id")
+def assign_mod_id(payload: Dict[str, Any] = Body(...)) -> Dict[str, Any]:
+	local_paths = payload.get("local_paths", [])
+	nexus_mod_id = payload.get("nexus_mod_id")
+	game_domain = payload.get("game", "marvelrivals")
+	if not local_paths or not nexus_mod_id:
+		raise HTTPException(status_code=400, detail="Missing local_paths or nexus_mod_id")
+
+	from core.nexus.nexus_api import get_mod_files, get_api_key
+	api_key = get_api_key()
+	if not api_key:
+		raise HTTPException(status_code=400, detail="Missing API key")
+
+	status, response = get_mod_files(api_key, game_domain, nexus_mod_id)
+	if status != 200 or "files" not in response:
+		return {"ok": False, "error": "Failed to fetch files from Nexus API"}
+
+	conn = get_db()
+	try:
+		cur = conn.cursor()
+		renamed_count = 0
+		for l_path in local_paths:
+			from core.utils.download_paths import resolve_absolute_download_path
+			abs_str = resolve_absolute_download_path(l_path)
+			path = Path(abs_str).resolve()
+			if not path.exists():
+				continue
+
+			file_size = path.stat().st_size
+			matched_file = None
+			main_file = None
+			for f in response.get("files", []):
+				if f.get("is_primary") or f.get("category_id") == 1:
+					if main_file is None:
+						main_file = f
+				api_file_name = f.get("file_name", "")
+				api_size = f.get("size_in_bytes")
+				if api_file_name.lower() == path.name.lower() or api_size == file_size:
+					matched_file = f
+					break
+
+			if not matched_file:
+				files_list = response.get("files", [])
+				if main_file:
+					matched_file = main_file
+				elif files_list:
+					matched_file = files_list[-1]
+				else:
+					continue
+
+			# We have a match!
+			from core.utils.normalize_mod_filename import build_canonical_filename
+			canonical_name = build_canonical_filename(
+				mod_name=matched_file.get("name", "mod"),
+				mod_id=nexus_mod_id,
+				version=matched_file.get("version", "1.0"),
+				uploaded_timestamp=matched_file.get("uploaded_timestamp", 0),
+				ext=path.suffix.lstrip('.')
+			)
+			canonical_path = path.parent / canonical_name
+			renamed = False
+			if path.name != canonical_name:
+				try:
+					if not canonical_path.exists():
+						os.rename(path, canonical_path)
+						renamed = True
+					else:
+						canonical_path = path
+				except Exception:
+					canonical_path = path
+			else:
+				canonical_path = path
+			
+			normalized_path = str(canonical_path.resolve())
+			
+			# Save to overrides table
+			cur.execute(
+				"INSERT OR REPLACE INTO mod_id_overrides (local_path, nexus_mod_id) VALUES (?, ?)",
+				(canonical_path.name, nexus_mod_id)
+			)
+			
+			# Update local_downloads
+			# We must update the record using the ORIGINAL l_path (which is relative in DB) 
+			# but we need to update 'path' to the new relative path!
+			# Since 'normalized_path' is absolute, let's make it relative again using normalize_download_path
+			from core.utils.download_paths import normalize_download_path
+			rel_normalized_path = normalize_download_path(normalized_path)
+			
+			matched_version = matched_file.get("version") if matched_file else None
+
+			cur.execute(
+				"""
+				UPDATE local_downloads 
+				SET path = ?, mod_id = ?, version = ?, needs_manual_mod_id = 0, rename_status = 'renamed', rename_error = NULL
+				WHERE path = ? OR path = ?
+				""",
+				(rel_normalized_path, nexus_mod_id, matched_version, l_path, str(abs_str))
+			)
+			renamed_count += 1
+			
+		conn.commit()
+		if renamed_count > 0:
+			_sync_mod_metadata(conn, mod_id=nexus_mod_id, mod_name=None)
+			_safe_rebuild_conflicts(conn, active_only=None, purpose="assign_mod_id")
+			return {"ok": True, "renamed_count": renamed_count}
+		else:
+			return {"ok": False, "error": "No matching file found in Nexus API response."}
 	finally:
 		try:
 			conn.close()
