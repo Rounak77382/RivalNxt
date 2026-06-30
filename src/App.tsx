@@ -151,6 +151,10 @@ export default function App() {
   const nxmEntriesRef = useRef<Record<string, NxmEntry>>({});
   // Track (mod_id, file_id) pairs being managed by update flow to prevent background listener from processing them
   const updateManagedPairsRef = useRef<Set<string>>(new Set());
+  // Ref to always hold the latest fetchServerMods so event listeners don't go stale
+  const fetchServerModsRef = useRef<() => Promise<any[]>>(async () => []);
+  // Ref to always hold the latest refreshMods so event listeners don't go stale
+  const refreshModsRef = useRef<() => Promise<void>>(async () => {});
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [settingsSaving, setSettingsSaving] = useState(false);
@@ -192,6 +196,17 @@ export default function App() {
   useEffect(() => {
     nxmEntriesRef.current = nxmEntries;
   }, [nxmEntries]);
+
+  // Listen for author assignment events from AuthorPopover
+  useEffect(() => {
+    if (!backendReady) return;
+    const handler = async () => {
+      await refreshModsRef.current().catch(() => null);
+    };
+    window.addEventListener("refresh-downloads", handler);
+    return () => window.removeEventListener("refresh-downloads", handler);
+  // Only need to register/unregister on backendReady change; ref keeps fn current
+  }, [backendReady]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -737,6 +752,8 @@ export default function App() {
 
   // Event handlers
   async function fetchServerMods(): Promise<any[]> {
+    // Keep the ref updated so the refresh-downloads event handler always uses the latest version
+    fetchServerModsRef.current = fetchServerMods;
     // Start fetching downloads and favourites in parallel
     const [downloads, favouritedIds] = await Promise.all([
       listDownloads(),
@@ -1455,6 +1472,8 @@ export default function App() {
   const refreshMods = async (
     options: { quiet?: boolean; includeConflicts?: boolean } = {},
   ) => {
+    // Keep ref updated so event listener always calls the latest version
+    refreshModsRef.current = () => refreshMods({ quiet: true });
     const { quiet = false, includeConflicts = false } = options;
     try {
       try {
@@ -1876,6 +1895,18 @@ export default function App() {
       needsManualModId: Boolean(d.needs_manual_mod_id),
       renameStatus: d.rename_status as "idle" | "verifying" | "renamed" | "failed" | undefined,
       renameError: d.rename_error ?? null,
+      customAuthorName: (d as any).custom_author_name ?? null,
+      customAuthorType: (d as any).custom_author_type ?? null,
+      customAuthorId: (d as any).custom_author_id ?? null,
+      customAuthorAvatar: (() => {
+        const base64 = (d as any).custom_author_avatar ?? null;
+        if (base64) return base64;
+        // For Nexus-type custom authors, synthesize avatar URL from member ID
+        const nexusMemberId = (d as any).custom_nexus_member_id ?? null;
+        if (nexusMemberId) return `https://avatars.nexusmods.com/${nexusMemberId}/100`;
+        return null;
+      })(),
+      modKey: d.mod_id != null ? `mod:${d.mod_id}` : `local:${d.id}`,
     } as any;
   }
 

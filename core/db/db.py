@@ -1969,7 +1969,7 @@ def insert_characters(conn: sqlite3.Connection, characters: List[Tuple[str, str]
 def insert_skins(conn: sqlite3.Connection, skins: List[Tuple[str, str, str, str]]) -> None:
     """
     Batch insert skins.
-    
+
     Args:
         skins: List of (skin_id, character_id, variant, name) tuples
     """
@@ -1979,4 +1979,200 @@ def insert_skins(conn: sqlite3.Connection, skins: List[Tuple[str, str, str, str]
         skins
     )
     conn.commit()
+
+
+# ── Custom Author Metadata ──────────────────────────────────────────────────────────────────────────────
+
+def upsert_custom_author(
+    conn,
+    *,
+    display_name: str,
+    avatar_base64=None,
+    author_type: str = "custom",
+    nexus_member_id=None,
+) -> int:
+    """Insert or update a custom author by normalised name.  Returns the row id."""
+    name_normalized = display_name.strip().lower()
+    from datetime import datetime, timezone as _tz
+    now = datetime.now(_tz.utc).isoformat()
+    conn.execute(
+        """
+        INSERT INTO custom_authors
+            (name_normalized, display_name, author_type, nexus_member_id, avatar_base64, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(name_normalized) DO UPDATE SET
+            display_name    = excluded.display_name,
+            author_type     = excluded.author_type,
+            nexus_member_id = COALESCE(excluded.nexus_member_id, custom_authors.nexus_member_id),
+            avatar_base64   = COALESCE(excluded.avatar_base64, custom_authors.avatar_base64),
+            updated_at      = excluded.updated_at;
+        """,
+        (name_normalized, display_name, author_type, nexus_member_id, avatar_base64, now, now),
+    )
+    conn.commit()
+    row = conn.execute(
+        "SELECT id FROM custom_authors WHERE name_normalized = ?;", (name_normalized,)
+    ).fetchone()
+    return int(row[0])
+
+
+def update_custom_author(
+    conn,
+    author_id: int,
+    *,
+    display_name=None,
+    avatar_base64=None,
+    clear_avatar: bool = False,
+) -> None:
+    """Partially update an existing custom author row."""
+    from datetime import datetime, timezone as _tz
+    now = datetime.now(_tz.utc).isoformat()
+    if display_name is not None:
+        name_normalized = display_name.strip().lower()
+        conn.execute(
+            "UPDATE custom_authors SET display_name=?, name_normalized=?, updated_at=? WHERE id=?;",
+            (display_name, name_normalized, now, author_id),
+        )
+    if clear_avatar:
+        conn.execute(
+            "UPDATE custom_authors SET avatar_base64=NULL, updated_at=? WHERE id=?;",
+            (now, author_id),
+        )
+    elif avatar_base64 is not None:
+        conn.execute(
+            "UPDATE custom_authors SET avatar_base64=?, updated_at=? WHERE id=?;",
+            (avatar_base64, now, author_id),
+        )
+    conn.commit()
+
+
+def get_custom_author(conn, author_id: int):
+    """Fetch a single custom author by id."""
+    cur = conn.execute(
+        "SELECT id, display_name, author_type, nexus_member_id, avatar_base64 FROM custom_authors WHERE id = ?;",
+        (author_id,),
+    )
+    row = cur.fetchone()
+    if not row:
+        return None
+    return {
+        "id": row[0],
+        "display_name": row[1],
+        "author_type": row[2],
+        "nexus_member_id": row[3],
+        "avatar_base64": row[4],
+    }
+
+
+def search_custom_authors(conn, query: str, limit: int = 20):
+    """Search custom_authors + mods table by partial name match.
+
+    Returns a unified list: persisted custom authors first, then Nexus authors
+    from the local mods table, deduplicated by normalised name.
+    """
+    like = "%" + query.strip().lower() + "%"
+    rows = conn.execute(
+        """
+        SELECT id, display_name, author_type, nexus_member_id, avatar_base64
+        FROM custom_authors
+        WHERE name_normalized LIKE ?
+        ORDER BY display_name COLLATE NOCASE
+        LIMIT ?;
+        """,
+        (like, limit),
+    ).fetchall()
+    results = [
+        {
+            "id": r[0],
+            "display_name": r[1],
+            "author_type": r[2],
+            "nexus_member_id": r[3],
+            "avatar_base64": r[4],
+        }
+        for r in rows
+    ]
+    seen_names = {r["display_name"].strip().lower() for r in results}
+    # Supplement with Nexus authors from the mods table (not yet in custom_authors)
+    if len(results) < limit:
+        nexus_rows = conn.execute(
+            """
+            SELECT DISTINCT author, author_member_id
+            FROM mods
+            WHERE LOWER(author) LIKE ? AND author IS NOT NULL AND author != ''
+            ORDER BY author COLLATE NOCASE
+            LIMIT ?;
+            """,
+            (like, limit - len(results)),
+        ).fetchall()
+        for nr in nexus_rows:
+            name = (nr[0] or "").strip()
+            if not name or name.lower() in seen_names:
+                continue
+            seen_names.add(name.lower())
+            results.append({
+                "id": None,
+                "display_name": name,
+                "author_type": "nexus",
+                "nexus_member_id": nr[1],
+                "avatar_base64": None,
+            })
+    return results
+
+
+def set_mod_author(conn, mod_key: str, author_id: int) -> None:
+    """Assign a custom author to a mod (upsert)."""
+    from datetime import datetime, timezone as _tz
+    now = datetime.now(_tz.utc).isoformat()
+    conn.execute(
+        """
+        INSERT INTO local_mod_metadata (mod_key, custom_author_id, created_at, updated_at)
+        VALUES (?, ?, ?, ?)
+        ON CONFLICT(mod_key) DO UPDATE SET
+            custom_author_id = excluded.custom_author_id,
+            updated_at       = excluded.updated_at;
+        """,
+        (mod_key, author_id, now, now),
+    )
+    conn.commit()
+
+
+def clear_mod_author(conn, mod_key: str) -> None:
+    """Remove the custom author assignment for a mod."""
+    from datetime import datetime, timezone as _tz
+    conn.execute(
+        "UPDATE local_mod_metadata SET custom_author_id=NULL, updated_at=? WHERE mod_key=?;",
+        (datetime.now(_tz.utc).isoformat(), mod_key),
+    )
+    conn.commit()
+
+
+def get_mod_metadata(conn, mod_key: str):
+    """Fetch local_mod_metadata + joined custom_author for a single mod_key."""
+    cur = conn.execute(
+        """
+        SELECT lmm.mod_key,
+               lmm.custom_author_id,
+               lmm.extra_json,
+               ca.display_name,
+               ca.author_type,
+               ca.nexus_member_id,
+               ca.avatar_base64
+        FROM local_mod_metadata lmm
+        LEFT JOIN custom_authors ca ON ca.id = lmm.custom_author_id
+        WHERE lmm.mod_key = ?;
+        """,
+        (mod_key,),
+    )
+    row = cur.fetchone()
+    if not row:
+        return None
+    return {
+        "mod_key": row[0],
+        "custom_author_id": row[1],
+        "extra_json": row[2],
+        "custom_author_name": row[3],
+        "author_type": row[4],
+        "nexus_member_id": row[5],
+        "avatar_base64": row[6],
+    }
 

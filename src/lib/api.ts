@@ -1388,3 +1388,74 @@ export async function removeModCustomTag(
 export async function getAllCustomTags(): Promise<string[]> {
   return getJson<string[]>(`/api/mods/all-custom-tags`);
 }
+
+// ── Custom Author Metadata ──────────────────────────────────────────────────
+
+export interface CustomAuthor {
+  id: number;
+  display_name: string;
+  author_type: "nexus" | "custom";
+  nexus_member_id?: number | null;
+  avatar_base64?: string | null;
+}
+
+export async function searchAuthors(query: string): Promise<CustomAuthor[]> {
+  const q = encodeURIComponent(query);
+  return getJson<CustomAuthor[]>(`/api/authors/search?q=${q}`);
+}
+
+export async function createOrUpdateAuthor(
+  data: Omit<CustomAuthor, "id"> & { id?: number },
+): Promise<CustomAuthor> {
+  const baseUrl = await getBaseUrl();
+  if (data.id != null) {
+    // Update existing (PUT)
+    const res = await fetch(`${baseUrl}/api/authors/${data.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        display_name: data.display_name,
+        avatar_base64: data.avatar_base64,
+        clear_avatar: data.avatar_base64 === null,
+      }),
+    });
+    if (!res.ok) await handleError(res, "PUT", `/api/authors/${data.id}`);
+    return res.json();
+  } else {
+    // Create new (POST)
+    return postJson<any, CustomAuthor>(`/api/authors`, {
+      display_name: data.display_name,
+      author_type: data.author_type,
+      nexus_member_id: data.nexus_member_id,
+      avatar_base64: data.avatar_base64,
+    });
+  }
+}
+
+export async function assignModAuthor(
+  modKey: string,
+  authorId: number,
+): Promise<void> {
+  const baseUrl = await getBaseUrl();
+  const res = await fetch(`${baseUrl}/api/mods/${encodeURIComponent(modKey)}/author`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ author_id: authorId }),
+  });
+  if (!res.ok) await handleError(res, "PUT", `/api/mods/${encodeURIComponent(modKey)}/author`);
+}
+
+export async function clearModAuthor(modKey: string): Promise<void> {
+  const baseUrl = await getBaseUrl();
+  const res = await fetch(
+    `${baseUrl}/api/mods/${encodeURIComponent(modKey)}/author`,
+    { method: "DELETE" },
+  );
+  if (!res.ok) {
+    await handleError(
+      res,
+      "DELETE",
+      `/api/mods/${encodeURIComponent(modKey)}/author`,
+    );
+  }
+}

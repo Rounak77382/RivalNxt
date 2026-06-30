@@ -22,6 +22,11 @@ export interface ModBackupEntry {
   description?: string | null;
   /** Custom images uploaded for this mod (optional). */
   customImages?: { data: string; filename?: string; mimeType?: string }[];
+  /** Custom Author Metadata (optional) */
+  customAuthorId?: number | null;
+  customAuthorName?: string | null;
+  customAuthorType?: string | null;
+  customAuthorAvatar?: string | null;
 }
 
 /** The full backup object saved to disk as JSON. */
@@ -99,6 +104,10 @@ export function buildBackupFromMods(mods: any[], name: string): ModBackup {
         : [],
       sourceFileIds: Array.isArray(m.sourceFileIds) ? m.sourceFileIds : [],
       activePaks: Array.isArray(m.defaultActivePaks) ? m.defaultActivePaks : [],
+      customAuthorId: m.customAuthorId ?? null,
+      customAuthorName: m.customAuthorName ?? null,
+      customAuthorType: m.customAuthorType ?? null,
+      customAuthorAvatar: m.customAuthorAvatar ?? null,
     }));
 
   return {

@@ -5030,6 +5030,8 @@ def list_downloads() -> List[Dict[str, Any]]:
 		   m.mod_downloads, m.endorsement_count,
 		   m.author_profile_url, m.author_member_id,
 		   m.contains_adult_content,
+		   l.needs_manual_mod_id, l.rename_status, l.rename_error,
+		   ca.id AS custom_author_id, ca.display_name AS custom_author_name, ca.author_type AS custom_author_type, ca.nexus_member_id AS custom_nexus_member_id, ca.avatar_base64 AS custom_avatar_base64,
 		   v.tags_json,
 		   variant_latest.version AS file_version,
 		   variant_latest.uploaded_at AS latest_uploaded_at,
@@ -5038,6 +5040,8 @@ def list_downloads() -> List[Dict[str, Any]]:
 		   variant_latest.name AS file_name
 		FROM local_downloads l
 		LEFT JOIN mods m ON m.mod_id = l.mod_id
+		LEFT JOIN local_mod_metadata lmm ON lmm.mod_key = COALESCE('mod:' || l.mod_id, 'local:' || l.id)
+		LEFT JOIN custom_authors ca ON ca.id = lmm.custom_author_id
 		LEFT JOIN v_local_downloads_with_tags v ON v.download_id = l.id
 		LEFT JOIN v_mods_with_latest_by_version overall_latest ON overall_latest.mod_id = l.mod_id
 		LEFT JOIN (
@@ -5076,6 +5080,14 @@ def list_downloads() -> List[Dict[str, Any]]:
 		mod_author_profile_url,
 		mod_author_member_id,
 		contains_adult_content,
+		needs_manual_mod_id,
+		rename_status,
+		rename_error,
+		custom_author_id,
+		custom_author_name,
+		custom_author_type,
+		custom_nexus_member_id,
+		custom_avatar_base64,
 		view_tags_json,
 		latest_version,
 		latest_uploaded_at,
@@ -5190,6 +5202,14 @@ def list_downloads() -> List[Dict[str, Any]]:
 				"local_version_key": local_version_key,
 				"needs_update": needs_update,
 				"contains_adult_content": bool(contains_adult_content) if contains_adult_content else False,
+				"needs_manual_mod_id": bool(needs_manual_mod_id) if needs_manual_mod_id else False,
+				"rename_status": rename_status,
+				"rename_error": rename_error,
+				"custom_author_id": custom_author_id,
+				"custom_author_name": custom_author_name,
+				"custom_author_type": custom_author_type,
+				"custom_nexus_member_id": custom_nexus_member_id,
+				"custom_author_avatar": custom_avatar_base64,
 			}
 		)
 
@@ -7618,3 +7638,93 @@ def assign_mod_id(payload: Dict[str, Any] = Body(...)) -> Dict[str, Any]:
 			conn.close()
 		except Exception:
 			pass
+
+
+# ── Custom Author Metadata API ───────────────────────────────────────────────
+
+class CustomAuthorPayload(BaseModel):
+	display_name: str
+	author_type: Optional[str] = "custom"
+	nexus_member_id: Optional[int] = None
+	avatar_base64: Optional[str] = None
+
+class CustomAuthorUpdatePayload(BaseModel):
+	display_name: Optional[str] = None
+	avatar_base64: Optional[str] = None
+	clear_avatar: bool = False
+
+@app.get("/api/authors/search")
+def search_authors(q: str = Query(...)) -> List[Dict[str, Any]]:
+	from core.db.db import get_connection, search_custom_authors
+	conn = get_connection()
+	try:
+		return search_custom_authors(conn, q, limit=20)
+	finally:
+		conn.close()
+
+@app.post("/api/authors")
+def create_author(payload: CustomAuthorPayload = Body(...)) -> Dict[str, Any]:
+	from core.db.db import get_connection, upsert_custom_author, get_custom_author
+	conn = get_connection()
+	try:
+		author_id = upsert_custom_author(
+			conn,
+			display_name=payload.display_name,
+			avatar_base64=payload.avatar_base64,
+			author_type=payload.author_type or "custom",
+			nexus_member_id=payload.nexus_member_id,
+		)
+		return get_custom_author(conn, author_id)
+	finally:
+		conn.close()
+
+@app.put("/api/authors/{author_id}")
+def update_author(author_id: int, payload: CustomAuthorUpdatePayload = Body(...)) -> Dict[str, Any]:
+	from core.db.db import get_connection, update_custom_author, get_custom_author
+	conn = get_connection()
+	try:
+		update_custom_author(
+			conn,
+			author_id,
+			display_name=payload.display_name,
+			avatar_base64=payload.avatar_base64,
+			clear_avatar=payload.clear_avatar,
+		)
+		return get_custom_author(conn, author_id)
+	finally:
+		conn.close()
+
+@app.delete("/api/mods/{mod_key}/author")
+def clear_author_for_mod(mod_key: str) -> Dict[str, Any]:
+	from core.db.db import get_connection, clear_mod_author
+	conn = get_connection()
+	try:
+		clear_mod_author(conn, mod_key)
+		return {"ok": True}
+	finally:
+		conn.close()
+
+@app.put("/api/mods/{mod_key}/author")
+def assign_author_to_mod(mod_key: str, payload: Dict[str, Any] = Body(...)) -> Dict[str, Any]:
+	from core.db.db import get_connection, set_mod_author
+	author_id = payload.get("author_id")
+	if not author_id:
+		raise HTTPException(status_code=400, detail="Missing author_id")
+	conn = get_connection()
+	try:
+		set_mod_author(conn, mod_key, int(author_id))
+		return {"ok": True}
+	finally:
+		conn.close()
+
+@app.get("/api/mods/{mod_key}/author")
+def get_author_for_mod(mod_key: str) -> Dict[str, Any]:
+	from core.db.db import get_connection, get_mod_metadata
+	conn = get_connection()
+	try:
+		meta = get_mod_metadata(conn, mod_key)
+		if not meta:
+			raise HTTPException(status_code=404, detail="No metadata found")
+		return meta
+	finally:
+		conn.close()

@@ -407,6 +407,7 @@ export function DownloadsPage({
                     onFavorite={onFavorite}
                     onOpenFilesTab={handleOpenFilesTab}
                     onAssignModId={onAssignModId}
+                    onRefresh={onRefresh}
                   />
                 ))}
               </div>

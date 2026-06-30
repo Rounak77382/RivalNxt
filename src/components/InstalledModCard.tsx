@@ -23,12 +23,14 @@ import {
   CheckCircle,
   Link,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Pencil
 } from "lucide-react";
 import type { Mod } from "./ModCard";
 import { computeTagDisplay } from "../lib/tagDisplay";
 import TagList from "./TagList";
 import { useNsfwFilter } from "./NSFWFilterProvider";
+import { AuthorPopover } from "./AuthorPopover";
 
 interface InstalledModCardProps {
   mod: Mod;
@@ -40,6 +42,7 @@ interface InstalledModCardProps {
   onFavorite: (modId: string) => void;
   onOpenFilesTab: (modId: string) => void;
   onAssignModId?: (modId: string) => void;
+  onRefresh?: () => void;
 }
 
 function InstalledModCardInner({
@@ -51,6 +54,7 @@ function InstalledModCardInner({
   onFavorite,
   onOpenFilesTab,
   onAssignModId,
+  onRefresh,
 }: InstalledModCardProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isUninstalling, setIsUninstalling] = useState(false);
@@ -92,9 +96,12 @@ function InstalledModCardInner({
 
   const avatarCandidates = Array.from(
     new Set(
-      [mod.authorAvatar, fallbackAvatarSrc, pngAvatarSrc].filter(
-        (value): value is string => Boolean(value),
-      ),
+      [
+        mod.customAuthorAvatar,
+        mod.authorAvatar,
+        fallbackAvatarSrc,
+        pngAvatarSrc,
+      ].filter((value): value is string => Boolean(value)),
     ),
   );
 
@@ -295,11 +302,6 @@ function InstalledModCardInner({
                   </Button>
                 </div>
               )}
-              {mod.renameStatus === "renamed" && (
-                <div className="mt-1 text-xs text-emerald-400 flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3" /> Renamed to canonical format
-                </div>
-              )}
               {mod.renameStatus === "failed" && (
                 <div className="mt-1 text-xs text-red-400 flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" /> {mod.renameError}
@@ -438,88 +440,99 @@ function InstalledModCardInner({
                   </Button>
                 </div>
 
-                <div
-                  className="flex items-center gap-2 mb-3"
-                  style={{
-                    visibility:
-                      !mod.backendModId || mod.backendModId <= 0
-                        ? "hidden"
-                        : "visible",
-                  }}
-                >
-                  <Avatar className="w-6 h-6">
-                    <AvatarImage
-                      src={authorAvatarSrc}
-                      alt={mod.author || "Unknown author"}
-                      referrerPolicy="no-referrer"
-                      data-avatar-index="0"
-                      data-avatar-candidates={avatarCandidates.join("|")}
-                      onError={(event: SyntheticEvent<HTMLImageElement>) => {
-                        const img = event.currentTarget;
-                        const candidates = (img.dataset.avatarCandidates || "")
-                          .split("|")
-                          .filter(Boolean);
-                        const currentIndex = Number(
-                          img.dataset.avatarIndex || "0",
-                        );
-                        const nextIndex = currentIndex + 1;
-                        if (nextIndex < candidates.length) {
-                          const nextSrc = candidates[nextIndex];
-                          img.dataset.avatarIndex = String(nextIndex);
-                          if (typeof window !== "undefined") {
-                            console.warn(
-                              "[avatar] fallback to next candidate",
-                              {
-                                modId: mod.id,
-                                name: mod.name,
-                                attempted: img.src,
-                                nextSrc,
-                                nextIndex,
-                              },
+                {(!mod.backendModId || mod.backendModId <= 0 || mod.needsManualModId) ? (
+                  <AuthorPopover 
+                    modKey={mod.modKey!} 
+                    currentAuthorName={mod.customAuthorName} 
+                    onSave={() => {
+                      // Call direct refresh prop first (fastest), then event as fallback
+                      if (onRefresh) {
+                        onRefresh();
+                      } else {
+                        window.dispatchEvent(new CustomEvent("refresh-downloads"));
+                      }
+                    }}
+                  >
+                    <div className="flex items-center gap-2 mb-2 cursor-pointer group rounded-sm p-1 -ml-1 hover:bg-accent hover:text-accent-foreground transition-colors max-w-max">
+                      <Avatar className="w-6 h-6">
+                        <AvatarImage
+                          src={authorAvatarSrc}
+                          alt={mod.customAuthorName || mod.author || "Unknown author"}
+                          referrerPolicy="no-referrer"
+                          data-avatar-index="0"
+                          data-avatar-candidates={avatarCandidates.join("|")}
+                          onError={(event: SyntheticEvent<HTMLImageElement>) => {
+                            const img = event.currentTarget;
+                            const candidates = (img.dataset.avatarCandidates || "")
+                              .split("|")
+                              .filter(Boolean);
+                            const currentIndex = Number(
+                              img.dataset.avatarIndex || "0",
                             );
-                          }
-                          img.src = nextSrc;
-                          return;
-                        }
-                        if (typeof window !== "undefined") {
-                          console.error(
-                            "[avatar] all avatar candidates failed",
-                            {
-                              modId: mod.id,
-                              name: mod.name,
-                              candidates,
-                            },
-                          );
-                        }
-                        img.dataset.avatarIndex = String(candidates.length);
-                        img.src = "";
-                      }}
-                    />
-                    <AvatarFallback className="text-xs">
-                      {(mod.author?.trim()?.[0] ?? "?").toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
+                            const nextIndex = currentIndex + 1;
+                            if (nextIndex < candidates.length) {
+                              const nextSrc = candidates[nextIndex];
+                              img.dataset.avatarIndex = String(nextIndex);
+                              img.src = nextSrc;
+                              return;
+                            }
+                            img.dataset.avatarIndex = String(candidates.length);
+                            img.src = "";
+                          }}
+                        />
+                        <AvatarFallback className="text-xs">
+                          {(mod.customAuthorName || mod.author || "?")
+                            .substring(0, 2)
+                            .toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-xs font-medium truncate flex-1 flex items-center gap-1 group-hover:text-primary">
+                        {mod.customAuthorName || mod.author || "Assign Author"}
+                        <Pencil className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity ml-1" />
+                      </span>
+                    </div>
+                  </AuthorPopover>
+                ) : (
                   <a
-                    className="flex items-center gap-2 cursor-pointer"
+                    className="flex items-center gap-2 mb-3 cursor-pointer hover:text-primary transition-colors"
                     onClick={async () => {
-                      const modUrl = `https://next.nexusmods.com/profile/${
-                        mod.author || "unknown"
-                      }`;
+                      const modUrl = `https://next.nexusmods.com/profile/${mod.author || "unknown"}`;
                       try {
-                        const { openInBrowser } =
-                          await import("../lib/tauri-utils");
+                        const { openInBrowser } = await import("../lib/tauri-utils");
                         await openInBrowser(modUrl);
                       } catch (error) {
                         console.error("Failed to open mod page:", error);
                       }
                     }}
                   >
-                    <span className="text-sm text-muted-foreground">
+                    <Avatar className="w-6 h-6">
+                      <AvatarImage
+                        src={authorAvatarSrc}
+                        alt={mod.author || "Unknown author"}
+                        referrerPolicy="no-referrer"
+                        data-avatar-index="0"
+                        data-avatar-candidates={avatarCandidates.join("|")}
+                        onError={(event: SyntheticEvent<HTMLImageElement>) => {
+                          const img = event.currentTarget;
+                          const candidates = (img.dataset.avatarCandidates || "").split("|").filter(Boolean);
+                          const currentIndex = Number(img.dataset.avatarIndex || "0");
+                          const nextIndex = currentIndex + 1;
+                          if (nextIndex < candidates.length) {
+                            const nextSrc = candidates[nextIndex];
+                            img.dataset.avatarIndex = String(nextIndex);
+                            img.src = nextSrc;
+                          }
+                        }}
+                      />
+                      <AvatarFallback className="text-xs">
+                        {(mod.author?.trim()?.[0] ?? "?").toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-xs text-muted-foreground font-medium truncate flex-1">
                       {mod.author || "Unknown author"}
                     </span>
                   </a>
-                </div>
-
+                )}
                 <TagList
                   tags={displayTags}
                   className="flex items-center gap-1 mb-2 overflow-hidden flex-nowrap"
@@ -619,12 +632,6 @@ function InstalledModCardInner({
                   {mod.updateError}
                 </div>
               )}
-
-              {mod.renameStatus === "renamed" && (
-                <div className="mt-2 text-xs text-emerald-400 flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3" /> Renamed to canonical format
-                </div>
-              )}
               {mod.renameStatus === "failed" && (
                 <div className="mt-2 text-xs text-red-400 flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" /> {mod.renameError}
@@ -657,10 +664,13 @@ function installedModPropsAreEqual(
     "name",
     "latestVersion",
     "updateError",
-    "needsManualModId",
     "manualModIdOverride",
     "renameStatus",
-    "renameError"
+    "renameError",
+    "customAuthorName",
+    "customAuthorAvatar",
+    "customAuthorType",
+    "customAuthorId",
   ];
   for (const k of keys) {
     // @ts-ignore

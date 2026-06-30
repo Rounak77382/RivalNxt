@@ -10,7 +10,7 @@ import { Badge } from "./ui/badge";
 import { toast } from "sonner";
 import { invokeReadTextFile } from "../lib/tauri-utils";
 import { computeRestoreDiff, type BackupMeta, type ModBackup } from "../lib/backupUtils";
-import { setActivePaks, scanActive, refreshConflicts, getLocalDownload, addModCustomTag, updateModDetails, uploadModImagesBase64 } from "../lib/api";
+import { setActivePaks, scanActive, refreshConflicts, getLocalDownload, addModCustomTag, updateModDetails, uploadModImagesBase64, createOrUpdateAuthor, assignModAuthor } from "../lib/api";
 import { Loader2, CheckCircle2, XCircle, RotateCcw } from "lucide-react";
 
 interface BackupRestoreModalProps {
@@ -193,6 +193,21 @@ export function BackupRestoreModal({ meta, installedMods, onComplete, onClose }:
           try {
             await uploadModImagesBase64(effectiveModId, backupEntry.customImages);
           } catch { /* best effort */ }
+        }
+
+        // Restore custom author
+        if (backupEntry?.customAuthorName && mod.modKey) {
+          try {
+            const author = await createOrUpdateAuthor({
+              display_name: backupEntry.customAuthorName,
+              author_type: (backupEntry.customAuthorType as any) || "custom",
+              avatar_base64: backupEntry.customAuthorAvatar,
+              // don't try to reuse customAuthorId as it is local DB specific
+            });
+            await assignModAuthor(mod.modKey, author.id);
+          } catch (err) {
+            console.error("Failed to restore custom author:", err);
+          }
         }
       }
 

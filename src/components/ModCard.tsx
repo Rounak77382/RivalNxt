@@ -31,6 +31,11 @@ export interface Mod {
   authorAvatar?: string;
   authorMemberId?: number;
   authorProfileUrl?: string;
+  customAuthorName?: string | null;
+  customAuthorAvatar?: string | null;  // base64 data URL
+  customAuthorType?: "nexus" | "custom" | null;
+  customAuthorId?: number | null;
+  modKey?: string;  // "mod:<id>" or "local:<id>"
   category: string;
   categoryTags?: string[];
   character?: string; // New field for character filtering
@@ -610,11 +615,6 @@ function ModCardInner({
               >
                 <Link className="w-3 h-3" /> Assign Mod ID
               </Button>
-            </div>
-          )}
-          {mod.renameStatus === "renamed" && (
-            <div className="px-4 pb-2 text-xs text-emerald-400 flex items-center gap-1">
-              <CheckCircle2 className="w-3 h-3" /> Renamed to canonical format
             </div>
           )}
           {mod.renameStatus === "failed" && (

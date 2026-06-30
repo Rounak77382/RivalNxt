@@ -1,16 +1,16 @@
-# Graph Report - RivalNxt  (2026-06-29)
+# Graph Report - RivalNxt  (2026-06-30)
 
 ## Corpus Check
-- 289 files · ~276,592 words
+- 292 files · ~278,945 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 3745 nodes · 9016 edges · 171 communities (156 shown, 15 thin omitted)
-- Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 100 edges (avg confidence: 0.69)
+- 3777 nodes · 9136 edges · 169 communities (155 shown, 14 thin omitted)
+- Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 104 edges (avg confidence: 0.68)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `83e7d2f8`
+- Built from commit: `a91b21ac`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -132,9 +132,11 @@
 - [[_COMMUNITY_Community 114|Community 114]]
 - [[_COMMUNITY_Community 115|Community 115]]
 - [[_COMMUNITY_Community 116|Community 116]]
+- [[_COMMUNITY_Community 117|Community 117]]
 - [[_COMMUNITY_Community 118|Community 118]]
 - [[_COMMUNITY_Community 119|Community 119]]
 - [[_COMMUNITY_Community 120|Community 120]]
+- [[_COMMUNITY_Community 121|Community 121]]
 - [[_COMMUNITY_Community 123|Community 123]]
 - [[_COMMUNITY_Community 126|Community 126]]
 - [[_COMMUNITY_Community 127|Community 127]]
@@ -143,7 +145,6 @@
 - [[_COMMUNITY_Community 131|Community 131]]
 - [[_COMMUNITY_Community 132|Community 132]]
 - [[_COMMUNITY_Community 133|Community 133]]
-- [[_COMMUNITY_Community 134|Community 134]]
 - [[_COMMUNITY_Community 135|Community 135]]
 - [[_COMMUNITY_Community 136|Community 136]]
 - [[_COMMUNITY_Community 137|Community 137]]
@@ -159,19 +160,16 @@
 - [[_COMMUNITY_Community 155|Community 155]]
 - [[_COMMUNITY_Community 156|Community 156]]
 - [[_COMMUNITY_Community 157|Community 157]]
-- [[_COMMUNITY_Community 158|Community 158]]
 - [[_COMMUNITY_Community 159|Community 159]]
 - [[_COMMUNITY_Community 160|Community 160]]
 - [[_COMMUNITY_Community 162|Community 162]]
 - [[_COMMUNITY_Community 164|Community 164]]
-- [[_COMMUNITY_Community 167|Community 167]]
-- [[_COMMUNITY_Community 170|Community 170]]
 - [[_COMMUNITY_Community 194|Community 194]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `cn()` - 226 edges
-2. `Result` - 87 edges
-3. `get_connection()` - 85 edges
+2. `get_connection()` - 91 edges
+3. `Result` - 87 edges
 4. `get_db()` - 60 edges
 5. `init_schema()` - 60 edges
 6. `Ok` - 60 edges
@@ -181,14 +179,14 @@
 10. `Result` - 32 edges
 
 ## Surprising Connections (you probably didn't know these)
+- `_collect_nexus_metadata_for_record()` --calls--> `filter_aggregate_payload()`  [EXTRACTED]
+  core/api/server.py → field_prefs.py
 - `AppSettings` --uses--> `AppSettings`  [INFERRED]
   core/ingestion/scan_mod_downloads.py → core/config/settings.py
 - `main()` --calls--> `reload_settings()`  [EXTRACTED]
   scripts/rebuild_sqlite.py → core/config/settings.py
-- `test_database_path()` --calls--> `_data_root()`  [EXTRACTED]
-  scripts/verify_dynamic_paths.py → core/db/db.py
-- `test_database_persistence()` --calls--> `_data_root()`  [EXTRACTED]
-  scripts/verify_universal_paths.py → core/db/db.py
+- `main()` --calls--> `configure()`  [EXTRACTED]
+  src-python/run_server.py → core/config/settings.py
 - `find_fallbacks()` --calls--> `get_connection()`  [EXTRACTED]
   scratch/find_all_variant_fallbacks.py → core/db/db.py
 
@@ -214,19 +212,19 @@
 - 1-file cycle: `src-tauri/src/rust-ue-tools/repak-rivals/retoc-rivals/src/asset_conversion.rs -> src-tauri/src/rust-ue-tools/repak-rivals/retoc-rivals/src/asset_conversion.rs`
 - 1-file cycle: `src-tauri/src/rust-ue-tools/repak-rivals/retoc-rivals/src/compact_binary.rs -> src-tauri/src/rust-ue-tools/repak-rivals/retoc-rivals/src/compact_binary.rs`
 
-## Communities (171 total, 15 thin omitted)
+## Communities (169 total, 14 thin omitted)
 
 ### Community 0 - "Community 0"
-Cohesion: 0.06
-Nodes (52): Force schema re-initialization on next get_db() call.          Use this after, reset_schema_cache(), _allow_direct_api_downloads(), _apply_settings_update(), _collect_settings_validation(), _create_settings_task_job(), debug_log(), _downscale_base64_image() (+44 more)
+Cohesion: 0.05
+Nodes (54): Force schema re-initialization on next get_db() call.          Use this after, reset_schema_cache(), _apply_settings_update(), assign_author_to_mod(), clear_author_for_mod(), _collect_settings_validation(), create_author(), CustomAuthorPayload (+46 more)
 
 ### Community 1 - "Community 1"
 Cohesion: 0.02
-Nodes (119): AccordionContent(), AccordionItem(), AccordionTrigger(), BreadcrumbEllipsis(), BreadcrumbItem(), BreadcrumbLink(), BreadcrumbList(), BreadcrumbPage() (+111 more)
+Nodes (118): AccordionContent(), AccordionItem(), AccordionTrigger(), BreadcrumbEllipsis(), BreadcrumbItem(), BreadcrumbLink(), BreadcrumbList(), BreadcrumbPage() (+110 more)
 
 ### Community 2 - "Community 2"
 Cohesion: 0.03
-Nodes (113): AddModModal(), AddModModalProps, HandoffFailure, NxmBackgroundListener(), NxmBackgroundListenerProps, ServerStartupOverlay(), ServerStartupOverlayProps, activateByName() (+105 more)
+Nodes (107): AddModModal(), AddModModalProps, HandoffFailure, NxmBackgroundListener(), NxmBackgroundListenerProps, activateByName(), addMod(), addModCustomTag() (+99 more)
 
 ### Community 3 - "Community 3"
 Cohesion: 0.06
@@ -245,8 +243,8 @@ Cohesion: 0.09
 Nodes (69): FExportMapEntry, FileWriterTrait, FObjectImport, FZenPackageContextMutableState, FZenPackageContextScriptObjects, KeyMutex, RwLockReadGuard, apply_standalone_dependencies_to_package() (+61 more)
 
 ### Community 7 - "Community 7"
-Cohesion: 0.33
-Nodes (4): AesKey, decrypt_chunks(), decrypt_data(), ValueError
+Cohesion: 0.07
+Nodes (36): ActiveModsViewProps, AuthorPopover(), AuthorPopoverProps, BrowsePageProps, CreateAuthorDialog(), CreateAuthorDialogProps, DownloadsPageProps, InstalledModCard (+28 more)
 
 ### Community 8 - "Community 8"
 Cohesion: 0.08
@@ -269,16 +267,16 @@ Cohesion: 0.09
 Nodes (57): ConvertedZenAssetBundle, FPackageImportReference, Arc, EExportCommandType, EIoContainerHeaderVersion, FLegacyPackageHeader, FPackageFileVersion, FPackageId (+49 more)
 
 ### Community 13 - "Community 13"
-Cohesion: 0.19
-Nodes (19): Any, Any, Path, _coerce_key(), collect_all_for_mod(), _get(), get_mod_by_md5(), get_mod_changelogs() (+11 more)
+Cohesion: 0.07
+Nodes (25): assign_mod_id(), _eager_resolve_mod_name(), Best-effort resolve the mod name and store it in the handoff metadata.  	Checks, Any, Any, Path, _coerce_key(), collect_all_for_mod() (+17 more)
 
 ### Community 14 - "Community 14"
 Cohesion: 0.09
 Nodes (29): ReadExt, bool, i16, i32, i64, i8, read_array(), read_string() (+21 more)
 
 ### Community 15 - "Community 15"
-Cohesion: 0.21
-Nodes (9): EIoContainerHeaderVersion, EIoStoreTocVersion, Option, Path, StoreEntry, String, get_package_name(), run_parse() (+1 more)
+Cohesion: 0.20
+Nodes (14): EIoContainerHeaderVersion, EIoStoreTocVersion, FNameMap, FPackageId, FSHAHash, Option, StoreEntry, String (+6 more)
 
 ### Community 16 - "Community 16"
 Cohesion: 0.08
@@ -286,23 +284,23 @@ Nodes (25): Default, Display, Err, Formatter, From, FromStr, Option, P (+17 more
 
 ### Community 17 - "Community 17"
 Cohesion: 0.06
-Nodes (46): AssignModIdModal(), AssignModIdModalProps, CheckForUpdatesModal(), CheckForUpdatesModalProps, ModStatus, ModUpdateStatus, CollectionsPageProps, DownloadsPageProps (+38 more)
+Nodes (48): AssignModIdModal(), AssignModIdModalProps, CheckForUpdatesModal(), CheckForUpdatesModalProps, ModStatus, ModUpdateStatus, GameUpdateModal(), GameUpdateModalProps (+40 more)
 
 ### Community 18 - "Community 18"
-Cohesion: 0.05
-Nodes (44): ActiveModsPanelProps, InstalledModCardInner(), LazyLoad(), LazyLoadProps, mockMods, ModCardInner(), ModCardProps, NavigationProps (+36 more)
+Cohesion: 0.06
+Nodes (40): buildFileTree(), collapseFileTree(), DownloadEntry, FileTreeNode, getDownloadDisplayName(), ModModalProps, PakGroup, toBasename() (+32 more)
 
 ### Community 19 - "Community 19"
-Cohesion: 0.08
-Nodes (39): BackupModal(), BackupModalProps, ModalView, RestorePreview, BackupRestoreModal(), BackupRestoreModalProps, RestoreStatus, CollectionsPage() (+31 more)
+Cohesion: 0.06
+Nodes (45): BackupModal(), BackupModalProps, ModalView, RestorePreview, BackupRestoreModal(), BackupRestoreModalProps, RestoreStatus, CollectionsPage() (+37 more)
 
 ### Community 20 - "Community 20"
-Cohesion: 0.13
-Nodes (12): Ok, from_hex(), to_hex(), write_compression_methods(), write_meta(), D, Err, Error (+4 more)
+Cohesion: 0.14
+Nodes (11): Ok, from_hex(), to_hex(), write_compression_methods(), write_meta(), D, Error, Result (+3 more)
 
 ### Community 21 - "Community 21"
-Cohesion: 0.08
-Nodes (42): activate_by_name(), _canonicalize_tokens(), deactivate_by_name(), disable_all_mods(), _get_scan_active_args(), _infer_character_tag(), _load_canonical_names(), _mods_folder_from_env() (+34 more)
+Cohesion: 0.07
+Nodes (53): activate_by_name(), add_mod(), copy_to_downloads(), deactivate_by_name(), delete_local_downloads_endpoint(), disable_all_mods(), _download_remote_archive(), _downloads_root_from_env() (+45 more)
 
 ### Community 22 - "Community 22"
 Cohesion: 0.04
@@ -313,16 +311,16 @@ Cohesion: 0.10
 Nodes (23): FPackageImportReference, FPackageObjectIndex, FPackageObjectIndexType, FScriptObjectEntry, test_gen_script_objects(), test_read_script_objects_new(), test_read_script_objects_old(), ZenScriptObjects (+15 more)
 
 ### Community 24 - "Community 24"
-Cohesion: 0.12
-Nodes (26): _task_rebuild_conflicts(), Apply .sql migration files in chronological order if not yet applied.      Mig, run_migrations(), Trigger character/skin extraction/ingestion and then run rebuild_tags.py., rebuild_all(), ensure_schema(), main(), parse_args() (+18 more)
+Cohesion: 0.09
+Nodes (24): ActiveModsPanelProps, NavigationProps, formatDelta(), NxmHandoffPrompt(), NxmHandoffPromptProps, TagListProps, LastNxmUrl, NxmProtocolStatus (+16 more)
 
 ### Community 25 - "Community 25"
-Cohesion: 0.09
-Nodes (40): ChunkId, EngineVersion, PackageStoreManifest, ProgressStyle, Action, action_to_legacy_assets(), action_to_legacy_inner(), action_to_legacy_shaders() (+32 more)
+Cohesion: 0.12
+Nodes (44): EIoChunkType, EngineVersion, PackageStoreManifest, ProgressStyle, action_dump_test(), action_get(), action_info(), action_list() (+36 more)
 
 ### Community 26 - "Community 26"
-Cohesion: 0.09
-Nodes (30): Config, CopyToDownloadsRequest, _download_archive_via_nxm(), DownloadCancelledError, DuplicateDownloadError, get_mod_changelogs_endpoint(), Raised when an ingest matches an existing local download., Raised when a download is stopped by a user cancel request. (+22 more)
+Cohesion: 0.07
+Nodes (42): Config, CopyToDownloadsRequest, _create_settings_task_job(), CustomAuthorUpdatePayload, _download_archive_via_nxm(), DownloadCancelledError, DuplicateDownloadError, get_mod_changelogs_endpoint() (+34 more)
 
 ### Community 27 - "Community 27"
 Cohesion: 0.17
@@ -333,24 +331,24 @@ Cohesion: 0.11
 Nodes (26): App, CreationContext, Event, FileTable, Frame, ModEntry, ModInstallRequest, Receiver (+18 more)
 
 ### Community 29 - "Community 29"
-Cohesion: 0.06
-Nodes (37): ActiveModsView(), ActiveModsViewProps, BrowsePageProps, DownloadsPage(), InstalledModCard, ModCard, SearchHeader(), SearchHeaderProps (+29 more)
+Cohesion: 0.04
+Nodes (55): ActiveModsView(), DownloadsPage(), calculateTotalSize(), categories, DownloadsSidebar(), DownloadsSidebarProps, NSFWFilterContext, NSFWFilterContextType (+47 more)
 
 ### Community 30 - "Community 30"
-Cohesion: 0.08
-Nodes (21): ReadableCtx, action_list(), ActionList, AesKey, EIoChunkType, FIoChunkId, FPackageId, lower_utf16_cityhash() (+13 more)
+Cohesion: 0.13
+Nodes (12): FIoChunkId, FIoStoreTocChunkInfo, TocSignatures, EIoStoreTocVersion, Eq, FSHAHash, H, Hash (+4 more)
 
 ### Community 31 - "Community 31"
-Cohesion: 0.13
-Nodes (31): EUnrealEngineObjectUE5Version, FGuid, FMappedName, FNameMap, FPackageId, FPackageObjectIndex, FSHAHash, Readable (+23 more)
+Cohesion: 0.10
+Nodes (24): FGuid, FMappedName, FPackageObjectIndex, Path, Readable, Writeable, EExportCommandType, EExportFilterFlags (+16 more)
 
 ### Community 32 - "Community 32"
 Cohesion: 0.06
 Nodes (34): app, security, windows, build, beforeBuildCommand, beforeDevCommand, devUrl, frontendDist (+26 more)
 
 ### Community 33 - "Community 33"
-Cohesion: 0.18
-Nodes (4): EUnrealEngineObjectUE4Version, Result, S, Self
+Cohesion: 0.19
+Nodes (4): Result, S, Self, FExportBundleHeader
 
 ### Community 34 - "Community 34"
 Cohesion: 0.15
@@ -361,24 +359,24 @@ Cohesion: 0.16
 Nodes (19): ArchiveType, PakUnpacker, ArchiveType, test_unpacker_creation(), Unpacker, AssetPath, Default, Option (+11 more)
 
 ### Community 36 - "Community 36"
-Cohesion: 0.14
-Nodes (18): IoStoreWriter, test_write_container(), EIoContainerHeaderVersion, EIoStoreTocVersion, File, FIoChunkId, FIoChunkIdRaw, FIoContainerHeader (+10 more)
+Cohesion: 0.12
+Nodes (20): BufWriter, IoStoreWriter, test_write_container(), align_usize(), EIoContainerHeaderVersion, EIoStoreTocVersion, File, FIoChunkId (+12 more)
 
 ### Community 37 - "Community 37"
-Cohesion: 0.15
-Nodes (26): EIoContainerFlags, FIoDirectoryIndexResource, FIoOffsetAndLength, FIoStoreTocCompressedBlockEntry, FIoStoreTocEntryMeta, Config, FIoStoreTocHeader, read_chunk_block_signatures() (+18 more)
+Cohesion: 0.11
+Nodes (25): ChunkId, EIoContainerFlags, FIoDirectoryIndexResource, FIoOffsetAndLength, FIoStoreTocCompressedBlockEntry, FIoStoreTocEntryMeta, ReadableCtx, Config (+17 more)
 
 ### Community 38 - "Community 38"
 Cohesion: 0.18
 Nodes (27): Action, ActionGet, ActionHashList, ActionInfo, ActionList, ActionPack, ActionUnpack, Args (+19 more)
 
 ### Community 39 - "Community 39"
-Cohesion: 0.07
-Nodes (44): Any, Path, clear_character_data(), has_character_data(), insert_characters(), insert_skins(), Check if the database has character data., Clear all character and skin data (cascades to skins via FK). (+36 more)
+Cohesion: 0.08
+Nodes (33): Any, Path, combine_extraction_data(), extract_character_names_from_locres(), extract_skin_ids_from_pak(), extract_skin_names_from_locres(), fetch_wiki_skin_names(), get_all_locres_strings() (+25 more)
 
 ### Community 40 - "Community 40"
-Cohesion: 0.12
-Nodes (25): cancel_nxm_handoff(), Signal an in-progress NXM download to stop.  	This sets a cancellation flag that, Any, NXMRequest, clear_handoff_failure(), delete_handoff(), get_handoff_failure_count(), get_handoff_or_404() (+17 more)
+Cohesion: 0.11
+Nodes (22): list_characters(), Get all characters with their skins., get_all_characters(), Get all characters with their skins.          Returns:         List of dicts, find_fallbacks(), List all skins in the database that currently have fallback names starting with, inspect_hela(), Inspect Hela (1024) skins in the SQLite database. (+14 more)
 
 ### Community 41 - "Community 41"
 Cohesion: 0.15
@@ -393,8 +391,8 @@ Cohesion: 0.19
 Nodes (13): Bound, PyModule, PyResult, PyAssetPath, PyUnpacker, rust_ue_tools(), AssetPath, HashMap (+5 more)
 
 ### Community 44 - "Community 44"
-Cohesion: 0.07
-Nodes (45): AppSettings, _candidate_data_dirs(), configure(), _default_data_dir(), load_settings(), _normalize_path(), Determine the default data directory with platform-specific logic. 	 	Uses platf, Reload settings from disk and update the global SETTINGS object. 	 	This is usef (+37 more)
+Cohesion: 0.08
+Nodes (47): AppSettings, _candidate_data_dirs(), configure(), _default_data_dir(), load_settings(), _normalize_path(), Determine the default data directory with platform-specific logic. 	 	Uses platf, Reload settings from disk and update the global SETTINGS object. 	 	This is usef (+39 more)
 
 ### Community 45 - "Community 45"
 Cohesion: 0.17
@@ -405,24 +403,24 @@ Cohesion: 0.16
 Nodes (16): E, FnMut, bool, BoolExt, R, ReadExt, W, WriteExt (+8 more)
 
 ### Community 47 - "Community 47"
-Cohesion: 0.14
-Nodes (20): FIoStoreTocEntryMetaFlags, IdFile, IdName, EIoContainerFlags, EIoStoreTocVersion, FGuid, FIoChunkHash, FIoChunkIdRaw (+12 more)
+Cohesion: 0.09
+Nodes (27): FIoStoreTocEntryMetaFlags, IdFile, IdName, AesKey, EIoContainerFlags, EIoStoreTocVersion, FGuid, FIoChunkHash (+19 more)
 
 ### Community 48 - "Community 48"
 Cohesion: 0.18
-Nodes (19): Path, datetime, update_local_download_active_paks(), discover_paks(), main(), _parse_iso(), _parse_json_array(), _ts() (+11 more)
+Nodes (21): Path, update_local_download_active_paks(), _load_env_mods_folder(), main(), parse_args(), Path, Resolve the ~mods folder from MARVEL_RIVALS_ROOT (env or .env)., _resolve_source_path() (+13 more)
 
 ### Community 49 - "Community 49"
 Cohesion: 0.14
 Nodes (15): PakUnpacker, AssetPath, Default, Option, P, P1, P2, PakUnpackOptions (+7 more)
 
 ### Community 50 - "Community 50"
-Cohesion: 0.21
-Nodes (15): Any, AppSettings, Path, build_download_row(), _enumerate_archive_contents(), _fetch_existing_download_rows(), ingest_single_file(), list_files_level_one_including_root() (+7 more)
+Cohesion: 0.14
+Nodes (26): Any, AppSettings, Path, Path, replace_local_downloads(), build_download_row(), _enumerate_archive_contents(), _fetch_existing_download_rows() (+18 more)
 
 ### Community 51 - "Community 51"
-Cohesion: 0.06
-Nodes (41): buildFileTree(), collapseFileTree(), DownloadEntry, FileTreeNode, getDownloadDisplayName(), ModModal(), ModModalProps, PakGroup (+33 more)
+Cohesion: 0.11
+Nodes (28): _task_rebuild_conflicts(), Apply .sql migration files in chronological order if not yet applied.      Mig, run_migrations(), extract_and_ingest(), Extract character and skin data from PAK files and ingest into database.     Th, Trigger character/skin extraction/ingestion and then run rebuild_tags.py., rebuild_all(), ensure_schema() (+20 more)
 
 ### Community 52 - "Community 52"
 Cohesion: 0.13
@@ -445,16 +443,16 @@ Cohesion: 0.20
 Nodes (18): RetocAction, Cli, Commands, ExtractArgs, handle_extract(), handle_retoc(), handle_retoc_info(), handle_retoc_list() (+10 more)
 
 ### Community 57 - "Community 57"
-Cohesion: 0.06
-Nodes (70): get_db(), Return a SQLite connection with schema guaranteed to exist., _clear_handoff_failure_by_file_id(), _coerce_int(), _complete_update_from_handoff(), delete_collection(), delete_mod_endpoint(), delete_mod_image() (+62 more)
+Cohesion: 0.05
+Nodes (66): get_db(), Return a SQLite connection with schema guaranteed to exist., _allow_direct_api_downloads(), cancel_nxm_handoff(), check_game_version(), _clear_handoff_failure_by_file_id(), _coerce_int(), _collect_nexus_metadata_for_record() (+58 more)
 
 ### Community 58 - "Community 58"
-Cohesion: 0.08
-Nodes (30): assign_mod_id(), _collect_nexus_metadata_for_record(), _load_nexus_prefs_cached(), _sync_mod_metadata(), _task_sync_nexus(), Any, Any, _extract_member_id() (+22 more)
+Cohesion: 0.13
+Nodes (31): _load_nexus_prefs_cached(), _lookup_mod_id_by_name(), _search_mod_id_remote(), _sync_mod_metadata(), _task_sync_nexus(), Any, Any, _extract_member_id() (+23 more)
 
 ### Community 59 - "Community 59"
-Cohesion: 0.12
-Nodes (13): FileReaderTrait, FSFileReader, PakFileReader, read_file_opt(), to_ue_path(), FilePool, P, PakReader (+5 more)
+Cohesion: 0.08
+Nodes (27): Action, Args, FileReaderTrait, FSFileReader, PackageTestMetadata, PakFileReader, ParallelPakWriter, read_file_opt() (+19 more)
 
 ### Community 60 - "Community 60"
 Cohesion: 0.13
@@ -466,39 +464,39 @@ Nodes (19): extract_pak_asset_map_from_folder(), extract_uasset_paths_from_archi
 
 ### Community 62 - "Community 62"
 Cohesion: 0.16
-Nodes (4): FIoStoreTocChunkInfo, align_u64(), FIoOffsetAndLength, FIoStoreTocCompressedBlockEntry
+Nodes (5): C, FIoStoreTocChunkInfo, align_u64(), FIoOffsetAndLength, FIoStoreTocCompressedBlockEntry
 
 ### Community 63 - "Community 63"
-Cohesion: 0.10
-Nodes (29): _ensure_schema_initialised(), Shared dependencies and environment checks for the API layer., Ensure critical Nexus hosts resolve before accepting requests., verify_required_dns_hosts(), get_connection(), init_schema(), _init_views(), Rebuild materialized conflict tables.      ``active_only`` controls which snap (+21 more)
+Cohesion: 0.09
+Nodes (34): _ensure_schema_initialised(), Shared dependencies and environment checks for the API layer., Ensure critical Nexus hosts resolve before accepting requests., verify_required_dns_hosts(), _load_canonical_names(), Load character names from database instead of character_ids.json., get_connection(), init_schema() (+26 more)
 
 ### Community 64 - "Community 64"
 Cohesion: 0.10
 Nodes (19): compilerOptions, allowImportingTsExtensions, isolatedModules, jsx, lib, module, moduleResolution, noEmit (+11 more)
 
 ### Community 65 - "Community 65"
-Cohesion: 0.19
-Nodes (10): FIoDirectoryIndexEntry, FIoFileIndexEntry, IdDir, ActionGet, ChunkId, FIoDirectoryIndexResource, test_dir(), F (+2 more)
+Cohesion: 0.20
+Nodes (9): FIoDirectoryIndexEntry, FIoFileIndexEntry, IdDir, ChunkId, FIoDirectoryIndexResource, test_dir(), F, FIoChunkIdRaw (+1 more)
 
 ### Community 66 - "Community 66"
 Cohesion: 0.17
 Nodes (14): FileEntry, FileTable, show_ctx_menu(), Default, FileEntry, Option, PakReader, Path (+6 more)
 
 ### Community 67 - "Community 67"
-Cohesion: 0.18
-Nodes (17): _author_avatar_url(), check_mod_update(), _extract_member_id(), _get_actually_active_filenames(), get_local_download(), get_mod_details(), get_pak_version_status_endpoint(), list_downloads() (+9 more)
+Cohesion: 0.13
+Nodes (21): _author_avatar_url(), _canonicalize_tokens(), check_mod_update(), _extract_member_id(), _get_actually_active_filenames(), get_local_download(), get_mod_details(), get_pak_version_status_endpoint() (+13 more)
 
 ### Community 68 - "Community 68"
-Cohesion: 0.11
-Nodes (25): add_mod_custom_tag(), AddCustomTagRequest, Character, CharacterSkin, CustomTagItem, get_all_custom_tags(), get_mod_custom_tags(), list_character_skins() (+17 more)
+Cohesion: 0.10
+Nodes (22): add_mod_custom_tag(), AddCustomTagRequest, Character, CharacterSkin, CustomTagItem, get_all_custom_tags(), get_mod_custom_tags(), list_character_skins() (+14 more)
 
 ### Community 69 - "Community 69"
 Cohesion: 0.23
 Nodes (9): DecodeError, FromHexError, UeToolError, Error, From, P, S, Self (+1 more)
 
 ### Community 70 - "Community 70"
-Cohesion: 0.26
-Nodes (20): _load_download_rows_from_json(), _load_env(), main(), _maybe_reset_db(), parse_args(), Any, Logger, Namespace (+12 more)
+Cohesion: 0.12
+Nodes (27): delete_nxm_handoff(), get_nxm_handoff(), list_nxm_handoffs(), submit_nxm_handoff(), Any, NXMRequest, clear_handoff_failure(), delete_handoff() (+19 more)
 
 ### Community 71 - "Community 71"
 Cohesion: 0.67
@@ -513,12 +511,12 @@ Cohesion: 0.20
 Nodes (10): LogProvider, Logger, PatchFixer, PatchFixer<LogProvider>, Error, PathBuf, R, Result (+2 more)
 
 ### Community 74 - "Community 74"
-Cohesion: 0.09
-Nodes (35): add_mod(), check_game_version(), copy_to_downloads(), delete_local_downloads_endpoint(), _download_remote_archive(), _downloads_root_from_env(), downloads_summary(), _ensure_dir() (+27 more)
+Cohesion: 0.26
+Nodes (20): _load_download_rows_from_json(), _load_env(), main(), _maybe_reset_db(), parse_args(), Any, Logger, Namespace (+12 more)
 
 ### Community 75 - "Community 75"
-Cohesion: 0.13
-Nodes (15): definitions, Identifier, Number, PermissionEntry, Target, Value, oneOf, anyOf (+7 more)
+Cohesion: 0.15
+Nodes (13): definitions, Identifier, Number, PermissionEntry, Target, description, oneOf, anyOf (+5 more)
 
 ### Community 76 - "Community 76"
 Cohesion: 0.17
@@ -537,8 +535,8 @@ Cohesion: 0.18
 Nodes (11): properties, description, type, default, description, type, identifier, local (+3 more)
 
 ### Community 80 - "Community 80"
-Cohesion: 0.67
-Nodes (5): backup_db(), get_mtime_iso_for_path(), main(), Path, resolve_candidates()
+Cohesion: 0.13
+Nodes (18): _fetch_collection_from_nexus(), get_collection(), import_collection(), import_collection_raw(), _parse_collection_nxm(), Extract (slug, revision_num) from an nxm://game/collections/{slug}/revisions/{N}, Fetch collection data from Nexus GraphQL API., Insert or replace a collection and its mod files. Returns collection DB id. (+10 more)
 
 ### Community 81 - "Community 81"
 Cohesion: 0.26
@@ -553,16 +551,16 @@ Cohesion: 0.19
 Nodes (13): Carousel(), CarouselApi, CarouselContent(), CarouselContext, CarouselContextProps, CarouselItem(), CarouselNext(), CarouselOptions (+5 more)
 
 ### Community 84 - "Community 84"
-Cohesion: 0.33
-Nodes (6): Update mod details (description only for now)., update_mod_details(), UpdateModDetailsPayload, bbcode_to_html(), _get_parser(), Convert BBCode text to HTML using the centralized parser logic.
+Cohesion: 0.14
+Nodes (13): SearchHeaderProps, DropdownMenu(), DropdownMenuCheckboxItem(), DropdownMenuContent(), DropdownMenuItem(), DropdownMenuLabel(), DropdownMenuRadioGroup(), DropdownMenuRadioItem() (+5 more)
 
 ### Community 85 - "Community 85"
 Cohesion: 0.19
 Nodes (12): ChunkData, Op, OpLog, PackageStoreEntry, ChunkData, Op, OpLog, PackageStoreEntry (+4 more)
 
 ### Community 86 - "Community 86"
-Cohesion: 0.15
-Nodes (20): BufWriter, install_mods_in_viewport(), convert_directory_to_iostore(), create_repak_from_pak(), extract_pak_to_dir(), repak_dir(), AtomicI32, Error (+12 more)
+Cohesion: 0.53
+Nodes (8): create_repak_from_pak(), extract_pak_to_dir(), repak_dir(), AtomicI32, Error, InstallableMod, PathBuf, Result
 
 ### Community 87 - "Community 87"
 Cohesion: 0.18
@@ -581,12 +579,12 @@ Cohesion: 0.20
 Nodes (6): EIoContainerHeaderVersion, EIoStoreTocVersion, EUnrealEngineObjectUE4Version, EUnrealEngineObjectUE5Version, FPackageFileVersion, EngineVersion
 
 ### Community 91 - "Community 91"
-Cohesion: 0.33
-Nodes (10): getIconPath(), getIconsDirectoryPath(), getIconUrl(), getRoamingDirectoryPath(), getUsername(), ICON_CONFIGS, IconConfig, initializeIcons() (+2 more)
+Cohesion: 0.28
+Nodes (8): _ensure_repo_on_path(), main(), _parse_args(), Namespace, Path, Wrapper entry point used by Tauri to start the FastAPI backend., Return the repository root (already added to sys.path at module load)., Parse command-line arguments for backend configuration.
 
 ### Community 92 - "Community 92"
-Cohesion: 0.16
-Nodes (25): extract_pak_asset_map_from_folder(), Return mapping of pak_name -> asset paths for content already extracted to a fol, Connection, bulk_upsert_pak_assets(), next_local_download_id(), Resolve a created_at timestamp preferring supplied hints over filesystem mtimes., resolve_created_at(), upsert_mod_pak() (+17 more)
+Cohesion: 0.07
+Nodes (56): extract_pak_asset_map_from_folder(), Return mapping of pak_name -> asset paths for content already extracted to a fol, Connection, Path, bulk_upsert_pak_assets(), clear_character_data(), delete_local_downloads(), get_character_names() (+48 more)
 
 ### Community 93 - "Community 93"
 Cohesion: 0.35
@@ -601,16 +599,16 @@ Cohesion: 0.36
 Nodes (10): Cli, Commands, handle_extract(), handle_info(), handle_list(), main(), Commands, Option (+2 more)
 
 ### Community 96 - "Community 96"
-Cohesion: 0.11
-Nodes (22): list_characters(), Get all characters with their skins., get_all_characters(), Get all characters with their skins.          Returns:         List of dicts, find_fallbacks(), List all skins in the database that currently have fallback names starting with, inspect_hela(), Inspect Hela (1024) skins in the SQLite database. (+14 more)
+Cohesion: 0.47
+Nodes (5): install_mods_in_viewport(), AtomicBool, AtomicI32, InstallableMod, Path
 
 ### Community 97 - "Community 97"
 Cohesion: 0.18
 Nodes (11): devDependencies, jsdom, @tauri-apps/api, @tauri-apps/cli, @tauri-apps/plugin-shell, @types/node, @types/react, @types/react-dom (+3 more)
 
 ### Community 98 - "Community 98"
-Cohesion: 0.18
-Nodes (11): properties, description, type, default, description, type, identifier, local (+3 more)
+Cohesion: 0.14
+Nodes (14): description, properties, required, type, Capability, type, default, description (+6 more)
 
 ### Community 99 - "Community 99"
 Cohesion: 0.22
@@ -645,12 +643,12 @@ Cohesion: 0.20
 Nodes (9): fs, nexusApiContent, nexusApiPath, packageJson, path, serverContent, serverPath, tauriConfig (+1 more)
 
 ### Community 107 - "Community 107"
-Cohesion: 0.28
-Nodes (15): C, EIoChunkType, action_dump_test(), action_get(), action_info(), action_manifest(), action_pack_raw(), action_to_legacy() (+7 more)
+Cohesion: 0.50
+Nodes (4): description, required, type, Capability
 
 ### Community 108 - "Community 108"
 Cohesion: 0.67
-Nodes (3): ShellScopeEntryAllowedArg, anyOf, description
+Nodes (3): Value, anyOf, description
 
 ### Community 109 - "Community 109"
 Cohesion: 0.31
@@ -684,6 +682,10 @@ Nodes (8): description, properties, required, type, CapabilityRemote, urls, desc
 Cohesion: 0.25
 Nodes (8): description, properties, required, type, CapabilityRemote, urls, description, type
 
+### Community 117 - "Community 117"
+Cohesion: 0.33
+Nodes (3): EUnrealEngineObjectUE4Version, EUnrealEngineObjectUE5Version, FPackageFileVersion
+
 ### Community 118 - "Community 118"
 Cohesion: 0.52
 Nodes (6): _load_env_value(), main(), normalize_paths(), parse_args(), Path, _resolve_downloads_root()
@@ -695,6 +697,10 @@ Nodes (5): Err, FromStr, Result, Self, AesKey
 ### Community 120 - "Community 120"
 Cohesion: 0.33
 Nodes (5): description, identifier, permissions, $schema, windows
+
+### Community 121 - "Community 121"
+Cohesion: 0.67
+Nodes (3): ShellScopeEntryAllowedArg, anyOf, description
 
 ### Community 123 - "Community 123"
 Cohesion: 0.33
@@ -713,11 +719,11 @@ Cohesion: 0.40
 Nodes (4): anyOf, description, $schema, title
 
 ### Community 130 - "Community 130"
-Cohesion: 0.06
-Nodes (37): EMPTY_VALUES, GetStartedDialog(), GetStartedDialogProps, Stage, WizardStep, EMPTY_SETTINGS, SettingsDialog(), SettingsDialogProps (+29 more)
+Cohesion: 0.20
+Nodes (11): FormControl(), FormDescription(), FormFieldContext, FormFieldContextValue, FormItem(), FormItemContext, FormItemContextValue, FormLabel() (+3 more)
 
 ### Community 131 - "Community 131"
-Cohesion: 0.25
+Cohesion: 0.27
 Nodes (8): extract_asset_paths_from_zip_py(), extract_pak_asset_map_from_folder_py(), extract_uasset_paths_from_zip(), _pak_map_worker(), Extract asset paths from a ZIP file using PyO3 Rust library.      This function, PyO3 function wrapper for extracting asset paths from ZIP, PyO3 function wrapper for extracting pak asset map from folder, Run in a child process so Rust panics don't kill the parent.      Must be at mod
 
 ### Community 132 - "Community 132"
@@ -748,41 +754,29 @@ Nodes (3): ShellScopeEntryAllowedArg, anyOf, description
 Cohesion: 0.67
 Nodes (3): ShellScopeEntryAllowedArgs, anyOf, description
 
-### Community 158 - "Community 158"
-Cohesion: 0.50
-Nodes (4): description, required, type, Capability
-
-### Community 167 - "Community 167"
-Cohesion: 0.11
-Nodes (28): Path, Path, bbcode_to_html(), _data_root(), delete_local_downloads(), get_character_names(), _get_mods_folder_for_deletion(), _normalize_datetime_hint() (+20 more)
-
-### Community 170 - "Community 170"
-Cohesion: 0.50
-Nodes (4): description, required, type, Capability
-
 ### Community 194 - "Community 194"
-Cohesion: 0.53
-Nodes (5): PanicHookInfo, custom_panic(), free_console(), is_console(), main()
+Cohesion: 0.22
+Nodes (11): convert_directory_to_iostore(), PanicHookInfo, custom_panic(), free_console(), is_console(), AtomicI32, Error, InstallableMod (+3 more)
 
 ## Knowledge Gaps
-- **647 isolated node(s):** `build_local.sh script`, `Cursor`, `Path`, `Any`, `Path` (+642 more)
+- **649 isolated node(s):** `build_local.sh script`, `Cursor`, `Path`, `Any`, `Path` (+644 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **15 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **14 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `collect_files()` connect `Community 81` to `Community 38`, `Community 45`, `Community 86`?**
-  _High betweenness centrality (0.035) - this node is a cross-community bridge._
+- **Why does `collect_files()` connect `Community 81` to `Community 38`, `Community 194`, `Community 45`, `Community 86`?**
+  _High betweenness centrality (0.039) - this node is a cross-community bridge._
 - **Why does `pack()` connect `Community 38` to `Community 81`?**
-  _High betweenness centrality (0.034) - this node is a cross-community bridge._
+  _High betweenness centrality (0.038) - this node is a cross-community bridge._
 - **Why does `BTreeMap` connect `Community 4` to `Community 38`?**
-  _High betweenness centrality (0.034) - this node is a cross-community bridge._
+  _High betweenness centrality (0.038) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `Any` (e.g. with `NXMParseError` and `NXMRequest`) actually correct?**
   _`Any` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `build_local.sh script`, `API endpoints for Marvel Rivals character and skin data.`, `Get all characters with their skins.` to the rest of the system?**
-  _857 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _867 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Community 0` be split into smaller, more focused modules?**
-  _Cohesion score 0.05565638233514821 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.05254237288135593 - nodes in this community are weakly interconnected._
 - **Should `Community 1` be split into smaller, more focused modules?**
-  _Cohesion score 0.02187192118226601 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.022566219470244238 - nodes in this community are weakly interconnected._

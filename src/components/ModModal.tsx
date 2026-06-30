@@ -16,6 +16,7 @@ import {
   AlertDialogTitle,
 } from "./ui/alert-dialog";
 import { Button } from "./ui/button";
+import { AuthorPopover } from "./AuthorPopover";
 import { Badge } from "./ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Separator } from "./ui/separator";
@@ -1677,9 +1678,44 @@ export function ModModal({
                 </p>
 
                 <div className="flex items-center gap-3 mb-3">
-                  {mod.backendModId != null && mod.backendModId > 0 && (
+                  {(!mod.backendModId || mod.backendModId <= 0 || mod.needsManualModId) ? (
+                    <AuthorPopover 
+                      modKey={mod.modKey!} 
+                      currentAuthorName={mod.customAuthorName} 
+                      onSave={() => {
+                        if (onRefresh) {
+                          onRefresh();
+                        } else {
+                          window.dispatchEvent(new CustomEvent("refresh-downloads"));
+                        }
+                      }}
+                    >
+                      <div className="flex items-center gap-2 cursor-pointer hover:bg-accent hover:text-accent-foreground p-1 -ml-1 rounded-sm transition-colors group">
+                        <Avatar className="w-6 h-6">
+                          <AvatarImage
+                            src={mod.customAuthorAvatar || mod.authorAvatar || undefined}
+                            alt={mod.customAuthorName || mod.author || "Unknown author"}
+                            referrerPolicy="no-referrer"
+                            onError={(event: SyntheticEvent<HTMLImageElement>) => {
+                              const img = event.currentTarget;
+                              if (img.dataset.fallbackApplied === "1") return;
+                              img.dataset.fallbackApplied = "1";
+                              img.src = "";
+                            }}
+                          />
+                          <AvatarFallback className="text-xs">
+                            {(mod.customAuthorName || mod.author || "?").substring(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="font-medium flex items-center gap-1 group-hover:text-primary">
+                          {mod.customAuthorName || mod.author || "Assign Author"}
+                          <Pencil className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity ml-1" />
+                        </span>
+                      </div>
+                    </AuthorPopover>
+                  ) : (
                     <a
-                      className="flex items-center gap-2 cursor-pointer"
+                      className="flex items-center gap-2 cursor-pointer hover:text-primary transition-colors"
                       onClick={async () => {
                         const modUrl = `https://next.nexusmods.com/profile/${
                           details?.mod?.author || mod.author || "unknown"
@@ -1698,13 +1734,9 @@ export function ModModal({
                           src={mod.authorAvatar || undefined}
                           alt={mod.author || "Unknown author"}
                           referrerPolicy="no-referrer"
-                          onError={(
-                            event: SyntheticEvent<HTMLImageElement>,
-                          ) => {
+                          onError={(event: SyntheticEvent<HTMLImageElement>) => {
                             const img = event.currentTarget;
-                            if (img.dataset.fallbackApplied === "1") {
-                              return;
-                            }
+                            if (img.dataset.fallbackApplied === "1") return;
                             img.dataset.fallbackApplied = "1";
                             img.src = "";
                           }}
@@ -1819,11 +1851,6 @@ export function ModModal({
                   >
                     <Link className="w-4 h-4" /> Assign Mod ID
                   </Button>
-                )}
-                {mod.renameStatus === "renamed" && (
-                  <div className="text-xs text-emerald-400 flex items-center gap-1 justify-center py-1">
-                    <CheckCircle2 className="w-3 h-3" /> Renamed to canonical format
-                  </div>
                 )}
                 {mod.renameStatus === "failed" && (
                   <div className="text-xs text-red-400 flex items-center gap-1 justify-center py-1">
