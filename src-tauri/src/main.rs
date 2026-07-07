@@ -1377,6 +1377,139 @@ async fn launch_backend(app_handle: AppHandle, backend_state: BackendChild) -> R
     Ok(())
 }
 
+// ─── Crash Detector ──────────────────────────────────────────────────────────
+
+/// Holds the last-seen crash context path so we don't re-emit on restart.
+#[derive(Clone, Default)]
+struct CrashWatcherState(Arc<Mutex<Option<std::path::PathBuf>>>);
+
+/// One-shot command: reads the content of a CrashContext.runtime-xml file.
+#[tauri::command]
+fn read_crash_context(path: String) -> Result<String, String> {
+    std::fs::read_to_string(&path)
+        .map_err(|e| format!("Failed to read crash context '{}': {}", path, e))
+}
+
+/// Starts a background thread that polls the Marvel Rivals crash directory for
+/// new CrashContext.runtime-xml files. Emits a `crash-detected` Tauri event
+/// with the XML content when a new crash (newer than app start) is found.
+#[tauri::command]
+fn watch_crash_dir(app_handle: AppHandle, state: tauri::State<CrashWatcherState>) {
+    let last_seen = state.0.clone();
+    let app = app_handle.clone();
+    let app_start = std::time::SystemTime::now();
+
+    std::thread::spawn(move || {
+        // Determine %LOCALAPPDATA%\Marvel\Saved\Crashes
+        let base = match std::env::var("LOCALAPPDATA") {
+            Ok(p) => std::path::PathBuf::from(p),
+            Err(_) => {
+                eprintln!("[CrashWatcher] LOCALAPPDATA not set, watcher disabled");
+                return;
+            }
+        };
+        let crashes_dir = base.join("Marvel").join("Saved").join("Crashes");
+
+        println!("[CrashWatcher] Watching: {}", crashes_dir.display());
+
+        let mut last_processed_time: u64 = 0;
+        let config_dir = base.join("MarvelRivalsModManager");
+        let marker_file = config_dir.join(".last_crash_time");
+
+        // Read saved timestamp
+        if let Ok(content) = std::fs::read_to_string(&marker_file) {
+            if let Ok(ts) = content.trim().parse::<u64>() {
+                last_processed_time = ts;
+            }
+        }
+        
+        // If it's the first time running this, default to the current time minus 2 hours
+        // so we don't prompt for ancient crashes, but we do catch recent unhandled ones.
+        if last_processed_time == 0 {
+            let now = std::time::SystemTime::now();
+            let two_hours_ago = now - std::time::Duration::from_secs(2 * 3600);
+            if let Ok(dur) = two_hours_ago.duration_since(std::time::UNIX_EPOCH) {
+                last_processed_time = dur.as_secs();
+            }
+        }
+
+        loop {
+            if crashes_dir.is_dir() {
+                let mut newest_xml = None;
+                let mut newest_time = 0;
+
+                // Find the newest crash file
+                if let Ok(entries) = std::fs::read_dir(&crashes_dir) {
+                    for entry in entries.flatten() {
+                        let sub = entry.path();
+                        if !sub.is_dir() { continue; }
+                        let xml_path = sub.join("CrashContext.runtime-xml");
+                        if !xml_path.is_file() { continue; }
+
+                        if let Ok(meta) = std::fs::metadata(&xml_path) {
+                            if let Ok(modified) = meta.modified() {
+                                if let Ok(dur) = modified.duration_since(std::time::UNIX_EPOCH) {
+                                    let secs = dur.as_secs();
+                                    if secs > newest_time {
+                                        newest_time = secs;
+                                        newest_xml = Some(xml_path);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // If the newest file is strictly newer than our last processed time
+                if newest_time > last_processed_time {
+                    if let Some(xml_path) = newest_xml {
+                        println!("[CrashWatcher] New crash detected: {}", xml_path.display());
+                        
+                        // Check we haven't already emitted this crash in the current session
+                        let already_seen = {
+                            let guard = last_seen.lock().unwrap();
+                            guard.as_deref() == Some(xml_path.as_path())
+                        };
+
+                        if !already_seen {
+                            match std::fs::read_to_string(&xml_path) {
+                                Ok(content) => {
+                                    // Mark as seen in memory
+                                    {
+                                        let mut guard = last_seen.lock().unwrap();
+                                        *guard = Some(xml_path.clone());
+                                    }
+                                    
+                                    // Save the new timestamp to disk
+                                    let _ = std::fs::create_dir_all(&config_dir);
+                                    let _ = std::fs::write(&marker_file, newest_time.to_string());
+                                    last_processed_time = newest_time;
+
+                                    // Emit to all windows
+                                    use tauri::Emitter;
+                                    if let Err(e) = app.emit("crash-detected", content) {
+                                        eprintln!("[CrashWatcher] Failed to emit event: {}", e);
+                                    }
+                                }
+                                Err(e) => {
+                                    eprintln!("[CrashWatcher] Failed to read {}: {}", xml_path.display(), e);
+                                }
+                            }
+                        } else {
+                            // If it's already seen in this session, update our loop tracker
+                            last_processed_time = newest_time;
+                        }
+                    }
+                }
+            }
+
+            std::thread::sleep(std::time::Duration::from_secs(5));
+        }
+    });
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+
 fn main() {
     let port = get_available_port().unwrap_or(8000);
     println!("[Backend Config] dynamically assigned port: {}", port);
@@ -1412,6 +1545,7 @@ fn main() {
         }))
         .manage(BackendChild::new())
         .manage(BackendConfig { port })
+        .manage(CrashWatcherState::default())
         .invoke_handler(tauri::generate_handler![
             get_executable_path,
             handle_nxm_url,
@@ -1435,7 +1569,9 @@ fn main() {
             validate_ue_file,
             save_file_dialog,
             save_text_file,
-            read_text_file
+            read_text_file,
+            watch_crash_dir,
+            read_crash_context
         ])
         .setup(|app| {
             // CRITICAL FIX: Register NXM protocol with proper quoting on Windows

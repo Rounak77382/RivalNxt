@@ -42,7 +42,6 @@ import {
   RefreshCw,
   AlertTriangle,
   Link,
-  CheckCircle2,
   AlertCircle
 } from "lucide-react";
 import type { Mod } from "./ModCard";

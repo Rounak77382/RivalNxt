@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 // AppHeader migrated into TabHeader; remove separate AppHeader import
 import { GetStartedDialog } from "./components/GetStartedDialog";
 import {
@@ -15,6 +17,8 @@ import { AssignModIdModal } from "./components/AssignModIdModal";
 import { ServerStartupOverlay } from "./components/ServerStartupOverlay";
 import { NxmBackgroundListener } from "./components/NxmBackgroundListener";
 import { GameUpdateModal, type GameUpdateStep, type GameUpdatePhase } from "./components/GameUpdateModal";
+import { CrashDetectorModal } from "./components/CrashDetectorModal";
+import { parseCrashContext, type CrashInfo } from "./lib/crashParser";
 import { toast } from "sonner";
 import { Toaster } from "./components/ui/sonner";
 import { ThemeProvider } from "./components/ThemeProvider";
@@ -39,8 +43,10 @@ import {
   disableAllMods,
   scanActive,
   getLocalDownload,
+  getPakAssets,
   ApiError,
   type ApiDownload,
+  type ApiPakAsset,
   type ApiNxmHandoffSummary,
   type ApiNxmPreview,
   getSettings,
@@ -186,6 +192,13 @@ export default function App() {
   const [backupOpen, setBackupOpen] = useState(false);
   const [collectionsCount, setCollectionsCount] = useState(0);
   const [backupsRefreshTrigger, setBackupsRefreshTrigger] = useState(0);
+
+  // ── Crash Detector state ──────────────────────────────────────────────
+  const [crashDetectorOpen, setCrashDetectorOpen] = useState(false);
+  const [crashInfo, setCrashInfo] = useState<CrashInfo | null>(null);
+  const [crashAllDownloads, setCrashAllDownloads] = useState<ApiDownload[]>([]);
+  const [crashPakAssets, setCrashPakAssets] = useState<ApiPakAsset[]>([]);
+  const crashWatcherStartedRef = useRef(false);
 
   const backendReady = backendStatus.state === "ready";
 
@@ -468,6 +481,54 @@ export default function App() {
     return () => window.clearInterval(interval);
   }, [backendReady, fetchCollectionsCount]);
 
+  // ── Crash Detector: start watcher & listen for events ────────────────
+  useEffect(() => {
+    if (!backendReady) return;
+    if (crashWatcherStartedRef.current) return;
+    crashWatcherStartedRef.current = true;
+
+    // Start the Rust background crash-dir watcher
+    invoke("watch_crash_dir").catch((e: unknown) =>
+      console.warn("[CrashDetector] Failed to start watcher:", e)
+    );
+
+    let unlisten: (() => void) | null = null;
+
+    listen<string>("crash-detected", async (event) => {
+      console.log("[CrashDetector] crash-detected event received");
+      const xmlContent = event.payload;
+      const parsed = parseCrashContext(xmlContent);
+
+      // Fetch all downloads so the modal can show active mods
+      let downloads: ApiDownload[] = [];
+      let pakAssets: ApiPakAsset[] = [];
+      try {
+        downloads = await listDownloads();
+        const activeIds = downloads
+          .filter((d) => d.active_paks && d.active_paks.length > 0)
+          .map((d) => d.id);
+        if (activeIds.length > 0) {
+          pakAssets = await getPakAssets(activeIds);
+        }
+      } catch (e) {
+        console.warn("[CrashDetector] Failed to fetch downloads/assets:", e);
+      }
+
+      setCrashInfo(parsed);
+      setCrashAllDownloads(downloads);
+      setCrashPakAssets(pakAssets);
+      setCrashDetectorOpen(true);
+    }).then((fn) => {
+      unlisten = fn;
+    }).catch((e: unknown) =>
+      console.warn("[CrashDetector] Failed to listen for crash events:", e)
+    );
+
+    return () => {
+      unlisten?.();
+    };
+  }, [backendReady]);
+
   useEffect(() => {
     if (!backendReady) {
       return undefined;
@@ -701,15 +762,6 @@ export default function App() {
   // Get counts for header
   const installedMods = mods.filter((mod) => mod.isInstalled);
   const activeMods = installedMods.filter((mod) => mod.isActive !== false);
-
-  const normalizeVersionForCheck = (ver: string | undefined | null): string => {
-    if (!ver) return "";
-    let cleaned = ver.replace(/\.\d{9,11}$/, "").toLowerCase();
-    if (!cleaned.startsWith("v")) cleaned = "v" + cleaned;
-    cleaned = cleaned.replace(/^vs/, "v");
-    cleaned = cleaned.replace(/-w\d*$/, "");
-    return cleaned;
-  };
 
   // Compute unique update count: dedupe by backend mod id when present, otherwise by normalized name
   const updatesCount = (() => {
@@ -1507,7 +1559,7 @@ export default function App() {
     }
   }, [mods]);
 
-  const handleAssignModIdSuccess = useCallback((modId: string, newNexusId: number) => {
+  const handleAssignModIdSuccess = useCallback((_modId: string, _newNexusId: number) => {
     refreshMods({ quiet: true });
   }, [refreshMods]);
 
@@ -2463,6 +2515,17 @@ export default function App() {
             }}
             mod={assignModIdTarget}
             onSuccess={handleAssignModIdSuccess}
+          />
+          <CrashDetectorModal
+            open={crashDetectorOpen}
+            crashInfo={crashInfo}
+            allDownloads={crashAllDownloads}
+            pakAssets={crashPakAssets}
+            onDismiss={() => setCrashDetectorOpen(false)}
+            onDeactivated={() => {
+              setCrashDetectorOpen(false);
+              void refreshMods({ quiet: true, includeConflicts: true });
+            }}
           />
         </div>
       </ThemeProvider>

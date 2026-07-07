@@ -10,7 +10,7 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { createOrUpdateAuthor, assignModAuthor, CustomAuthor } from "../lib/api";
+import { createOrUpdateAuthor, assignModAuthor } from "../lib/api";
 import { Loader2, Upload, X } from "lucide-react";
 
 interface CreateAuthorDialogProps {

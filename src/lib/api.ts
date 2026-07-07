@@ -877,6 +877,9 @@ export type ApiDownload = {
   local_version_key?: string | null;
   needs_update?: boolean;
   contains_adult_content?: boolean;
+  needs_manual_mod_id?: boolean;
+  rename_status?: string | null;
+  rename_error?: string | null;
 };
 
 export interface ApiPakVersionStatus {

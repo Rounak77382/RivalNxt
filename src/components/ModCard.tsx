@@ -4,7 +4,7 @@ import { Card, CardContent } from "./ui/card";
 import { Button } from "./ui/button";
 // Badge is used by TagList; not needed directly here
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { Download, Star, Eye, Heart, FolderOpen, Power, RefreshCw, Ban, Link, CheckCircle2, AlertCircle } from "lucide-react";
+import { Download, Star, Eye, Heart, FolderOpen, Power, RefreshCw, Ban, Link, AlertCircle } from "lucide-react";
 import TagList from "./TagList";
 import { useNsfwFilter } from "./NSFWFilterProvider";
 import { LazyLoad } from "./LazyLoad";

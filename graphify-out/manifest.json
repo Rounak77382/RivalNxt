@@ -680,9 +680,9 @@
     "semantic_hash": "08f3fb540926f8a24ceeb8658ea5886b"
   },
   "src-tauri/src/main.rs": {
-    "mtime": 1778939465.0928235,
-    "ast_hash": "4054e8dd3256b09167b36ce664f5116d",
-    "semantic_hash": "4054e8dd3256b09167b36ce664f5116d"
+    "mtime": 1783452933.2704637,
+    "ast_hash": "df2419a8de2fb0582203353abdf93f5e",
+    "semantic_hash": ""
   },
   "src-tauri/src/rust-ue-tools/examples/advanced_usage.rs": {
     "mtime": 1764004488.954253,
@@ -1100,8 +1100,8 @@
     "semantic_hash": ""
   },
   "src/App.tsx": {
-    "mtime": 1782811129.6902359,
-    "ast_hash": "9d4bba0a7b9d654d27300a62f21076f9",
+    "mtime": 1783460230.7617123,
+    "ast_hash": "5985abb1948de43942a6fe432c8f235d",
     "semantic_hash": ""
   },
   "src/components/ActiveModsPanel.tsx": {
@@ -1165,8 +1165,8 @@
     "semantic_hash": "a067673314d5da49e6edda76bfe744b7"
   },
   "src/components/InstalledModCard.tsx": {
-    "mtime": 1782840315.1258335,
-    "ast_hash": "48e63f87736c03154b901278216243eb",
+    "mtime": 1783460248.0632763,
+    "ast_hash": "c354c6693347302af402707958c4952e",
     "semantic_hash": ""
   },
   "src/components/LazyLoad.tsx": {
@@ -1175,8 +1175,8 @@
     "semantic_hash": "87b9a8c6c2642b55a2e7884b878f5fa1"
   },
   "src/components/ModCard.tsx": {
-    "mtime": 1782840324.474243,
-    "ast_hash": "c6e2b4be4d16f052244a7c0a5ce68359",
+    "mtime": 1783460249.7543125,
+    "ast_hash": "a01d408789a6b2c2ad0911bcb169b05d",
     "semantic_hash": ""
   },
   "src/components/ModConflictModal.tsx": {
@@ -1185,8 +1185,8 @@
     "semantic_hash": "f7cb7ad671ee6fcc6ff3aa99d5a4cc0e"
   },
   "src/components/ModModal.tsx": {
-    "mtime": 1782840333.2550433,
-    "ast_hash": "723e9939cc580a0cf8832c316b029e6e",
+    "mtime": 1783460251.3124661,
+    "ast_hash": "a7c03cd1f29eaa20990ff80a1c965ba6",
     "semantic_hash": ""
   },
   "src/components/NSFWFilterProvider.tsx": {
@@ -1500,8 +1500,8 @@
     "semantic_hash": "e3f848f1b39f863e6164cf58b5a8e752"
   },
   "src/lib/api.ts": {
-    "mtime": 1782753948.4934726,
-    "ast_hash": "b59d0c4e072a15102aa30c357c678dbc",
+    "mtime": 1783460194.4887352,
+    "ast_hash": "c62702b6f342369c97646ff2b24f808b",
     "semantic_hash": ""
   },
   "src/lib/backupUtils.ts": {
@@ -1750,8 +1750,18 @@
     "semantic_hash": ""
   },
   "src/components/CreateAuthorDialog.tsx": {
-    "mtime": 1782754020.1400635,
-    "ast_hash": "cf4969cbc5e4652990537d5ae1e22a0d",
+    "mtime": 1783460232.528297,
+    "ast_hash": "af57bc0ca93418c9b5a7612b9e5b8d67",
+    "semantic_hash": ""
+  },
+  "src/components/CrashDetectorModal.tsx": {
+    "mtime": 1783444479.2103815,
+    "ast_hash": "524aed42d4109332c976847330b0102c",
+    "semantic_hash": ""
+  },
+  "src/lib/crashParser.ts": {
+    "mtime": 1783444433.1937518,
+    "ast_hash": "48d71702adaad2a82eeb21036d650efe",
     "semantic_hash": ""
   }
 }

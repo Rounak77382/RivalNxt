@@ -22,7 +22,6 @@ import {
   AlertTriangle,
   CheckCircle,
   Link,
-  CheckCircle2,
   AlertCircle,
   Pencil
 } from "lucide-react";
