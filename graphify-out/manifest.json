@@ -1100,8 +1100,8 @@
     "semantic_hash": ""
   },
   "src/App.tsx": {
-    "mtime": 1783460230.7617123,
-    "ast_hash": "5985abb1948de43942a6fe432c8f235d",
+    "mtime": 1783552952.6193526,
+    "ast_hash": "df7454614683f0c2c4a12cec977ac4de",
     "semantic_hash": ""
   },
   "src/components/ActiveModsPanel.tsx": {
@@ -1230,8 +1230,8 @@
     "semantic_hash": "f414a3f209056fa1dd349ecb40d97c4c"
   },
   "src/components/TabHeader.tsx": {
-    "mtime": 1782692614.8986855,
-    "ast_hash": "469cd7013be800dc062f8b4ff4518f3b",
+    "mtime": 1783550362.8909366,
+    "ast_hash": "97f8865dacea3936e8b499306b38806c",
     "semantic_hash": ""
   },
   "src/components/TagList.tsx": {
@@ -1755,13 +1755,13 @@
     "semantic_hash": ""
   },
   "src/components/CrashDetectorModal.tsx": {
-    "mtime": 1783444479.2103815,
-    "ast_hash": "524aed42d4109332c976847330b0102c",
+    "mtime": 1783552788.1777723,
+    "ast_hash": "67b5547e2ff3376dd0240d2306447fc6",
     "semantic_hash": ""
   },
   "src/lib/crashParser.ts": {
-    "mtime": 1783444433.1937518,
-    "ast_hash": "48d71702adaad2a82eeb21036d650efe",
+    "mtime": 1783548546.9716494,
+    "ast_hash": "7c3a8cb1275d1f395b8dfcf5f7cec027",
     "semantic_hash": ""
   }
 }

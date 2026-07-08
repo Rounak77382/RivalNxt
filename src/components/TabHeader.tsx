@@ -1,6 +1,6 @@
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { Bell, Settings, RefreshCw, Rocket, Play, Archive, PowerOff } from "lucide-react";
+import { Bell, Settings, RefreshCw, Rocket, Play, Archive, PowerOff, ShieldAlert } from "lucide-react";
 import { open } from "@tauri-apps/plugin-shell";
 import {
   AlertDialog,
@@ -27,6 +27,10 @@ interface TabHeaderProps {
   onOpenBootstrap?: () => void;
   onOpenBackup?: () => void;
   onDisableAllMods?: () => void;
+  /** Called when the user clicks "Last Crash" to re-open the crash modal */
+  onViewLastCrash?: () => void;
+  /** Whether there is a crash available to view */
+  hasLastCrash?: boolean;
 }
 
 export function TabHeader({
@@ -42,6 +46,8 @@ export function TabHeader({
   onOpenBootstrap,
   onOpenBackup,
   onDisableAllMods,
+  onViewLastCrash,
+  hasLastCrash = false,
 }: TabHeaderProps) {
   return (
     <div className="border-b border-border bg-card" style={{ contain: 'layout paint' }}>
@@ -85,6 +91,23 @@ export function TabHeader({
 
           <div className="flex items-center gap-2">
 
+            {hasLastCrash && onViewLastCrash && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onViewLastCrash}
+                className="header-action-btn"
+                style={{
+                  borderColor: "rgba(234,88,12,0.6)",
+                  color: "#fb923c",
+                  animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+                }}
+                title="View last crash report"
+              >
+                <ShieldAlert className="w-4 h-4 shrink-0" />
+                <span className="header-action-text">Last Crash</span>
+              </Button>
+            )}
             {onOpenBootstrap && (
               <Button
                 variant="outline"

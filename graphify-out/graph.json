@@ -48,7 +48,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "api_characters",
-      "community": 21,
+      "community": 48,
       "norm_label": "characters.py"
     },
     {
@@ -58,7 +58,7 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "api_characters_characterskin",
-      "community": 21,
+      "community": 48,
       "norm_label": "characterskin"
     },
     {
@@ -68,7 +68,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "basemodel",
-      "community": 21,
+      "community": 26,
       "norm_label": "basemodel"
     },
     {
@@ -78,7 +78,7 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "api_characters_character",
-      "community": 21,
+      "community": 48,
       "norm_label": "character"
     },
     {
@@ -88,7 +88,7 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "api_characters_rebuildresponse",
-      "community": 21,
+      "community": 48,
       "norm_label": "rebuildresponse"
     },
     {
@@ -98,7 +98,7 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "api_characters_list_characters",
-      "community": 21,
+      "community": 48,
       "norm_label": "list_characters()"
     },
     {
@@ -108,7 +108,7 @@
       "source_location": "L50",
       "_origin": "ast",
       "id": "api_characters_list_character_skins",
-      "community": 51,
+      "community": 48,
       "norm_label": "list_character_skins()"
     },
     {
@@ -118,7 +118,7 @@
       "source_location": "L77",
       "_origin": "ast",
       "id": "api_characters_taglookuprequest",
-      "community": 21,
+      "community": 48,
       "norm_label": "taglookuprequest"
     },
     {
@@ -128,7 +128,7 @@
       "source_location": "L81",
       "_origin": "ast",
       "id": "api_characters_taginfo",
-      "community": 21,
+      "community": 48,
       "norm_label": "taginfo"
     },
     {
@@ -138,7 +138,7 @@
       "source_location": "L89",
       "_origin": "ast",
       "id": "api_characters_lookup_tags",
-      "community": 21,
+      "community": 48,
       "norm_label": "lookup_tags()"
     },
     {
@@ -148,7 +148,7 @@
       "source_location": "L152",
       "_origin": "ast",
       "id": "api_characters_rebuild_character_data",
-      "community": 21,
+      "community": 48,
       "norm_label": "rebuild_character_data()"
     },
     {
@@ -158,7 +158,7 @@
       "source_location": "L188",
       "_origin": "ast",
       "id": "api_characters_customtagitem",
-      "community": 21,
+      "community": 48,
       "norm_label": "customtagitem"
     },
     {
@@ -168,7 +168,7 @@
       "source_location": "L194",
       "_origin": "ast",
       "id": "api_characters_addcustomtagrequest",
-      "community": 21,
+      "community": 48,
       "norm_label": "addcustomtagrequest"
     },
     {
@@ -178,7 +178,7 @@
       "source_location": "L199",
       "_origin": "ast",
       "id": "api_characters_get_all_custom_tags",
-      "community": 21,
+      "community": 48,
       "norm_label": "get_all_custom_tags()"
     },
     {
@@ -188,7 +188,7 @@
       "source_location": "L251",
       "_origin": "ast",
       "id": "api_characters_get_mod_custom_tags",
-      "community": 21,
+      "community": 48,
       "norm_label": "get_mod_custom_tags()"
     },
     {
@@ -198,7 +198,7 @@
       "source_location": "L269",
       "_origin": "ast",
       "id": "api_characters_add_mod_custom_tag",
-      "community": 21,
+      "community": 48,
       "norm_label": "add_mod_custom_tag()"
     },
     {
@@ -208,7 +208,7 @@
       "source_location": "L303",
       "_origin": "ast",
       "id": "api_characters_remove_mod_custom_tag",
-      "community": 21,
+      "community": 48,
       "norm_label": "remove_mod_custom_tag()"
     },
     {
@@ -218,7 +218,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "api_characters_rationale_1",
-      "community": 21,
+      "community": 48,
       "norm_label": "api endpoints for marvel rivals character and skin data."
     },
     {
@@ -228,7 +228,7 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "api_characters_rationale_36",
-      "community": 21,
+      "community": 48,
       "norm_label": "get all characters with their skins."
     },
     {
@@ -238,7 +238,7 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "api_characters_rationale_51",
-      "community": 51,
+      "community": 48,
       "norm_label": "get all skins for a specific character."
     },
     {
@@ -248,7 +248,7 @@
       "source_location": "L90",
       "_origin": "ast",
       "id": "api_characters_rationale_90",
-      "community": 21,
+      "community": 48,
       "norm_label": "lookup tags to determine which are characters and which are skins.     returns"
     },
     {
@@ -258,7 +258,7 @@
       "source_location": "L153",
       "_origin": "ast",
       "id": "api_characters_rationale_153",
-      "community": 21,
+      "community": 48,
       "norm_label": "rebuild character and skin data by re-extracting from pak files.     this will"
     },
     {
@@ -268,7 +268,7 @@
       "source_location": "L200",
       "_origin": "ast",
       "id": "api_characters_rationale_200",
-      "community": 21,
+      "community": 48,
       "norm_label": "return a distinct list of all custom tags used across all mods.     used to pop"
     },
     {
@@ -278,7 +278,7 @@
       "source_location": "L252",
       "_origin": "ast",
       "id": "api_characters_rationale_252",
-      "community": 21,
+      "community": 48,
       "norm_label": "return all custom tags attached to a specific mod."
     },
     {
@@ -288,7 +288,7 @@
       "source_location": "L270",
       "_origin": "ast",
       "id": "api_characters_rationale_270",
-      "community": 21,
+      "community": 48,
       "norm_label": "add a custom tag to a mod. if the tag already exists for this mod, returns the e"
     },
     {
@@ -298,7 +298,7 @@
       "source_location": "L304",
       "_origin": "ast",
       "id": "api_characters_rationale_304",
-      "community": 21,
+      "community": 48,
       "norm_label": "remove a specific custom tag from a mod by its row id."
     },
     {
@@ -308,7 +308,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "api_dependencies",
-      "community": 51,
+      "community": 48,
       "norm_label": "dependencies.py"
     },
     {
@@ -318,7 +318,7 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "api_dependencies_verify_required_dns_hosts",
-      "community": 51,
+      "community": 48,
       "norm_label": "verify_required_dns_hosts()"
     },
     {
@@ -328,7 +328,7 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "api_dependencies_ensure_schema_initialised",
-      "community": 51,
+      "community": 48,
       "norm_label": "_ensure_schema_initialised()"
     },
     {
@@ -338,7 +338,7 @@
       "source_location": "L47",
       "_origin": "ast",
       "id": "api_dependencies_get_db",
-      "community": 57,
+      "community": 70,
       "norm_label": "get_db()"
     },
     {
@@ -348,7 +348,7 @@
       "source_location": "L61",
       "_origin": "ast",
       "id": "api_dependencies_reset_schema_cache",
-      "community": 57,
+      "community": 129,
       "norm_label": "reset_schema_cache()"
     },
     {
@@ -358,7 +358,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "api_dependencies_rationale_1",
-      "community": 51,
+      "community": 48,
       "norm_label": "shared dependencies and environment checks for the api layer."
     },
     {
@@ -368,7 +368,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "api_dependencies_rationale_17",
-      "community": 51,
+      "community": 48,
       "norm_label": "ensure critical nexus hosts resolve before accepting requests."
     },
     {
@@ -378,7 +378,7 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "api_dependencies_rationale_48",
-      "community": 57,
+      "community": 70,
       "norm_label": "return a sqlite connection with schema guaranteed to exist."
     },
     {
@@ -388,7 +388,7 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "api_dependencies_rationale_62",
-      "community": 57,
+      "community": 129,
       "norm_label": "force schema re-initialization on next get_db() call.          use this after"
     },
     {
@@ -438,7 +438,7 @@
       "source_location": "L223",
       "_origin": "ast",
       "id": "api_server_md5_backfill_worker",
-      "community": 57,
+      "community": 80,
       "norm_label": "_md5_backfill_worker()"
     },
     {
@@ -448,7 +448,7 @@
       "source_location": "L297",
       "_origin": "ast",
       "id": "api_server_safe_rebuild_conflicts",
-      "community": 57,
+      "community": 108,
       "norm_label": "_safe_rebuild_conflicts()"
     },
     {
@@ -468,7 +468,7 @@
       "source_location": "L324",
       "_origin": "ast",
       "id": "api_server_get_actually_active_filenames",
-      "community": 57,
+      "community": 86,
       "norm_label": "_get_actually_active_filenames()"
     },
     {
@@ -488,7 +488,7 @@
       "source_location": "L411",
       "_origin": "ast",
       "id": "api_server_create_settings_task_job",
-      "community": 57,
+      "community": 26,
       "norm_label": "_create_settings_task_job()"
     },
     {
@@ -498,7 +498,7 @@
       "source_location": "L411",
       "_origin": "ast",
       "id": "settingstaskname",
-      "community": 57,
+      "community": 26,
       "norm_label": "settingstaskname"
     },
     {
@@ -508,7 +508,7 @@
       "source_location": "L411",
       "_origin": "ast",
       "id": "core_api_server_py_any",
-      "community": 57,
+      "community": 82,
       "norm_label": "any"
     },
     {
@@ -528,7 +528,7 @@
       "source_location": "L458",
       "_origin": "ast",
       "id": "api_server_update_job",
-      "community": 57,
+      "community": 26,
       "norm_label": "_update_job()"
     },
     {
@@ -538,7 +538,7 @@
       "source_location": "L470",
       "_origin": "ast",
       "id": "api_server_job_snapshot",
-      "community": 57,
+      "community": 82,
       "norm_label": "_job_snapshot()"
     },
     {
@@ -548,7 +548,7 @@
       "source_location": "L480",
       "_origin": "ast",
       "id": "api_server_list_job_snapshots",
-      "community": 57,
+      "community": 82,
       "norm_label": "_list_job_snapshots()"
     },
     {
@@ -558,7 +558,7 @@
       "source_location": "L492",
       "_origin": "ast",
       "id": "api_server_execute_settings_task_async",
-      "community": 57,
+      "community": 26,
       "norm_label": "_execute_settings_task_async()"
     },
     {
@@ -588,7 +588,7 @@
       "source_location": "L559",
       "_origin": "ast",
       "id": "api_server_settingstaskrequest",
-      "community": 57,
+      "community": 26,
       "norm_label": "settingstaskrequest"
     },
     {
@@ -608,7 +608,7 @@
       "source_location": "L564",
       "_origin": "ast",
       "id": "core_api_server_py_path",
-      "community": 57,
+      "community": 80,
       "norm_label": "path"
     },
     {
@@ -698,7 +698,7 @@
       "source_location": "L745",
       "_origin": "ast",
       "id": "api_server_task_delete_outdated_versions",
-      "community": 57,
+      "community": 80,
       "norm_label": "_task_delete_outdated_versions()"
     },
     {
@@ -728,7 +728,7 @@
       "source_location": "L969",
       "_origin": "ast",
       "id": "api_server_get_scan_active_args",
-      "community": 57,
+      "community": 108,
       "norm_label": "_get_scan_active_args()"
     },
     {
@@ -738,7 +738,7 @@
       "source_location": "L986",
       "_origin": "ast",
       "id": "api_server_task_scan_active_mods",
-      "community": 57,
+      "community": 108,
       "norm_label": "_task_scan_active_mods()"
     },
     {
@@ -768,7 +768,7 @@
       "source_location": "L1017",
       "_origin": "ast",
       "id": "api_server_task_rebuild_conflicts",
-      "community": 51,
+      "community": 48,
       "norm_label": "_task_rebuild_conflicts()"
     },
     {
@@ -778,7 +778,7 @@
       "source_location": "L1045",
       "_origin": "ast",
       "id": "api_server_task_rebuild_character_data",
-      "community": 57,
+      "community": 129,
       "norm_label": "_task_rebuild_character_data()"
     },
     {
@@ -788,7 +788,7 @@
       "source_location": "L1071",
       "_origin": "ast",
       "id": "api_server_task_bootstrap_rebuild",
-      "community": 57,
+      "community": 129,
       "norm_label": "_task_bootstrap_rebuild()"
     },
     {
@@ -798,7 +798,7 @@
       "source_location": "L1269",
       "_origin": "ast",
       "id": "api_server_run_settings_task",
-      "community": 57,
+      "community": 26,
       "norm_label": "_run_settings_task()"
     },
     {
@@ -808,7 +808,7 @@
       "source_location": "L1391",
       "_origin": "ast",
       "id": "api_server_extract_member_id",
-      "community": 57,
+      "community": 86,
       "norm_label": "_extract_member_id()"
     },
     {
@@ -818,7 +818,7 @@
       "source_location": "L1421",
       "_origin": "ast",
       "id": "api_server_author_avatar_url",
-      "community": 57,
+      "community": 86,
       "norm_label": "_author_avatar_url()"
     },
     {
@@ -868,7 +868,7 @@
       "source_location": "L1461",
       "_origin": "ast",
       "id": "api_server_normalize_contents_for_compare",
-      "community": 57,
+      "community": 82,
       "norm_label": "_normalize_contents_for_compare()"
     },
     {
@@ -878,7 +878,7 @@
       "source_location": "L1486",
       "_origin": "ast",
       "id": "api_server_extract_created_at_hint",
-      "community": 57,
+      "community": 82,
       "norm_label": "_extract_created_at_hint()"
     },
     {
@@ -888,7 +888,7 @@
       "source_location": "L1499",
       "_origin": "ast",
       "id": "api_server_duplicate_detail_from_error",
-      "community": 57,
+      "community": 82,
       "norm_label": "_duplicate_detail_from_error()"
     },
     {
@@ -898,7 +898,7 @@
       "source_location": "L1526",
       "_origin": "ast",
       "id": "api_server_resolve_mod_metadata",
-      "community": 57,
+      "community": 80,
       "norm_label": "_resolve_mod_metadata()"
     },
     {
@@ -908,7 +908,7 @@
       "source_location": "L1567",
       "_origin": "ast",
       "id": "api_server_find_duplicate_download",
-      "community": 57,
+      "community": 80,
       "norm_label": "_find_duplicate_download()"
     },
     {
@@ -918,7 +918,7 @@
       "source_location": "L1622",
       "_origin": "ast",
       "id": "api_server_ingest_resolved_download",
-      "community": 51,
+      "community": 80,
       "norm_label": "_ingest_resolved_download()"
     },
     {
@@ -928,7 +928,7 @@
       "source_location": "L2011",
       "_origin": "ast",
       "id": "api_server_load_canonical_names",
-      "community": 57,
+      "community": 108,
       "norm_label": "_load_canonical_names()"
     },
     {
@@ -938,7 +938,7 @@
       "source_location": "L2031",
       "_origin": "ast",
       "id": "api_server_normalize",
-      "community": 57,
+      "community": 108,
       "norm_label": "_normalize()"
     },
     {
@@ -948,7 +948,7 @@
       "source_location": "L2044",
       "_origin": "ast",
       "id": "api_server_canonicalize_tokens",
-      "community": 57,
+      "community": 108,
       "norm_label": "_canonicalize_tokens()"
     },
     {
@@ -958,7 +958,7 @@
       "source_location": "L2080",
       "_origin": "ast",
       "id": "api_server_health",
-      "community": 57,
+      "community": 70,
       "norm_label": "health()"
     },
     {
@@ -968,7 +968,7 @@
       "source_location": "L2098",
       "_origin": "ast",
       "id": "api_server_toggle_favourite",
-      "community": 57,
+      "community": 70,
       "norm_label": "toggle_favourite()"
     },
     {
@@ -978,7 +978,7 @@
       "source_location": "L2129",
       "_origin": "ast",
       "id": "api_server_list_favourites",
-      "community": 57,
+      "community": 70,
       "norm_label": "list_favourites()"
     },
     {
@@ -988,7 +988,7 @@
       "source_location": "L2145",
       "_origin": "ast",
       "id": "api_server_check_game_version",
-      "community": 57,
+      "community": 80,
       "norm_label": "check_game_version()"
     },
     {
@@ -998,7 +998,7 @@
       "source_location": "L2220",
       "_origin": "ast",
       "id": "api_server_get_bootstrap_status",
-      "community": 57,
+      "community": 70,
       "norm_label": "get_bootstrap_status()"
     },
     {
@@ -1008,7 +1008,7 @@
       "source_location": "L2295",
       "_origin": "ast",
       "id": "api_server_debug_log",
-      "community": 57,
+      "community": 82,
       "norm_label": "debug_log()"
     },
     {
@@ -1038,7 +1038,7 @@
       "source_location": "L2336",
       "_origin": "ast",
       "id": "api_server_run_settings_task_route",
-      "community": 57,
+      "community": 26,
       "norm_label": "run_settings_task_route()"
     },
     {
@@ -1048,7 +1048,7 @@
       "source_location": "L2348",
       "_origin": "ast",
       "id": "api_server_get_settings_task_job",
-      "community": 57,
+      "community": 82,
       "norm_label": "get_settings_task_job()"
     },
     {
@@ -1058,7 +1058,7 @@
       "source_location": "L2356",
       "_origin": "ast",
       "id": "api_server_list_settings_task_jobs",
-      "community": 57,
+      "community": 82,
       "norm_label": "list_settings_task_jobs()"
     },
     {
@@ -1078,7 +1078,7 @@
       "source_location": "L2388",
       "_origin": "ast",
       "id": "api_server_get_nxm_protocol_status",
-      "community": 57,
+      "community": 60,
       "norm_label": "get_nxm_protocol_status()"
     },
     {
@@ -1088,7 +1088,7 @@
       "source_location": "L2401",
       "_origin": "ast",
       "id": "api_server_register_nxm_protocol",
-      "community": 57,
+      "community": 60,
       "norm_label": "register_nxm_protocol()"
     },
     {
@@ -1098,7 +1098,7 @@
       "source_location": "L2425",
       "_origin": "ast",
       "id": "api_server_unregister_nxm_protocol",
-      "community": 57,
+      "community": 60,
       "norm_label": "unregister_nxm_protocol()"
     },
     {
@@ -1138,7 +1138,7 @@
       "source_location": "L2597",
       "_origin": "ast",
       "id": "api_server_add_mod",
-      "community": 57,
+      "community": 80,
       "norm_label": "add_mod()"
     },
     {
@@ -1168,7 +1168,7 @@
       "source_location": "L2788",
       "_origin": "ast",
       "id": "api_server_get_nxm_handoff",
-      "community": 70,
+      "community": 82,
       "norm_label": "get_nxm_handoff()"
     },
     {
@@ -1178,7 +1178,7 @@
       "source_location": "L2796",
       "_origin": "ast",
       "id": "api_server_get_last_nxm_url",
-      "community": 57,
+      "community": 82,
       "norm_label": "get_last_nxm_url()"
     },
     {
@@ -1188,7 +1188,7 @@
       "source_location": "L2812",
       "_origin": "ast",
       "id": "api_server_list_nxm_handoffs",
-      "community": 70,
+      "community": 82,
       "norm_label": "list_nxm_handoffs()"
     },
     {
@@ -1198,7 +1198,7 @@
       "source_location": "L2829",
       "_origin": "ast",
       "id": "api_server_delete_nxm_handoff",
-      "community": 70,
+      "community": 82,
       "norm_label": "delete_nxm_handoff()"
     },
     {
@@ -1208,7 +1208,7 @@
       "source_location": "L2837",
       "_origin": "ast",
       "id": "api_server_cancel_nxm_handoff",
-      "community": 70,
+      "community": 117,
       "norm_label": "cancel_nxm_handoff()"
     },
     {
@@ -1218,7 +1218,7 @@
       "source_location": "L2864",
       "_origin": "ast",
       "id": "api_server_clear_handoff_failure_by_file_id",
-      "community": 57,
+      "community": 70,
       "norm_label": "_clear_handoff_failure_by_file_id()"
     },
     {
@@ -1228,7 +1228,7 @@
       "source_location": "L2888",
       "_origin": "ast",
       "id": "api_server_normalize_game_domain",
-      "community": 57,
+      "community": 58,
       "norm_label": "_normalize_game_domain()"
     },
     {
@@ -1238,7 +1238,7 @@
       "source_location": "L2899",
       "_origin": "ast",
       "id": "api_server_coerce_int",
-      "community": 57,
+      "community": 82,
       "norm_label": "_coerce_int()"
     },
     {
@@ -1248,7 +1248,7 @@
       "source_location": "L2914",
       "_origin": "ast",
       "id": "api_server_collect_nexus_metadata_for_record",
-      "community": 57,
+      "community": 58,
       "norm_label": "_collect_nexus_metadata_for_record()"
     },
     {
@@ -1258,7 +1258,7 @@
       "source_location": "L2945",
       "_origin": "ast",
       "id": "api_server_find_matching_handoff",
-      "community": 57,
+      "community": 82,
       "norm_label": "_find_matching_handoff()"
     },
     {
@@ -1268,7 +1268,7 @@
       "source_location": "L2981",
       "_origin": "ast",
       "id": "api_server_summarize_mod_files",
-      "community": 57,
+      "community": 82,
       "norm_label": "_summarize_mod_files()"
     },
     {
@@ -1278,7 +1278,7 @@
       "source_location": "L3030",
       "_origin": "ast",
       "id": "api_server_select_file_entry",
-      "community": 57,
+      "community": 82,
       "norm_label": "_select_file_entry()"
     },
     {
@@ -1288,7 +1288,7 @@
       "source_location": "L3055",
       "_origin": "ast",
       "id": "api_server_preview_nxm_handoff",
-      "community": 57,
+      "community": 82,
       "norm_label": "preview_nxm_handoff()"
     },
     {
@@ -1298,7 +1298,7 @@
       "source_location": "L3080",
       "_origin": "ast",
       "id": "api_server_check_mod_update",
-      "community": 57,
+      "community": 86,
       "norm_label": "check_mod_update()"
     },
     {
@@ -1308,7 +1308,7 @@
       "source_location": "L3145",
       "_origin": "ast",
       "id": "api_server_ingest_nxm_handoff",
-      "community": 57,
+      "community": 82,
       "norm_label": "ingest_nxm_handoff()"
     },
     {
@@ -1318,7 +1318,7 @@
       "source_location": "L3498",
       "_origin": "ast",
       "id": "api_server_extract_download_uri",
-      "community": 26,
+      "community": 82,
       "norm_label": "_extract_download_uri()"
     },
     {
@@ -1328,7 +1328,7 @@
       "source_location": "L3519",
       "_origin": "ast",
       "id": "api_server_snapshot_local_downloads",
-      "community": 57,
+      "community": 82,
       "norm_label": "_snapshot_local_downloads()"
     },
     {
@@ -1338,7 +1338,7 @@
       "source_location": "L3581",
       "_origin": "ast",
       "id": "api_server_complete_update_from_handoff",
-      "community": 57,
+      "community": 82,
       "norm_label": "_complete_update_from_handoff()"
     },
     {
@@ -1348,7 +1348,7 @@
       "source_location": "L3667",
       "_origin": "ast",
       "id": "api_server_update_mod",
-      "community": 57,
+      "community": 82,
       "norm_label": "update_mod()"
     },
     {
@@ -1358,7 +1358,7 @@
       "source_location": "L3995",
       "_origin": "ast",
       "id": "api_server_upload_mod_file",
-      "community": 57,
+      "community": 80,
       "norm_label": "upload_mod_file()"
     },
     {
@@ -1378,7 +1378,7 @@
       "source_location": "L4070",
       "_origin": "ast",
       "id": "api_server_copytodownloadsrequest",
-      "community": 57,
+      "community": 26,
       "norm_label": "copytodownloadsrequest"
     },
     {
@@ -1388,7 +1388,7 @@
       "source_location": "L4076",
       "_origin": "ast",
       "id": "api_server_copy_to_downloads",
-      "community": 57,
+      "community": 80,
       "norm_label": "copy_to_downloads()"
     },
     {
@@ -1398,7 +1398,7 @@
       "source_location": "L4179",
       "_origin": "ast",
       "id": "api_server_refresh_conflicts",
-      "community": 57,
+      "community": 108,
       "norm_label": "refresh_conflicts()"
     },
     {
@@ -1408,7 +1408,7 @@
       "source_location": "L4229",
       "_origin": "ast",
       "id": "api_server_list_mods",
-      "community": 57,
+      "community": 70,
       "norm_label": "list_mods()"
     },
     {
@@ -1418,7 +1418,7 @@
       "source_location": "L4271",
       "_origin": "ast",
       "id": "api_server_get_pak_version_status_endpoint",
-      "community": 57,
+      "community": 86,
       "norm_label": "get_pak_version_status_endpoint()"
     },
     {
@@ -1448,7 +1448,7 @@
       "source_location": "L4398",
       "_origin": "ast",
       "id": "api_server_get_mod_details",
-      "community": 57,
+      "community": 86,
       "norm_label": "get_mod_details()"
     },
     {
@@ -1468,7 +1468,7 @@
       "source_location": "L4528",
       "_origin": "ast",
       "id": "api_server_get_mod_conflicts",
-      "community": 57,
+      "community": 70,
       "norm_label": "get_mod_conflicts()"
     },
     {
@@ -1478,7 +1478,7 @@
       "source_location": "L4578",
       "_origin": "ast",
       "id": "api_server_get_mod_files_endpoint",
-      "community": 57,
+      "community": 70,
       "norm_label": "get_mod_files_endpoint()"
     },
     {
@@ -1498,7 +1498,7 @@
       "source_location": "L4619",
       "_origin": "ast",
       "id": "api_server_get_mod_images",
-      "community": 57,
+      "community": 70,
       "norm_label": "get_mod_images()"
     },
     {
@@ -1568,7 +1568,7 @@
       "source_location": "L4974",
       "_origin": "ast",
       "id": "api_server_delete_mod_image",
-      "community": 57,
+      "community": 70,
       "norm_label": "delete_mod_image()"
     },
     {
@@ -1578,7 +1578,7 @@
       "source_location": "L5006",
       "_origin": "ast",
       "id": "api_server_list_downloads",
-      "community": 57,
+      "community": 86,
       "norm_label": "list_downloads()"
     },
     {
@@ -1588,7 +1588,7 @@
       "source_location": "L5241",
       "_origin": "ast",
       "id": "api_server_downloads_summary",
-      "community": 57,
+      "community": 80,
       "norm_label": "downloads_summary()"
     },
     {
@@ -1598,7 +1598,7 @@
       "source_location": "L5377",
       "_origin": "ast",
       "id": "api_server_mods_folder_from_env",
-      "community": 57,
+      "community": 108,
       "norm_label": "_mods_folder_from_env()"
     },
     {
@@ -1608,7 +1608,7 @@
       "source_location": "L5389",
       "_origin": "ast",
       "id": "api_server_downloads_root_from_env",
-      "community": 57,
+      "community": 80,
       "norm_label": "_downloads_root_from_env()"
     },
     {
@@ -1658,7 +1658,7 @@
       "source_location": "L5516",
       "_origin": "ast",
       "id": "api_server_looks_like_url",
-      "community": 57,
+      "community": 80,
       "norm_label": "_looks_like_url()"
     },
     {
@@ -1668,7 +1668,7 @@
       "source_location": "L5520",
       "_origin": "ast",
       "id": "api_server_safe_filename",
-      "community": 57,
+      "community": 80,
       "norm_label": "_safe_filename()"
     },
     {
@@ -1678,7 +1678,7 @@
       "source_location": "L5532",
       "_origin": "ast",
       "id": "api_server_unique_destination",
-      "community": 57,
+      "community": 80,
       "norm_label": "_unique_destination()"
     },
     {
@@ -1698,7 +1698,7 @@
       "source_location": "L5546",
       "_origin": "ast",
       "id": "api_server_nxm_required_detail",
-      "community": 57,
+      "community": 82,
       "norm_label": "_nxm_required_detail()"
     },
     {
@@ -1708,7 +1708,7 @@
       "source_location": "L5575",
       "_origin": "ast",
       "id": "api_server_download_remote_archive",
-      "community": 57,
+      "community": 80,
       "norm_label": "_download_remote_archive()"
     },
     {
@@ -1718,7 +1718,7 @@
       "source_location": "L5686",
       "_origin": "ast",
       "id": "api_server_resolve_nexus_download_candidates",
-      "community": 26,
+      "community": 117,
       "norm_label": "_resolve_nexus_download_candidates()"
     },
     {
@@ -1728,7 +1728,7 @@
       "source_location": "L5829",
       "_origin": "ast",
       "id": "api_server_download_archive_via_nxm",
-      "community": 26,
+      "community": 117,
       "norm_label": "_download_archive_via_nxm()"
     },
     {
@@ -1738,7 +1738,7 @@
       "source_location": "L5935",
       "_origin": "ast",
       "id": "api_server_to_folder_name",
-      "community": 57,
+      "community": 108,
       "norm_label": "_to_folder_name()"
     },
     {
@@ -1748,7 +1748,7 @@
       "source_location": "L5945",
       "_origin": "ast",
       "id": "api_server_infer_character_tag",
-      "community": 57,
+      "community": 108,
       "norm_label": "_infer_character_tag()"
     },
     {
@@ -1758,7 +1758,7 @@
       "source_location": "L5998",
       "_origin": "ast",
       "id": "api_server_resolve_download_source_path",
-      "community": 57,
+      "community": 80,
       "norm_label": "_resolve_download_source_path()"
     },
     {
@@ -1768,7 +1768,7 @@
       "source_location": "L6040",
       "_origin": "ast",
       "id": "api_server_ensure_dir",
-      "community": 57,
+      "community": 80,
       "norm_label": "_ensure_dir()"
     },
     {
@@ -1778,7 +1778,7 @@
       "source_location": "L6050",
       "_origin": "ast",
       "id": "api_server_remove_in_mods_by_names",
-      "community": 57,
+      "community": 108,
       "norm_label": "_remove_in_mods_by_names()"
     },
     {
@@ -1788,7 +1788,7 @@
       "source_location": "L6067",
       "_origin": "ast",
       "id": "api_server_remove_in_mods_by_stems",
-      "community": 57,
+      "community": 80,
       "norm_label": "_remove_in_mods_by_stems()"
     },
     {
@@ -1798,7 +1798,7 @@
       "source_location": "L6090",
       "_origin": "ast",
       "id": "api_server_delete_local_downloads_endpoint",
-      "community": 57,
+      "community": 80,
       "norm_label": "delete_local_downloads_endpoint()"
     },
     {
@@ -1808,7 +1808,7 @@
       "source_location": "L6190",
       "_origin": "ast",
       "id": "api_server_disable_all_mods",
-      "community": 57,
+      "community": 108,
       "norm_label": "disable_all_mods()"
     },
     {
@@ -1818,7 +1818,7 @@
       "source_location": "L6239",
       "_origin": "ast",
       "id": "api_server_set_active_paks",
-      "community": 57,
+      "community": 108,
       "norm_label": "set_active_paks()"
     },
     {
@@ -1828,7 +1828,7 @@
       "source_location": "L6771",
       "_origin": "ast",
       "id": "api_server_activate_by_name",
-      "community": 57,
+      "community": 108,
       "norm_label": "activate_by_name()"
     },
     {
@@ -1838,7 +1838,7 @@
       "source_location": "L6892",
       "_origin": "ast",
       "id": "api_server_deactivate_by_name",
-      "community": 57,
+      "community": 108,
       "norm_label": "deactivate_by_name()"
     },
     {
@@ -1848,7 +1848,7 @@
       "source_location": "L6942",
       "_origin": "ast",
       "id": "api_server_scan_active_endpoint",
-      "community": 57,
+      "community": 108,
       "norm_label": "scan_active_endpoint()"
     },
     {
@@ -1858,7 +1858,7 @@
       "source_location": "L6957",
       "_origin": "ast",
       "id": "api_server_get_local_download",
-      "community": 57,
+      "community": 86,
       "norm_label": "get_local_download()"
     },
     {
@@ -1868,7 +1868,7 @@
       "source_location": "L7054",
       "_origin": "ast",
       "id": "api_server_get_pak_assets",
-      "community": 57,
+      "community": 70,
       "norm_label": "get_pak_assets()"
     },
     {
@@ -1878,7 +1878,7 @@
       "source_location": "L7136",
       "_origin": "ast",
       "id": "api_server_delete_mod_endpoint",
-      "community": 57,
+      "community": 70,
       "norm_label": "delete_mod_endpoint()"
     },
     {
@@ -1948,7 +1948,7 @@
       "source_location": "L7428",
       "_origin": "ast",
       "id": "api_server_list_collections",
-      "community": 57,
+      "community": 70,
       "norm_label": "list_collections()"
     },
     {
@@ -1968,7 +1968,7 @@
       "source_location": "L7462",
       "_origin": "ast",
       "id": "api_server_delete_collection",
-      "community": 57,
+      "community": 70,
       "norm_label": "delete_collection()"
     },
     {
@@ -2008,7 +2008,7 @@
       "source_location": "L7645",
       "_origin": "ast",
       "id": "api_server_customauthorpayload",
-      "community": 26,
+      "community": 57,
       "norm_label": "customauthorpayload"
     },
     {
@@ -2028,7 +2028,7 @@
       "source_location": "L7657",
       "_origin": "ast",
       "id": "api_server_search_authors",
-      "community": 51,
+      "community": 57,
       "norm_label": "search_authors()"
     },
     {
@@ -2038,7 +2038,7 @@
       "source_location": "L7666",
       "_origin": "ast",
       "id": "api_server_create_author",
-      "community": 26,
+      "community": 57,
       "norm_label": "create_author()"
     },
     {
@@ -2048,7 +2048,7 @@
       "source_location": "L7682",
       "_origin": "ast",
       "id": "api_server_update_author",
-      "community": 26,
+      "community": 57,
       "norm_label": "update_author()"
     },
     {
@@ -2058,7 +2058,7 @@
       "source_location": "L7698",
       "_origin": "ast",
       "id": "api_server_clear_author_for_mod",
-      "community": 51,
+      "community": 57,
       "norm_label": "clear_author_for_mod()"
     },
     {
@@ -2068,7 +2068,7 @@
       "source_location": "L7708",
       "_origin": "ast",
       "id": "api_server_assign_author_to_mod",
-      "community": 51,
+      "community": 57,
       "norm_label": "assign_author_to_mod()"
     },
     {
@@ -2078,7 +2078,7 @@
       "source_location": "L7721",
       "_origin": "ast",
       "id": "api_server_get_author_for_mod",
-      "community": 51,
+      "community": 57,
       "norm_label": "get_author_for_mod()"
     },
     {
@@ -2108,7 +2108,7 @@
       "source_location": "L224",
       "_origin": "ast",
       "id": "api_server_rationale_224",
-      "community": 57,
+      "community": 80,
       "norm_label": "daemon thread: compute md5 hashes for all non-conforming mods in local_downloads"
     },
     {
@@ -2118,7 +2118,7 @@
       "source_location": "L304",
       "_origin": "ast",
       "id": "api_server_rationale_304",
-      "community": 57,
+      "community": 108,
       "norm_label": "rebuild conflict tables, logging failures with context and optional re-raise."
     },
     {
@@ -2138,7 +2138,7 @@
       "source_location": "L325",
       "_origin": "ast",
       "id": "api_server_rationale_325",
-      "community": 57,
+      "community": 86,
       "norm_label": "return a set of lowercase pak filenames actually present in ~mods, \tor none if t"
     },
     {
@@ -2148,7 +2148,7 @@
       "source_location": "L970",
       "_origin": "ast",
       "id": "api_server_rationale_970",
-      "community": 57,
+      "community": 108,
       "norm_label": "build arguments for scan_active_main with game-root from settings."
     },
     {
@@ -2158,7 +2158,7 @@
       "source_location": "L1046",
       "_origin": "ast",
       "id": "api_server_rationale_1046",
-      "community": 57,
+      "community": 129,
       "norm_label": "rebuild character and skin data from pak files."
     },
     {
@@ -2168,7 +2168,7 @@
       "source_location": "L1072",
       "_origin": "ast",
       "id": "api_server_rationale_1072",
-      "community": 57,
+      "community": 129,
       "norm_label": "run full database rebuild including tags, conflicts, and all metadata. \t \tforces"
     },
     {
@@ -2178,7 +2178,7 @@
       "source_location": "L1392",
       "_origin": "ast",
       "id": "api_server_rationale_1392",
-      "community": 57,
+      "community": 86,
       "norm_label": "best-effort parsing for nexus member identifiers from diverse inputs."
     },
     {
@@ -2188,7 +2188,7 @@
       "source_location": "L1422",
       "_origin": "ast",
       "id": "api_server_rationale_1422",
-      "community": 57,
+      "community": 86,
       "norm_label": "derive a usable avatar url for nexus authors when possible."
     },
     {
@@ -2208,7 +2208,7 @@
       "source_location": "L1532",
       "_origin": "ast",
       "id": "api_server_rationale_1532",
-      "community": 57,
+      "community": 80,
       "norm_label": "unified metadata resolver for mod installation. \t \textracts name, mod_id, and ve"
     },
     {
@@ -2218,7 +2218,7 @@
       "source_location": "L1573",
       "_origin": "ast",
       "id": "api_server_rationale_1573",
-      "community": 57,
+      "community": 80,
       "norm_label": "check if a download with the same name + version + mod_id already exists. \t \tret"
     },
     {
@@ -2228,7 +2228,7 @@
       "source_location": "L1633",
       "_origin": "ast",
       "id": "api_server_rationale_1633",
-      "community": 51,
+      "community": 80,
       "norm_label": "ingest a resolved local archive/pak into ``local_downloads`` and related tables."
     },
     {
@@ -2238,7 +2238,7 @@
       "source_location": "L2012",
       "_origin": "ast",
       "id": "api_server_rationale_2012",
-      "community": 57,
+      "community": 108,
       "norm_label": "load character names from database instead of character_ids.json."
     },
     {
@@ -2248,7 +2248,7 @@
       "source_location": "L2032",
       "_origin": "ast",
       "id": "api_server_rationale_2032",
-      "community": 57,
+      "community": 108,
       "norm_label": "return (spaced, compact) lowercase normalized variants for matching. \tspaced rep"
     },
     {
@@ -2258,7 +2258,7 @@
       "source_location": "L2045",
       "_origin": "ast",
       "id": "api_server_rationale_2045",
-      "community": 57,
+      "community": 108,
       "norm_label": "keep only known categories and character tokens present in character_ids.json."
     },
     {
@@ -2268,7 +2268,7 @@
       "source_location": "L2099",
       "_origin": "ast",
       "id": "api_server_rationale_2099",
-      "community": 57,
+      "community": 70,
       "norm_label": "toggle a mod's favourite status. body: { \"mod_id\": int }"
     },
     {
@@ -2278,7 +2278,7 @@
       "source_location": "L2130",
       "_origin": "ast",
       "id": "api_server_rationale_2130",
-      "community": 57,
+      "community": 70,
       "norm_label": "return all favourited mod ids."
     },
     {
@@ -2288,7 +2288,7 @@
       "source_location": "L2146",
       "_origin": "ast",
       "id": "api_server_rationale_2146",
-      "community": 57,
+      "community": 80,
       "norm_label": "check the latest modification timestamp of game pak files.  \tscans the paks dire"
     },
     {
@@ -2298,7 +2298,7 @@
       "source_location": "L2221",
       "_origin": "ast",
       "id": "api_server_rationale_2221",
-      "community": 57,
+      "community": 70,
       "norm_label": "check if database and settings exist and need bootstrapping. \t \timportant: this"
     },
     {
@@ -2308,7 +2308,7 @@
       "source_location": "L2296",
       "_origin": "ast",
       "id": "api_server_rationale_2296",
-      "community": 57,
+      "community": 82,
       "norm_label": "frontend debug logging endpoint - logs to backend.log"
     },
     {
@@ -2328,7 +2328,7 @@
       "source_location": "L2389",
       "_origin": "ast",
       "id": "api_server_rationale_2389",
-      "community": 57,
+      "community": 60,
       "norm_label": "check if nxm:// protocol is registered on the system."
     },
     {
@@ -2338,7 +2338,7 @@
       "source_location": "L2402",
       "_origin": "ast",
       "id": "api_server_rationale_2402",
-      "community": 57,
+      "community": 60,
       "norm_label": "register nxm:// protocol to launch the tauri app. \t \texpects: { \"tauri_path\": \"c"
     },
     {
@@ -2348,7 +2348,7 @@
       "source_location": "L2426",
       "_origin": "ast",
       "id": "api_server_rationale_2426",
-      "community": 57,
+      "community": 60,
       "norm_label": "unregister nxm:// protocol from the system."
     },
     {
@@ -2358,7 +2358,7 @@
       "source_location": "L2598",
       "_origin": "ast",
       "id": "api_server_rationale_2598",
-      "community": 57,
+      "community": 80,
       "norm_label": "register a local mod archive or pak in local_downloads; minimal ingestion. \tbody"
     },
     {
@@ -2378,7 +2378,7 @@
       "source_location": "L2797",
       "_origin": "ast",
       "id": "api_server_rationale_2797",
-      "community": 57,
+      "community": 82,
       "norm_label": "get the last nxm url received by the backend for testing/debugging purposes."
     },
     {
@@ -2388,7 +2388,7 @@
       "source_location": "L2838",
       "_origin": "ast",
       "id": "api_server_rationale_2838",
-      "community": 70,
+      "community": 117,
       "norm_label": "signal an in-progress nxm download to stop.  \tthis sets a cancellation flag that"
     },
     {
@@ -2398,7 +2398,7 @@
       "source_location": "L2865",
       "_origin": "ast",
       "id": "api_server_rationale_2865",
-      "community": 57,
+      "community": 70,
       "norm_label": "remove any handoff_failures row for a given nexus file_id. \t \tused when a duplic"
     },
     {
@@ -2408,7 +2408,7 @@
       "source_location": "L2950",
       "_origin": "ast",
       "id": "api_server_rationale_2950",
-      "community": 57,
+      "community": 82,
       "norm_label": "return the most recent handoff compatible with the given mod and file.  \tparamet"
     },
     {
@@ -2418,7 +2418,7 @@
       "source_location": "L3081",
       "_origin": "ast",
       "id": "api_server_rationale_3081",
-      "community": 57,
+      "community": 86,
       "norm_label": "refresh nexus metadata for a mod and report whether updates are available."
     },
     {
@@ -2428,7 +2428,7 @@
       "source_location": "L3668",
       "_origin": "ast",
       "id": "api_server_rationale_3668",
-      "community": 57,
+      "community": 82,
       "norm_label": "download the latest nexus file for a mod, ingest it, and activate it while deact"
     },
     {
@@ -2438,7 +2438,7 @@
       "source_location": "L3996",
       "_origin": "ast",
       "id": "api_server_rationale_3996",
-      "community": 57,
+      "community": 80,
       "norm_label": "accept an uploaded mod archive/pak and store it under the downloads root. \t\tretu"
     },
     {
@@ -2448,7 +2448,7 @@
       "source_location": "L4063",
       "_origin": "ast",
       "id": "api_server_rationale_4063",
-      "community": 57,
+      "community": 80,
       "norm_label": "fallback upload endpoint when python-multipart is unavailable."
     },
     {
@@ -2458,7 +2458,7 @@
       "source_location": "L4071",
       "_origin": "ast",
       "id": "api_server_rationale_4071",
-      "community": 57,
+      "community": 26,
       "norm_label": "request body for copying a file to the downloads folder."
     },
     {
@@ -2468,7 +2468,7 @@
       "source_location": "L4077",
       "_origin": "ast",
       "id": "api_server_rationale_4077",
-      "community": 57,
+      "community": 80,
       "norm_label": "copy a file from an external path to the downloads folder. \t \tthis endpoint is u"
     },
     {
@@ -2478,7 +2478,7 @@
       "source_location": "L4180",
       "_origin": "ast",
       "id": "api_server_rationale_4180",
-      "community": 57,
+      "community": 108,
       "norm_label": "rebuild conflict materialization tables. \t \tgracefully handles empty/new databas"
     },
     {
@@ -2508,7 +2508,7 @@
       "source_location": "L4620",
       "_origin": "ast",
       "id": "api_server_rationale_4620",
-      "community": 57,
+      "community": 70,
       "norm_label": "get all images for a mod (nexus images + custom uploaded images)."
     },
     {
@@ -2548,7 +2548,7 @@
       "source_location": "L4975",
       "_origin": "ast",
       "id": "api_server_rationale_4975",
-      "community": 57,
+      "community": 70,
       "norm_label": "delete a custom uploaded image."
     },
     {
@@ -2558,7 +2558,7 @@
       "source_location": "L5007",
       "_origin": "ast",
       "id": "api_server_rationale_5007",
-      "community": 57,
+      "community": 86,
       "norm_label": "list local downloads with joined mod info and tags sourced strictly from v_local"
     },
     {
@@ -2568,7 +2568,7 @@
       "source_location": "L5242",
       "_origin": "ast",
       "id": "api_server_rationale_5242",
-      "community": 57,
+      "community": 80,
       "norm_label": "return aggregated summary for local downloads.  \tresponse fields: \t  - total_siz"
     },
     {
@@ -2578,7 +2578,7 @@
       "source_location": "L5533",
       "_origin": "ast",
       "id": "api_server_rationale_5533",
-      "community": 57,
+      "community": 80,
       "norm_label": "return a deterministic destination under ``directory`` without suffixing.  \tif t"
     },
     {
@@ -2588,7 +2588,7 @@
       "source_location": "L5936",
       "_origin": "ast",
       "id": "api_server_rationale_5936",
-      "community": 57,
+      "community": 108,
       "norm_label": "convert a canonical character tag to a safe folder name (snake case)."
     },
     {
@@ -2598,7 +2598,7 @@
       "source_location": "L5946",
       "_origin": "ast",
       "id": "api_server_rationale_5946",
-      "community": 57,
+      "community": 108,
       "norm_label": "infer a canonical character tag for a download using pak_tags_json; fallback to"
     },
     {
@@ -2608,7 +2608,7 @@
       "source_location": "L5999",
       "_origin": "ast",
       "id": "api_server_rationale_5999",
-      "community": 57,
+      "community": 80,
       "norm_label": "resolve a local download source path from either a path-like string or a local_d"
     },
     {
@@ -2618,7 +2618,7 @@
       "source_location": "L6051",
       "_origin": "ast",
       "id": "api_server_rationale_6051",
-      "community": 57,
+      "community": 108,
       "norm_label": "remove any files in mods_dir (recursively) whose basename is in names (case-inse"
     },
     {
@@ -2628,7 +2628,7 @@
       "source_location": "L6068",
       "_origin": "ast",
       "id": "api_server_rationale_6068",
-      "community": 57,
+      "community": 80,
       "norm_label": "remove any files in mods_dir (recursively) with basename matching stem + (.pak|."
     },
     {
@@ -2638,7 +2638,7 @@
       "source_location": "L6091",
       "_origin": "ast",
       "id": "api_server_rationale_6091",
-      "community": 57,
+      "community": 80,
       "norm_label": "remove one or more local_downloads rows and cascade associated data."
     },
     {
@@ -2648,7 +2648,7 @@
       "source_location": "L6191",
       "_origin": "ast",
       "id": "api_server_rationale_6191",
-      "community": 57,
+      "community": 108,
       "norm_label": "disable all active mods and clear the ~mods folder."
     },
     {
@@ -2658,7 +2658,7 @@
       "source_location": "L6240",
       "_origin": "ast",
       "id": "api_server_rationale_6240",
-      "community": 57,
+      "community": 108,
       "norm_label": "set the active pak list for a local_downloads row and mirror files into the game"
     },
     {
@@ -2668,7 +2668,7 @@
       "source_location": "L6772",
       "_origin": "ast",
       "id": "api_server_rationale_6772",
-      "community": 57,
+      "community": 108,
       "norm_label": "activate all pak files for the given local_download name by extracting its archi"
     },
     {
@@ -2678,7 +2678,7 @@
       "source_location": "L6893",
       "_origin": "ast",
       "id": "api_server_rationale_6893",
-      "community": 57,
+      "community": 108,
       "norm_label": "deactivate (remove) all pak files for the given local_download name from ~mods a"
     },
     {
@@ -2688,7 +2688,7 @@
       "source_location": "L6943",
       "_origin": "ast",
       "id": "api_server_rationale_6943",
-      "community": 57,
+      "community": 108,
       "norm_label": "trigger a filesystem scan of ~mods and update local_downloads.active_paks accord"
     },
     {
@@ -2698,7 +2698,7 @@
       "source_location": "L6958",
       "_origin": "ast",
       "id": "api_server_rationale_6958",
-      "community": 57,
+      "community": 86,
       "norm_label": "return a single local_download row with parsed contents and active_paks."
     },
     {
@@ -2708,7 +2708,7 @@
       "source_location": "L7055",
       "_origin": "ast",
       "id": "api_server_rationale_7055",
-      "community": 57,
+      "community": 70,
       "norm_label": "fetch pak assets from pak_assets_json table for given download ids. \t \tquery par"
     },
     {
@@ -2718,7 +2718,7 @@
       "source_location": "L7137",
       "_origin": "ast",
       "id": "api_server_rationale_7137",
-      "community": 57,
+      "community": 70,
       "norm_label": "delete all local downloads for a specific mod and clean up associated metadata."
     },
     {
@@ -2788,7 +2788,7 @@
       "source_location": "L7429",
       "_origin": "ast",
       "id": "api_server_rationale_7429",
-      "community": 57,
+      "community": 70,
       "norm_label": "list all stored collections (summary, no mod_files)."
     },
     {
@@ -2808,7 +2808,7 @@
       "source_location": "L7463",
       "_origin": "ast",
       "id": "api_server_rationale_7463",
-      "community": 57,
+      "community": 70,
       "norm_label": "remove a collection (and its mod_files via cascade)."
     },
     {
@@ -2968,7 +2968,7 @@
       "source_location": "L243",
       "_origin": "ast",
       "id": "services_handoffs_update_handoff_progress",
-      "community": 70,
+      "community": 117,
       "norm_label": "update_handoff_progress()"
     },
     {
@@ -2978,7 +2978,7 @@
       "source_location": "L280",
       "_origin": "ast",
       "id": "services_handoffs_serialize_handoff",
-      "community": 70,
+      "community": 82,
       "norm_label": "serialize_handoff()"
     },
     {
@@ -3008,7 +3008,7 @@
       "source_location": "L385",
       "_origin": "ast",
       "id": "services_handoffs_clear_handoff_failure",
-      "community": 57,
+      "community": 70,
       "norm_label": "clear_handoff_failure()"
     },
     {
@@ -3078,7 +3078,7 @@
       "source_location": "L386",
       "_origin": "ast",
       "id": "services_handoffs_rationale_386",
-      "community": 57,
+      "community": 70,
       "norm_label": "clear failure record for a handoff (e.g., after successful processing)."
     },
     {
@@ -3498,7 +3498,7 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "db_db_get_connection",
-      "community": 51,
+      "community": 48,
       "norm_label": "get_connection()"
     },
     {
@@ -3518,7 +3518,7 @@
       "source_location": "L61",
       "_origin": "ast",
       "id": "db_db_init_schema",
-      "community": 51,
+      "community": 48,
       "norm_label": "init_schema()"
     },
     {
@@ -3598,7 +3598,7 @@
       "source_location": "L492",
       "_origin": "ast",
       "id": "db_db_run_migrations",
-      "community": 51,
+      "community": 39,
       "norm_label": "run_migrations()"
     },
     {
@@ -3618,7 +3618,7 @@
       "source_location": "L838",
       "_origin": "ast",
       "id": "db_db_make_version_key",
-      "community": 57,
+      "community": 86,
       "norm_label": "make_version_key()"
     },
     {
@@ -3628,7 +3628,7 @@
       "source_location": "L871",
       "_origin": "ast",
       "id": "db_db_versions_equivalent",
-      "community": 57,
+      "community": 86,
       "norm_label": "versions_equivalent()"
     },
     {
@@ -3648,7 +3648,7 @@
       "source_location": "L1060",
       "_origin": "ast",
       "id": "db_db_fetch_pak_version_status",
-      "community": 57,
+      "community": 86,
       "norm_label": "fetch_pak_version_status()"
     },
     {
@@ -3688,7 +3688,7 @@
       "source_location": "L1179",
       "_origin": "ast",
       "id": "db_db_delete_local_downloads",
-      "community": 57,
+      "community": 51,
       "norm_label": "delete_local_downloads()"
     },
     {
@@ -3698,7 +3698,7 @@
       "source_location": "L1304",
       "_origin": "ast",
       "id": "db_db_update_local_download_active_paks",
-      "community": 57,
+      "community": 108,
       "norm_label": "update_local_download_active_paks()"
     },
     {
@@ -3788,7 +3788,7 @@
       "source_location": "L1706",
       "_origin": "ast",
       "id": "db_db_rebuild_conflicts",
-      "community": 51,
+      "community": 21,
       "norm_label": "rebuild_conflicts()"
     },
     {
@@ -3858,7 +3858,7 @@
       "source_location": "L1969",
       "_origin": "ast",
       "id": "db_db_insert_skins",
-      "community": 39,
+      "community": 51,
       "norm_label": "insert_skins()"
     },
     {
@@ -3868,7 +3868,7 @@
       "source_location": "L1986",
       "_origin": "ast",
       "id": "db_db_upsert_custom_author",
-      "community": 26,
+      "community": 57,
       "norm_label": "upsert_custom_author()"
     },
     {
@@ -3878,7 +3878,7 @@
       "source_location": "L2019",
       "_origin": "ast",
       "id": "db_db_update_custom_author",
-      "community": 26,
+      "community": 57,
       "norm_label": "update_custom_author()"
     },
     {
@@ -3888,7 +3888,7 @@
       "source_location": "L2049",
       "_origin": "ast",
       "id": "db_db_get_custom_author",
-      "community": 26,
+      "community": 57,
       "norm_label": "get_custom_author()"
     },
     {
@@ -3898,7 +3898,7 @@
       "source_location": "L2067",
       "_origin": "ast",
       "id": "db_db_search_custom_authors",
-      "community": 51,
+      "community": 57,
       "norm_label": "search_custom_authors()"
     },
     {
@@ -3908,7 +3908,7 @@
       "source_location": "L2122",
       "_origin": "ast",
       "id": "db_db_set_mod_author",
-      "community": 51,
+      "community": 57,
       "norm_label": "set_mod_author()"
     },
     {
@@ -3918,7 +3918,7 @@
       "source_location": "L2139",
       "_origin": "ast",
       "id": "db_db_clear_mod_author",
-      "community": 51,
+      "community": 57,
       "norm_label": "clear_mod_author()"
     },
     {
@@ -3928,7 +3928,7 @@
       "source_location": "L2149",
       "_origin": "ast",
       "id": "db_db_get_mod_metadata",
-      "community": 51,
+      "community": 57,
       "norm_label": "get_mod_metadata()"
     },
     {
@@ -3948,7 +3948,7 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "db_db_rationale_62",
-      "community": 51,
+      "community": 48,
       "norm_label": "create tables and views if they do not already exist."
     },
     {
@@ -3988,7 +3988,7 @@
       "source_location": "L493",
       "_origin": "ast",
       "id": "db_db_rationale_493",
-      "community": 51,
+      "community": 39,
       "norm_label": "apply .sql migration files in chronological order if not yet applied.      mig"
     },
     {
@@ -4028,7 +4028,7 @@
       "source_location": "L1183",
       "_origin": "ast",
       "id": "db_db_rationale_1183",
-      "community": 57,
+      "community": 51,
       "norm_label": "delete local download rows and cascade related pak records.      returns a tup"
     },
     {
@@ -4038,7 +4038,7 @@
       "source_location": "L1707",
       "_origin": "ast",
       "id": "db_db_rationale_1707",
-      "community": 51,
+      "community": 21,
       "norm_label": "rebuild materialized conflict tables.      ``active_only`` controls which snap"
     },
     {
@@ -4108,7 +4108,7 @@
       "source_location": "L1970",
       "_origin": "ast",
       "id": "db_db_rationale_1970",
-      "community": 39,
+      "community": 51,
       "norm_label": "batch insert skins.      args:         skins: list of (skin_id, character_id,"
     },
     {
@@ -4118,7 +4118,7 @@
       "source_location": "L1994",
       "_origin": "ast",
       "id": "db_db_rationale_1994",
-      "community": 26,
+      "community": 57,
       "norm_label": "insert or update a custom author by normalised name.  returns the row id."
     },
     {
@@ -4128,7 +4128,7 @@
       "source_location": "L2027",
       "_origin": "ast",
       "id": "db_db_rationale_2027",
-      "community": 26,
+      "community": 57,
       "norm_label": "partially update an existing custom author row."
     },
     {
@@ -4138,7 +4138,7 @@
       "source_location": "L2050",
       "_origin": "ast",
       "id": "db_db_rationale_2050",
-      "community": 26,
+      "community": 57,
       "norm_label": "fetch a single custom author by id."
     },
     {
@@ -4148,7 +4148,7 @@
       "source_location": "L2068",
       "_origin": "ast",
       "id": "db_db_rationale_2068",
-      "community": 51,
+      "community": 57,
       "norm_label": "search custom_authors + mods table by partial name match.      returns a unifi"
     },
     {
@@ -4158,7 +4158,7 @@
       "source_location": "L2123",
       "_origin": "ast",
       "id": "db_db_rationale_2123",
-      "community": 51,
+      "community": 57,
       "norm_label": "assign a custom author to a mod (upsert)."
     },
     {
@@ -4168,7 +4168,7 @@
       "source_location": "L2140",
       "_origin": "ast",
       "id": "db_db_rationale_2140",
-      "community": 51,
+      "community": 57,
       "norm_label": "remove the custom author assignment for a mod."
     },
     {
@@ -4178,7 +4178,7 @@
       "source_location": "L2150",
       "_origin": "ast",
       "id": "db_db_rationale_2150",
-      "community": 51,
+      "community": 57,
       "norm_label": "fetch local_mod_metadata + joined custom_author for a single mod_key."
     },
     {
@@ -4548,7 +4548,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "extraction_service",
-      "community": 39,
+      "community": 51,
       "norm_label": "service.py"
     },
     {
@@ -4558,7 +4558,7 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "extraction_service_extract_character_and_skin_data",
-      "community": 39,
+      "community": 51,
       "norm_label": "extract_character_and_skin_data()"
     },
     {
@@ -4568,7 +4568,7 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "core_extraction_service_py_any",
-      "community": 39,
+      "community": 51,
       "norm_label": "any"
     },
     {
@@ -4578,7 +4578,7 @@
       "source_location": "L87",
       "_origin": "ast",
       "id": "extraction_service_extract_character_names",
-      "community": 39,
+      "community": 51,
       "norm_label": "_extract_character_names()"
     },
     {
@@ -4588,7 +4588,7 @@
       "source_location": "L87",
       "_origin": "ast",
       "id": "core_extraction_service_py_path",
-      "community": 39,
+      "community": 51,
       "norm_label": "path"
     },
     {
@@ -4598,7 +4598,7 @@
       "source_location": "L93",
       "_origin": "ast",
       "id": "extraction_service_extract_skin_ids",
-      "community": 39,
+      "community": 51,
       "norm_label": "_extract_skin_ids()"
     },
     {
@@ -4608,7 +4608,7 @@
       "source_location": "L99",
       "_origin": "ast",
       "id": "extraction_service_extract_skin_names",
-      "community": 39,
+      "community": 51,
       "norm_label": "_extract_skin_names()"
     },
     {
@@ -4618,7 +4618,7 @@
       "source_location": "L105",
       "_origin": "ast",
       "id": "extraction_service_combine_data",
-      "community": 39,
+      "community": 51,
       "norm_label": "_combine_data()"
     },
     {
@@ -4628,7 +4628,7 @@
       "source_location": "L113",
       "_origin": "ast",
       "id": "extraction_service_ingest_into_database",
-      "community": 39,
+      "community": 51,
       "norm_label": "ingest_into_database()"
     },
     {
@@ -4658,7 +4658,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "extraction_service_rationale_1",
-      "community": 39,
+      "community": 51,
       "norm_label": "service module for marvel rivals character and skin extraction.  provides func"
     },
     {
@@ -4668,7 +4668,7 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "extraction_service_rationale_37",
-      "community": 39,
+      "community": 51,
       "norm_label": "extract all character and skin data from pak files.          returns:"
     },
     {
@@ -4678,7 +4678,7 @@
       "source_location": "L88",
       "_origin": "ast",
       "id": "extraction_service_rationale_88",
-      "community": 39,
+      "community": 51,
       "norm_label": "extract character names from locres files."
     },
     {
@@ -4688,7 +4688,7 @@
       "source_location": "L94",
       "_origin": "ast",
       "id": "extraction_service_rationale_94",
-      "community": 39,
+      "community": 51,
       "norm_label": "extract skin ids from character pak files."
     },
     {
@@ -4698,7 +4698,7 @@
       "source_location": "L100",
       "_origin": "ast",
       "id": "extraction_service_rationale_100",
-      "community": 39,
+      "community": 51,
       "norm_label": "extract skin names from locres files."
     },
     {
@@ -4708,7 +4708,7 @@
       "source_location": "L108",
       "_origin": "ast",
       "id": "extraction_service_rationale_108",
-      "community": 39,
+      "community": 51,
       "norm_label": "combine extracted data into final structure."
     },
     {
@@ -4718,7 +4718,7 @@
       "source_location": "L114",
       "_origin": "ast",
       "id": "extraction_service_rationale_114",
-      "community": 39,
+      "community": 51,
       "norm_label": "ingest extracted character and skin data into the database.          args:"
     },
     {
@@ -4758,7 +4758,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ingestion_scan_active_mods",
-      "community": 50,
+      "community": 21,
       "norm_label": "scan_active_mods.py"
     },
     {
@@ -4768,7 +4768,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "ingestion_scan_active_mods_utc_now",
-      "community": 50,
+      "community": 21,
       "norm_label": "utc_now()"
     },
     {
@@ -4778,7 +4778,7 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "ingestion_scan_active_mods_parse_args",
-      "community": 50,
+      "community": 44,
       "norm_label": "parse_args()"
     },
     {
@@ -4788,7 +4788,7 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "core_ingestion_scan_active_mods_py_appsettings",
-      "community": 50,
+      "community": 44,
       "norm_label": "appsettings"
     },
     {
@@ -4798,7 +4798,7 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "core_ingestion_scan_active_mods_py_namespace",
-      "community": 50,
+      "community": 44,
       "norm_label": "namespace"
     },
     {
@@ -4808,7 +4808,7 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "ingestion_scan_active_mods_discover_paks",
-      "community": 50,
+      "community": 21,
       "norm_label": "discover_paks()"
     },
     {
@@ -4818,7 +4818,7 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "core_ingestion_scan_active_mods_py_path",
-      "community": 50,
+      "community": 21,
       "norm_label": "path"
     },
     {
@@ -4828,7 +4828,7 @@
       "source_location": "L49",
       "_origin": "ast",
       "id": "ingestion_scan_active_mods_parse_json_array",
-      "community": 50,
+      "community": 21,
       "norm_label": "_parse_json_array()"
     },
     {
@@ -4838,7 +4838,7 @@
       "source_location": "L64",
       "_origin": "ast",
       "id": "ingestion_scan_active_mods_parse_iso",
-      "community": 50,
+      "community": 21,
       "norm_label": "_parse_iso()"
     },
     {
@@ -4848,7 +4848,7 @@
       "source_location": "L64",
       "_origin": "ast",
       "id": "datetime",
-      "community": 50,
+      "community": 21,
       "norm_label": "datetime"
     },
     {
@@ -4858,7 +4858,7 @@
       "source_location": "L76",
       "_origin": "ast",
       "id": "ingestion_scan_active_mods_ts",
-      "community": 50,
+      "community": 21,
       "norm_label": "_ts()"
     },
     {
@@ -4868,7 +4868,7 @@
       "source_location": "L84",
       "_origin": "ast",
       "id": "ingestion_scan_active_mods_main",
-      "community": 50,
+      "community": 21,
       "norm_label": "main()"
     },
     {
@@ -5218,7 +5218,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "valueerror",
-      "community": 150,
+      "community": 125,
       "norm_label": "valueerror"
     },
     {
@@ -5308,7 +5308,7 @@
       "source_location": "L122",
       "_origin": "ast",
       "id": "utils_archive_extract_archive",
-      "community": 51,
+      "community": 39,
       "norm_label": "extract_archive()"
     },
     {
@@ -5408,7 +5408,7 @@
       "source_location": "L123",
       "_origin": "ast",
       "id": "utils_archive_rationale_123",
-      "community": 51,
+      "community": 39,
       "norm_label": "extract entire archive into dest_dir and return list of extracted file paths (re"
     },
     {
@@ -5438,7 +5438,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "utils_bbcode_wrapper",
-      "community": 26,
+      "community": 140,
       "norm_label": "bbcode_wrapper.py"
     },
     {
@@ -5448,7 +5448,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "utils_bbcode_wrapper_get_parser",
-      "community": 26,
+      "community": 140,
       "norm_label": "_get_parser()"
     },
     {
@@ -5458,7 +5458,7 @@
       "source_location": "L101",
       "_origin": "ast",
       "id": "utils_bbcode_wrapper_bbcode_to_html",
-      "community": 26,
+      "community": 140,
       "norm_label": "bbcode_to_html()"
     },
     {
@@ -5468,7 +5468,7 @@
       "source_location": "L102",
       "_origin": "ast",
       "id": "utils_bbcode_wrapper_rationale_102",
-      "community": 26,
+      "community": 140,
       "norm_label": "convert bbcode text to html using the centralized parser logic."
     },
     {
@@ -5478,7 +5478,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "utils_download_paths",
-      "community": 138,
+      "community": 50,
       "norm_label": "download_paths.py"
     },
     {
@@ -5488,7 +5488,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "utils_download_paths_expand",
-      "community": 138,
+      "community": 50,
       "norm_label": "_expand()"
     },
     {
@@ -5498,7 +5498,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "core_utils_download_paths_py_path",
-      "community": 138,
+      "community": 50,
       "norm_label": "path"
     },
     {
@@ -5508,7 +5508,7 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "utils_download_paths_iter_config_roots",
-      "community": 138,
+      "community": 50,
       "norm_label": "_iter_config_roots()"
     },
     {
@@ -5518,7 +5518,7 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "utils_download_paths_known_download_roots",
-      "community": 138,
+      "community": 50,
       "norm_label": "known_download_roots()"
     },
     {
@@ -5538,7 +5538,7 @@
       "source_location": "L85",
       "_origin": "ast",
       "id": "utils_download_paths_resolve_absolute_download_path",
-      "community": 138,
+      "community": 50,
       "norm_label": "resolve_absolute_download_path()"
     },
     {
@@ -5548,7 +5548,7 @@
       "source_location": "L86",
       "_origin": "ast",
       "id": "utils_download_paths_rationale_86",
-      "community": 138,
+      "community": 50,
       "norm_label": "resolve a potentially relative download path back to an absolute filesystem path"
     },
     {
@@ -7208,7 +7208,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scratch_rebuild_all_database_and_tags",
-      "community": 51,
+      "community": 39,
       "norm_label": "rebuild_all_database_and_tags.py"
     },
     {
@@ -7218,7 +7218,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "scratch_rebuild_all_database_and_tags_rebuild_all",
-      "community": 51,
+      "community": 39,
       "norm_label": "rebuild_all()"
     },
     {
@@ -7228,7 +7228,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scratch_rebuild_all_database_and_tags_rationale_1",
-      "community": 51,
+      "community": 39,
       "norm_label": "trigger character/skin extraction/ingestion and then run rebuild_tags.py."
     },
     {
@@ -7268,7 +7268,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_init",
-      "community": 51,
+      "community": 39,
       "norm_label": "__init__.py"
     },
     {
@@ -7278,7 +7278,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_activate_mods",
-      "community": 108,
+      "community": 21,
       "norm_label": "activate_mods.py"
     },
     {
@@ -7288,7 +7288,7 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "scripts_activate_mods_load_env_mods_folder",
-      "community": 108,
+      "community": 21,
       "norm_label": "_load_env_mods_folder()"
     },
     {
@@ -7298,7 +7298,7 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "scripts_activate_mods_py_path",
-      "community": 108,
+      "community": 21,
       "norm_label": "path"
     },
     {
@@ -7308,7 +7308,7 @@
       "source_location": "L44",
       "_origin": "ast",
       "id": "scripts_activate_mods_parse_args",
-      "community": 108,
+      "community": 21,
       "norm_label": "parse_args()"
     },
     {
@@ -7318,7 +7318,7 @@
       "source_location": "L56",
       "_origin": "ast",
       "id": "scripts_activate_mods_resolve_source_path",
-      "community": 108,
+      "community": 21,
       "norm_label": "_resolve_source_path()"
     },
     {
@@ -7328,7 +7328,7 @@
       "source_location": "L81",
       "_origin": "ast",
       "id": "scripts_activate_mods_main",
-      "community": 108,
+      "community": 21,
       "norm_label": "main()"
     },
     {
@@ -7338,7 +7338,7 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "scripts_activate_mods_rationale_20",
-      "community": 108,
+      "community": 21,
       "norm_label": "resolve the ~mods folder from marvel_rivals_root (env or .env)."
     },
     {
@@ -7348,7 +7348,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_backfill_pak_mod_ids",
-      "community": 86,
+      "community": 48,
       "norm_label": "backfill_pak_mod_ids.py"
     },
     {
@@ -7358,7 +7358,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "scripts_backfill_pak_mod_ids_parse_args",
-      "community": 86,
+      "community": 48,
       "norm_label": "parse_args()"
     },
     {
@@ -7368,7 +7368,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "scripts_backfill_pak_mod_ids_backfill",
-      "community": 86,
+      "community": 48,
       "norm_label": "backfill()"
     },
     {
@@ -7378,7 +7378,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "scripts_backfill_pak_mod_ids_py_connection",
-      "community": 86,
+      "community": 48,
       "norm_label": "connection"
     },
     {
@@ -7388,7 +7388,7 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "scripts_backfill_pak_mod_ids_main",
-      "community": 86,
+      "community": 48,
       "norm_label": "main()"
     },
     {
@@ -7398,7 +7398,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "scripts_backfill_pak_mod_ids_rationale_18",
-      "community": 86,
+      "community": 48,
       "norm_label": "attempt to set mod_paks.mod_id where null using multiple strategies:     1. dir"
     },
     {
@@ -7408,7 +7408,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_build_asset_tags",
-      "community": 51,
+      "community": 39,
       "norm_label": "build_asset_tags.py"
     },
     {
@@ -7418,7 +7418,7 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "scripts_build_asset_tags_parse_args",
-      "community": 51,
+      "community": 39,
       "norm_label": "parse_args()"
     },
     {
@@ -7428,7 +7428,7 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "scripts_build_asset_tags_ensure_schema",
-      "community": 51,
+      "community": 39,
       "norm_label": "ensure_schema()"
     },
     {
@@ -7438,7 +7438,7 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "scripts_build_asset_tags_py_connection",
-      "community": 51,
+      "community": 39,
       "norm_label": "connection"
     },
     {
@@ -7448,7 +7448,7 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "scripts_build_asset_tags_split_tag",
-      "community": 51,
+      "community": 39,
       "norm_label": "split_tag()"
     },
     {
@@ -7458,7 +7458,7 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "scripts_build_asset_tags_main",
-      "community": 51,
+      "community": 39,
       "norm_label": "main()"
     },
     {
@@ -7468,7 +7468,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_build_pak_tags",
-      "community": 51,
+      "community": 39,
       "norm_label": "build_pak_tags.py"
     },
     {
@@ -7478,7 +7478,7 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "scripts_build_pak_tags_parse_args",
-      "community": 51,
+      "community": 39,
       "norm_label": "parse_args()"
     },
     {
@@ -7488,7 +7488,7 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "scripts_build_pak_tags_ensure_schema",
-      "community": 51,
+      "community": 39,
       "norm_label": "ensure_schema()"
     },
     {
@@ -7498,7 +7498,7 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "scripts_build_pak_tags_py_connection",
-      "community": 51,
+      "community": 39,
       "norm_label": "connection"
     },
     {
@@ -7508,7 +7508,7 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "scripts_build_pak_tags_fetch_pak_asset_tags",
-      "community": 51,
+      "community": 39,
       "norm_label": "fetch_pak_asset_tags()"
     },
     {
@@ -7518,7 +7518,7 @@
       "source_location": "L55",
       "_origin": "ast",
       "id": "scripts_build_pak_tags_build_pak_tags",
-      "community": 51,
+      "community": 39,
       "norm_label": "build_pak_tags()"
     },
     {
@@ -7528,7 +7528,7 @@
       "source_location": "L75",
       "_origin": "ast",
       "id": "scripts_build_pak_tags_upsert_pak_tags",
-      "community": 51,
+      "community": 39,
       "norm_label": "upsert_pak_tags()"
     },
     {
@@ -7538,7 +7538,7 @@
       "source_location": "L109",
       "_origin": "ast",
       "id": "scripts_build_pak_tags_main",
-      "community": 51,
+      "community": 39,
       "norm_label": "main()"
     },
     {
@@ -7548,7 +7548,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_check_tags",
-      "community": 51,
+      "community": 48,
       "norm_label": "check_tags.py"
     },
     {
@@ -7558,7 +7558,7 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "scripts_check_tags_main",
-      "community": 51,
+      "community": 48,
       "norm_label": "main()"
     },
     {
@@ -7568,7 +7568,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_conflicts_refresh",
-      "community": 51,
+      "community": 21,
       "norm_label": "conflicts_refresh.py"
     },
     {
@@ -7578,7 +7578,7 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "scripts_conflicts_refresh_parse_args",
-      "community": 51,
+      "community": 21,
       "norm_label": "parse_args()"
     },
     {
@@ -7588,7 +7588,7 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "scripts_conflicts_refresh_main",
-      "community": 51,
+      "community": 21,
       "norm_label": "main()"
     },
     {
@@ -7598,7 +7598,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_deactivate_mods",
-      "community": 51,
+      "community": 21,
       "norm_label": "deactivate_mods.py"
     },
     {
@@ -7608,7 +7608,7 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "scripts_deactivate_mods_mods_folder",
-      "community": 51,
+      "community": 21,
       "norm_label": "_mods_folder()"
     },
     {
@@ -7618,7 +7618,7 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "scripts_deactivate_mods_py_path",
-      "community": 51,
+      "community": 21,
       "norm_label": "path"
     },
     {
@@ -7628,7 +7628,7 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "scripts_deactivate_mods_parse_args",
-      "community": 51,
+      "community": 21,
       "norm_label": "parse_args()"
     },
     {
@@ -7638,7 +7638,7 @@
       "source_location": "L49",
       "_origin": "ast",
       "id": "scripts_deactivate_mods_main",
-      "community": 51,
+      "community": 21,
       "norm_label": "main()"
     },
     {
@@ -7648,7 +7648,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_demo_conflict_views",
-      "community": 51,
+      "community": 48,
       "norm_label": "demo_conflict_views.py"
     },
     {
@@ -7658,7 +7658,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "scripts_demo_conflict_views_main",
-      "community": 51,
+      "community": 48,
       "norm_label": "main()"
     },
     {
@@ -7698,7 +7698,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_demo_nxm_download",
-      "community": 26,
+      "community": 117,
       "norm_label": "demo_nxm_download.py"
     },
     {
@@ -7708,7 +7708,7 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "scripts_demo_nxm_download_load_nxm_source",
-      "community": 26,
+      "community": 117,
       "norm_label": "_load_nxm_source()"
     },
     {
@@ -7718,7 +7718,7 @@
       "source_location": "L47",
       "_origin": "ast",
       "id": "scripts_demo_nxm_download_mask_token",
-      "community": 26,
+      "community": 117,
       "norm_label": "_mask_token()"
     },
     {
@@ -7728,7 +7728,7 @@
       "source_location": "L56",
       "_origin": "ast",
       "id": "scripts_demo_nxm_download_build_demo_record",
-      "community": 26,
+      "community": 117,
       "norm_label": "_build_demo_record()"
     },
     {
@@ -7738,7 +7738,7 @@
       "source_location": "L78",
       "_origin": "ast",
       "id": "scripts_demo_nxm_download_emit_candidates",
-      "community": 26,
+      "community": 117,
       "norm_label": "_emit_candidates()"
     },
     {
@@ -7748,7 +7748,7 @@
       "source_location": "L84",
       "_origin": "ast",
       "id": "scripts_demo_nxm_download_main",
-      "community": 26,
+      "community": 117,
       "norm_label": "main()"
     },
     {
@@ -7758,7 +7758,7 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "scripts_demo_nxm_download_rationale_27",
-      "community": 26,
+      "community": 117,
       "norm_label": "return an nxm uri from a direct string or a file path."
     },
     {
@@ -7788,7 +7788,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_export_changelogs",
-      "community": 80,
+      "community": 48,
       "norm_label": "export_changelogs.py"
     },
     {
@@ -7798,7 +7798,7 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "scripts_export_changelogs_export_all",
-      "community": 80,
+      "community": 48,
       "norm_label": "export_all()"
     },
     {
@@ -7808,7 +7808,7 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "scripts_export_changelogs_py_path",
-      "community": 80,
+      "community": 48,
       "norm_label": "path"
     },
     {
@@ -7818,7 +7818,7 @@
       "source_location": "L57",
       "_origin": "ast",
       "id": "scripts_export_changelogs_main",
-      "community": 80,
+      "community": 48,
       "norm_label": "main()"
     },
     {
@@ -7828,7 +7828,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_export_changelogs_rationale_1",
-      "community": 80,
+      "community": 48,
       "norm_label": "export mod_changelogs rows into per-mod json files.  creates one file per mod"
     },
     {
@@ -7848,7 +7848,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_import_downloads",
-      "community": 51,
+      "community": 48,
       "norm_label": "import_downloads.py"
     },
     {
@@ -7858,7 +7858,7 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "scripts_import_downloads_main",
-      "community": 51,
+      "community": 48,
       "norm_label": "main()"
     },
     {
@@ -7868,7 +7868,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_ingest_download_assets",
-      "community": 51,
+      "community": 39,
       "norm_label": "ingest_download_assets.py"
     },
     {
@@ -7878,7 +7878,7 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "scripts_ingest_download_assets_load_env_from_dotenv",
-      "community": 51,
+      "community": 39,
       "norm_label": "_load_env_from_dotenv()"
     },
     {
@@ -7888,7 +7888,7 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "scripts_ingest_download_assets_py_path",
-      "community": 51,
+      "community": 39,
       "norm_label": "path"
     },
     {
@@ -7898,7 +7898,7 @@
       "source_location": "L78",
       "_origin": "ast",
       "id": "scripts_ingest_download_assets_downloads_root_from_env",
-      "community": 51,
+      "community": 39,
       "norm_label": "_downloads_root_from_env()"
     },
     {
@@ -7908,7 +7908,7 @@
       "source_location": "L92",
       "_origin": "ast",
       "id": "scripts_ingest_download_assets_to_full_path",
-      "community": 51,
+      "community": 39,
       "norm_label": "_to_full_path()"
     },
     {
@@ -7918,7 +7918,7 @@
       "source_location": "L102",
       "_origin": "ast",
       "id": "scripts_ingest_download_assets_map_declared_name",
-      "community": 51,
+      "community": 39,
       "norm_label": "_map_declared_name()"
     },
     {
@@ -7928,7 +7928,7 @@
       "source_location": "L133",
       "_origin": "ast",
       "id": "scripts_ingest_download_assets_parse_args",
-      "community": 51,
+      "community": 39,
       "norm_label": "parse_args()"
     },
     {
@@ -7938,7 +7938,7 @@
       "source_location": "L151",
       "_origin": "ast",
       "id": "scripts_ingest_download_assets_main",
-      "community": 51,
+      "community": 39,
       "norm_label": "main()"
     },
     {
@@ -7948,7 +7948,7 @@
       "source_location": "L49",
       "_origin": "ast",
       "id": "scripts_ingest_download_assets_rationale_49",
-      "community": 51,
+      "community": 39,
       "norm_label": "best-effort loader for a simple .env file at project root.      supports lines"
     },
     {
@@ -7958,7 +7958,7 @@
       "source_location": "L103",
       "_origin": "ast",
       "id": "scripts_ingest_download_assets_rationale_103",
-      "community": 51,
+      "community": 39,
       "norm_label": "return pak name aligned to local_downloads.contents when possible.      - pref"
     },
     {
@@ -8008,7 +8008,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_inspect_db",
-      "community": 51,
+      "community": 48,
       "norm_label": "inspect_db.py"
     },
     {
@@ -8018,7 +8018,7 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "scripts_inspect_db_main",
-      "community": 51,
+      "community": 48,
       "norm_label": "main()"
     },
     {
@@ -8028,7 +8028,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_inspect_pak_backfill",
-      "community": 51,
+      "community": 48,
       "norm_label": "inspect_pak_backfill.py"
     },
     {
@@ -8038,7 +8038,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "scripts_inspect_pak_backfill_parse_args",
-      "community": 51,
+      "community": 48,
       "norm_label": "parse_args()"
     },
     {
@@ -8048,7 +8048,7 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "scripts_inspect_pak_backfill_main",
-      "community": 51,
+      "community": 48,
       "norm_label": "main()"
     },
     {
@@ -8168,7 +8168,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_normalize_local_downloads",
-      "community": 51,
+      "community": 21,
       "norm_label": "normalize_local_downloads.py"
     },
     {
@@ -8178,7 +8178,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "scripts_normalize_local_downloads_normalize_local_downloads",
-      "community": 51,
+      "community": 21,
       "norm_label": "normalize_local_downloads()"
     },
     {
@@ -8188,7 +8188,7 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "scripts_normalize_local_downloads_main",
-      "community": 51,
+      "community": 21,
       "norm_label": "main()"
     },
     {
@@ -8248,7 +8248,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_rebuild_sqlite",
-      "community": 50,
+      "community": 150,
       "norm_label": "rebuild_sqlite.py"
     },
     {
@@ -8258,7 +8258,7 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "scripts_rebuild_sqlite_parse_args",
-      "community": 50,
+      "community": 150,
       "norm_label": "parse_args()"
     },
     {
@@ -8268,7 +8268,7 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "scripts_rebuild_sqlite_py_namespace",
-      "community": 50,
+      "community": 150,
       "norm_label": "namespace"
     },
     {
@@ -8278,7 +8278,7 @@
       "source_location": "L112",
       "_origin": "ast",
       "id": "scripts_rebuild_sqlite_load_env",
-      "community": 50,
+      "community": 150,
       "norm_label": "_load_env()"
     },
     {
@@ -8288,7 +8288,7 @@
       "source_location": "L112",
       "_origin": "ast",
       "id": "scripts_rebuild_sqlite_py_path",
-      "community": 50,
+      "community": 150,
       "norm_label": "path"
     },
     {
@@ -8298,7 +8298,7 @@
       "source_location": "L133",
       "_origin": "ast",
       "id": "scripts_rebuild_sqlite_resolve_db_path",
-      "community": 50,
+      "community": 150,
       "norm_label": "_resolve_db_path()"
     },
     {
@@ -8308,7 +8308,7 @@
       "source_location": "L139",
       "_origin": "ast",
       "id": "scripts_rebuild_sqlite_resolve_downloads_root",
-      "community": 50,
+      "community": 150,
       "norm_label": "_resolve_downloads_root()"
     },
     {
@@ -8318,7 +8318,7 @@
       "source_location": "L155",
       "_origin": "ast",
       "id": "scripts_rebuild_sqlite_resolve_game_root",
-      "community": 50,
+      "community": 150,
       "norm_label": "_resolve_game_root()"
     },
     {
@@ -8328,7 +8328,7 @@
       "source_location": "L171",
       "_origin": "ast",
       "id": "scripts_rebuild_sqlite_maybe_reset_db",
-      "community": 50,
+      "community": 150,
       "norm_label": "_maybe_reset_db()"
     },
     {
@@ -8338,7 +8338,7 @@
       "source_location": "L171",
       "_origin": "ast",
       "id": "scripts_rebuild_sqlite_py_logger",
-      "community": 50,
+      "community": 150,
       "norm_label": "logger"
     },
     {
@@ -8348,7 +8348,7 @@
       "source_location": "L192",
       "_origin": "ast",
       "id": "scripts_rebuild_sqlite_load_download_rows_from_json",
-      "community": 50,
+      "community": 150,
       "norm_label": "_load_download_rows_from_json()"
     },
     {
@@ -8358,7 +8358,7 @@
       "source_location": "L192",
       "_origin": "ast",
       "id": "scripts_rebuild_sqlite_py_any",
-      "community": 50,
+      "community": 150,
       "norm_label": "any"
     },
     {
@@ -8368,7 +8368,7 @@
       "source_location": "L203",
       "_origin": "ast",
       "id": "scripts_rebuild_sqlite_scan_download_rows",
-      "community": 50,
+      "community": 150,
       "norm_label": "_scan_download_rows()"
     },
     {
@@ -8378,7 +8378,7 @@
       "source_location": "L221",
       "_origin": "ast",
       "id": "scripts_rebuild_sqlite_store_local_downloads",
-      "community": 50,
+      "community": 150,
       "norm_label": "_store_local_downloads()"
     },
     {
@@ -8398,7 +8398,7 @@
       "source_location": "L286",
       "_origin": "ast",
       "id": "scripts_rebuild_sqlite_run_ingest",
-      "community": 50,
+      "community": 150,
       "norm_label": "_run_ingest()"
     },
     {
@@ -8408,7 +8408,7 @@
       "source_location": "L309",
       "_origin": "ast",
       "id": "scripts_rebuild_sqlite_run_tag_rebuild",
-      "community": 50,
+      "community": 150,
       "norm_label": "_run_tag_rebuild()"
     },
     {
@@ -8418,7 +8418,7 @@
       "source_location": "L321",
       "_origin": "ast",
       "id": "scripts_rebuild_sqlite_rebuild_conflict_tables",
-      "community": 50,
+      "community": 150,
       "norm_label": "_rebuild_conflict_tables()"
     },
     {
@@ -8428,7 +8428,7 @@
       "source_location": "L332",
       "_origin": "ast",
       "id": "scripts_rebuild_sqlite_run_active_scan",
-      "community": 50,
+      "community": 150,
       "norm_label": "_run_active_scan()"
     },
     {
@@ -8438,7 +8438,7 @@
       "source_location": "L348",
       "_origin": "ast",
       "id": "scripts_rebuild_sqlite_main",
-      "community": 50,
+      "community": 150,
       "norm_label": "main()"
     },
     {
@@ -8448,7 +8448,7 @@
       "source_location": "L140",
       "_origin": "ast",
       "id": "scripts_rebuild_sqlite_rationale_140",
-      "community": 50,
+      "community": 150,
       "norm_label": "resolve downloads root from override, settings, or environment (in that order)."
     },
     {
@@ -8458,7 +8458,7 @@
       "source_location": "L156",
       "_origin": "ast",
       "id": "scripts_rebuild_sqlite_rationale_156",
-      "community": 50,
+      "community": 150,
       "norm_label": "resolve game root from override, settings, or environment (in that order)."
     },
     {
@@ -8468,7 +8468,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_rebuild_tags",
-      "community": 51,
+      "community": 39,
       "norm_label": "rebuild_tags.py"
     },
     {
@@ -8478,7 +8478,7 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "scripts_rebuild_tags_parse_args",
-      "community": 51,
+      "community": 39,
       "norm_label": "parse_args()"
     },
     {
@@ -8488,7 +8488,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "scripts_rebuild_tags_assemble_args",
-      "community": 51,
+      "community": 39,
       "norm_label": "_assemble_args()"
     },
     {
@@ -8498,7 +8498,7 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "scripts_rebuild_tags_main",
-      "community": 51,
+      "community": 39,
       "norm_label": "main()"
     },
     {
@@ -8578,7 +8578,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_report_missing_tags",
-      "community": 51,
+      "community": 39,
       "norm_label": "report_missing_tags.py"
     },
     {
@@ -8588,7 +8588,7 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "scripts_report_missing_tags_parse_args",
-      "community": 51,
+      "community": 39,
       "norm_label": "parse_args()"
     },
     {
@@ -8598,7 +8598,7 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "scripts_report_missing_tags_fetch_missing_downloads",
-      "community": 51,
+      "community": 39,
       "norm_label": "_fetch_missing_downloads()"
     },
     {
@@ -8608,7 +8608,7 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "scripts_report_missing_tags_diagnose_download",
-      "community": 51,
+      "community": 39,
       "norm_label": "_diagnose_download()"
     },
     {
@@ -8618,7 +8618,7 @@
       "source_location": "L141",
       "_origin": "ast",
       "id": "scripts_report_missing_tags_fix_downloads",
-      "community": 51,
+      "community": 39,
       "norm_label": "_fix_downloads()"
     },
     {
@@ -8628,7 +8628,7 @@
       "source_location": "L159",
       "_origin": "ast",
       "id": "scripts_report_missing_tags_main",
-      "community": 51,
+      "community": 39,
       "norm_label": "main()"
     },
     {
@@ -8638,7 +8638,7 @@
       "source_location": "L142",
       "_origin": "ast",
       "id": "scripts_report_missing_tags_rationale_142",
-      "community": 51,
+      "community": 39,
       "norm_label": "re-ingest only the specified download names and rebuild tags."
     },
     {
@@ -8648,7 +8648,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_resync_local_downloads_created_at",
-      "community": 138,
+      "community": 50,
       "norm_label": "resync_local_downloads_created_at.py"
     },
     {
@@ -8658,7 +8658,7 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "scripts_resync_local_downloads_created_at_backup_db",
-      "community": 138,
+      "community": 50,
       "norm_label": "backup_db()"
     },
     {
@@ -8668,7 +8668,7 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "scripts_resync_local_downloads_created_at_py_path",
-      "community": 138,
+      "community": 50,
       "norm_label": "path"
     },
     {
@@ -8678,7 +8678,7 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "scripts_resync_local_downloads_created_at_resolve_candidates",
-      "community": 138,
+      "community": 50,
       "norm_label": "resolve_candidates()"
     },
     {
@@ -8688,7 +8688,7 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "scripts_resync_local_downloads_created_at_get_mtime_iso_for_path",
-      "community": 138,
+      "community": 50,
       "norm_label": "get_mtime_iso_for_path()"
     },
     {
@@ -8698,7 +8698,7 @@
       "source_location": "L57",
       "_origin": "ast",
       "id": "scripts_resync_local_downloads_created_at_main",
-      "community": 138,
+      "community": 50,
       "norm_label": "main()"
     },
     {
@@ -9498,7 +9498,7 @@
       "source_location": "L39",
       "_origin": "ast",
       "id": "schemas_desktop_schema_definitions_capability",
-      "community": 82,
+      "community": 149,
       "norm_label": "capability"
     },
     {
@@ -9508,7 +9508,7 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "schemas_desktop_schema_capability_description",
-      "community": 82,
+      "community": 149,
       "norm_label": "description"
     },
     {
@@ -9518,7 +9518,7 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "schemas_desktop_schema_capability_type",
-      "community": 82,
+      "community": 149,
       "norm_label": "type"
     },
     {
@@ -9528,7 +9528,7 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "schemas_desktop_schema_capability_required",
-      "community": 82,
+      "community": 149,
       "norm_label": "required"
     },
     {
@@ -10228,7 +10228,7 @@
       "source_location": "L39",
       "_origin": "ast",
       "id": "schemas_windows_schema_definitions_capability",
-      "community": 98,
+      "community": 138,
       "norm_label": "capability"
     },
     {
@@ -10238,7 +10238,7 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "schemas_windows_schema_capability_description",
-      "community": 98,
+      "community": 138,
       "norm_label": "description"
     },
     {
@@ -10248,7 +10248,7 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "schemas_windows_schema_capability_type",
-      "community": 98,
+      "community": 138,
       "norm_label": "type"
     },
     {
@@ -10258,7 +10258,7 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "schemas_windows_schema_capability_required",
-      "community": 98,
+      "community": 138,
       "norm_label": "required"
     },
     {
@@ -10288,7 +10288,7 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "schemas_windows_schema_identifier_description",
-      "community": 75,
+      "community": 98,
       "norm_label": "description"
     },
     {
@@ -10748,7 +10748,7 @@
       "source_location": "L2545",
       "_origin": "ast",
       "id": "schemas_windows_schema_definitions_value",
-      "community": 100,
+      "community": 75,
       "norm_label": "value"
     },
     {
@@ -10758,7 +10758,7 @@
       "source_location": "L2546",
       "_origin": "ast",
       "id": "schemas_windows_schema_value_description",
-      "community": 100,
+      "community": 75,
       "norm_label": "description"
     },
     {
@@ -10768,7 +10768,7 @@
       "source_location": "L2547",
       "_origin": "ast",
       "id": "schemas_windows_schema_value_anyof",
-      "community": 100,
+      "community": 75,
       "norm_label": "anyof"
     },
     {
@@ -11631,7 +11631,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "imhex_patterns_unencrypt_idx",
-      "community": 150,
+      "community": 125,
       "norm_label": "unencrypt_idx.py"
     },
     {
@@ -11641,7 +11641,7 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "imhex_patterns_unencrypt_idx_aeskey",
-      "community": 150,
+      "community": 125,
       "norm_label": "aeskey"
     },
     {
@@ -11651,7 +11651,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "imhex_patterns_unencrypt_idx_aeskey_init",
-      "community": 150,
+      "community": 125,
       "norm_label": ".__init__()"
     },
     {
@@ -11661,7 +11661,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "imhex_patterns_unencrypt_idx_aeskey_from_str",
-      "community": 150,
+      "community": 125,
       "norm_label": ".from_str()"
     },
     {
@@ -11671,7 +11671,7 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "imhex_patterns_unencrypt_idx_decrypt_chunks",
-      "community": 150,
+      "community": 125,
       "norm_label": "decrypt_chunks()"
     },
     {
@@ -11681,7 +11681,7 @@
       "source_location": "L55",
       "_origin": "ast",
       "id": "imhex_patterns_unencrypt_idx_decrypt_data",
-      "community": 150,
+      "community": 125,
       "norm_label": "decrypt_data()"
     },
     {
@@ -13451,7 +13451,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utoc_utils",
-      "community": 92,
+      "community": 66,
       "norm_label": "utoc_utils.rs"
     },
     {
@@ -13461,7 +13461,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "src_utoc_utils_read_utoc",
-      "community": 92,
+      "community": 66,
       "norm_label": "read_utoc()"
     },
     {
@@ -13471,7 +13471,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "src_tauri_src_rust_ue_tools_repak_rivals_repak_gui_src_utoc_utils_rs_path",
-      "community": 92,
+      "community": 66,
       "norm_label": "path"
     },
     {
@@ -13481,7 +13481,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "src_tauri_src_rust_ue_tools_repak_rivals_repak_gui_src_utoc_utils_rs_pakreader",
-      "community": 92,
+      "community": 66,
       "norm_label": "pakreader"
     },
     {
@@ -13491,7 +13491,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "src_tauri_src_rust_ue_tools_repak_rivals_repak_gui_src_utoc_utils_rs_vec",
-      "community": 92,
+      "community": 66,
       "norm_label": "vec"
     },
     {
@@ -13501,7 +13501,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "src_tauri_src_rust_ue_tools_repak_rivals_repak_gui_src_utoc_utils_rs_fileentry",
-      "community": 92,
+      "community": 66,
       "norm_label": "fileentry"
     },
     {
@@ -20445,7 +20445,7 @@
       "source_location": "L57",
       "_origin": "ast",
       "id": "src_tauri_src_rust_ue_tools_repak_rivals_retoc_rivals_src_lib_rs_arc",
-      "community": 122,
+      "community": 25,
       "norm_label": "arc"
     },
     {
@@ -20455,7 +20455,7 @@
       "source_location": "L57",
       "_origin": "ast",
       "id": "src_tauri_src_rust_ue_tools_repak_rivals_retoc_rivals_src_lib_rs_config",
-      "community": 122,
+      "community": 25,
       "norm_label": "config"
     },
     {
@@ -20545,7 +20545,7 @@
       "source_location": "L81",
       "_origin": "ast",
       "id": "src_lib_actionlist",
-      "community": 30,
+      "community": 25,
       "norm_label": "actionlist"
     },
     {
@@ -20605,7 +20605,7 @@
       "source_location": "L145",
       "_origin": "ast",
       "id": "src_tauri_src_rust_ue_tools_repak_rivals_retoc_rivals_src_lib_rs_vec",
-      "community": 37,
+      "community": 59,
       "norm_label": "vec"
     },
     {
@@ -20615,7 +20615,7 @@
       "source_location": "L145",
       "_origin": "ast",
       "id": "src_tauri_src_rust_ue_tools_repak_rivals_retoc_rivals_src_lib_rs_string",
-      "community": 25,
+      "community": 59,
       "norm_label": "string"
     },
     {
@@ -20625,7 +20625,7 @@
       "source_location": "L162",
       "_origin": "ast",
       "id": "src_tauri_src_rust_ue_tools_repak_rivals_retoc_rivals_src_lib_rs_option",
-      "community": 37,
+      "community": 59,
       "norm_label": "option"
     },
     {
@@ -20665,7 +20665,7 @@
       "source_location": "L218",
       "_origin": "ast",
       "id": "src_lib_actionget",
-      "community": 65,
+      "community": 25,
       "norm_label": "actionget"
     },
     {
@@ -20705,7 +20705,7 @@
       "source_location": "L242",
       "_origin": "ast",
       "id": "src_lib_action",
-      "community": 25,
+      "community": 59,
       "norm_label": "action"
     },
     {
@@ -20715,7 +20715,7 @@
       "source_location": "L272",
       "_origin": "ast",
       "id": "src_lib_args",
-      "community": 25,
+      "community": 59,
       "norm_label": "args"
     },
     {
@@ -20725,7 +20725,7 @@
       "source_location": "L280",
       "_origin": "ast",
       "id": "src_tauri_src_rust_ue_tools_repak_rivals_retoc_rivals_src_lib_rs_eiocontainerheaderversion",
-      "community": 25,
+      "community": 59,
       "norm_label": "eiocontainerheaderversion"
     },
     {
@@ -20735,7 +20735,7 @@
       "source_location": "L285",
       "_origin": "ast",
       "id": "src_lib_main",
-      "community": 122,
+      "community": 25,
       "norm_label": "main()"
     },
     {
@@ -20745,7 +20745,7 @@
       "source_location": "L323",
       "_origin": "ast",
       "id": "src_lib_action_manifest",
-      "community": 122,
+      "community": 25,
       "norm_label": "action_manifest()"
     },
     {
@@ -20765,7 +20765,7 @@
       "source_location": "L390",
       "_origin": "ast",
       "id": "src_lib_action_info",
-      "community": 122,
+      "community": 25,
       "norm_label": "action_info()"
     },
     {
@@ -20775,7 +20775,7 @@
       "source_location": "L396",
       "_origin": "ast",
       "id": "src_lib_action_list",
-      "community": 30,
+      "community": 25,
       "norm_label": "action_list()"
     },
     {
@@ -20785,7 +20785,7 @@
       "source_location": "L458",
       "_origin": "ast",
       "id": "src_lib_action_verify",
-      "community": 122,
+      "community": 25,
       "norm_label": "action_verify()"
     },
     {
@@ -20795,7 +20795,7 @@
       "source_location": "L528",
       "_origin": "ast",
       "id": "src_lib_action_unpack",
-      "community": 122,
+      "community": 25,
       "norm_label": "action_unpack()"
     },
     {
@@ -20805,7 +20805,7 @@
       "source_location": "L571",
       "_origin": "ast",
       "id": "src_lib_rawiomanifest",
-      "community": 25,
+      "community": 37,
       "norm_label": "rawiomanifest"
     },
     {
@@ -20825,7 +20825,7 @@
       "source_location": "L572",
       "_origin": "ast",
       "id": "chunkid",
-      "community": 25,
+      "community": 37,
       "norm_label": "chunkid"
     },
     {
@@ -20935,7 +20935,7 @@
       "source_location": "L606",
       "_origin": "ast",
       "id": "src_lib_action_unpack_raw",
-      "community": 122,
+      "community": 25,
       "norm_label": "action_unpack_raw()"
     },
     {
@@ -20945,7 +20945,7 @@
       "source_location": "L643",
       "_origin": "ast",
       "id": "src_lib_action_pack_raw",
-      "community": 122,
+      "community": 25,
       "norm_label": "action_pack_raw()"
     },
     {
@@ -21005,7 +21005,7 @@
       "source_location": "L677",
       "_origin": "ast",
       "id": "src_lib_fsfilewriter_write_file",
-      "community": 25,
+      "community": 59,
       "norm_label": ".write_file()"
     },
     {
@@ -21015,7 +21015,7 @@
       "source_location": "L684",
       "_origin": "ast",
       "id": "src_lib_parallelpakwriter",
-      "community": 25,
+      "community": 59,
       "norm_label": "parallelpakwriter"
     },
     {
@@ -21025,7 +21025,7 @@
       "source_location": "L685",
       "_origin": "ast",
       "id": "src_tauri_src_rust_ue_tools_repak_rivals_retoc_rivals_src_lib_rs_entrybuilder",
-      "community": 25,
+      "community": 59,
       "norm_label": "entrybuilder"
     },
     {
@@ -21035,7 +21035,7 @@
       "source_location": "L686",
       "_origin": "ast",
       "id": "syncsender",
-      "community": 25,
+      "community": 59,
       "norm_label": "syncsender"
     },
     {
@@ -21045,7 +21045,7 @@
       "source_location": "L686",
       "_origin": "ast",
       "id": "src_tauri_src_rust_ue_tools_repak_rivals_retoc_rivals_src_lib_rs_partialentry",
-      "community": 25,
+      "community": 59,
       "norm_label": "partialentry"
     },
     {
@@ -21055,7 +21055,7 @@
       "source_location": "L690",
       "_origin": "ast",
       "id": "src_lib_parallelpakwriter_write_file",
-      "community": 25,
+      "community": 59,
       "norm_label": ".write_file()"
     },
     {
@@ -21075,7 +21075,7 @@
       "source_location": "L700",
       "_origin": "ast",
       "id": "src_lib_nullfilewriter_write_file",
-      "community": 25,
+      "community": 59,
       "norm_label": ".write_file()"
     },
     {
@@ -21235,7 +21235,7 @@
       "source_location": "L784",
       "_origin": "ast",
       "id": "src_lib_action_to_legacy",
-      "community": 122,
+      "community": 25,
       "norm_label": "action_to_legacy()"
     },
     {
@@ -21305,7 +21305,7 @@
       "source_location": "L985",
       "_origin": "ast",
       "id": "src_lib_action_to_zen",
-      "community": 122,
+      "community": 25,
       "norm_label": "action_to_zen()"
     },
     {
@@ -21315,7 +21315,7 @@
       "source_location": "L1189",
       "_origin": "ast",
       "id": "src_lib_action_get",
-      "community": 122,
+      "community": 25,
       "norm_label": "action_get()"
     },
     {
@@ -21325,7 +21325,7 @@
       "source_location": "L1207",
       "_origin": "ast",
       "id": "src_lib_action_dump_test",
-      "community": 122,
+      "community": 25,
       "norm_label": "action_dump_test()"
     },
     {
@@ -21335,7 +21335,7 @@
       "source_location": "L1256",
       "_origin": "ast",
       "id": "src_lib_packagetestmetadata",
-      "community": 25,
+      "community": 59,
       "norm_label": "packagetestmetadata"
     },
     {
@@ -21345,7 +21345,7 @@
       "source_location": "L1259",
       "_origin": "ast",
       "id": "src_tauri_src_rust_ue_tools_repak_rivals_retoc_rivals_src_lib_rs_fpackagefileversion",
-      "community": 25,
+      "community": 59,
       "norm_label": "fpackagefileversion"
     },
     {
@@ -21355,7 +21355,7 @@
       "source_location": "L1260",
       "_origin": "ast",
       "id": "src_tauri_src_rust_ue_tools_repak_rivals_retoc_rivals_src_lib_rs_storeentry",
-      "community": 25,
+      "community": 59,
       "norm_label": "storeentry"
     },
     {
@@ -21405,7 +21405,7 @@
       "source_location": "L1278",
       "_origin": "ast",
       "id": "src_lib_aeskey",
-      "community": 30,
+      "community": 47,
       "norm_label": "aeskey"
     },
     {
@@ -21415,7 +21415,7 @@
       "source_location": "L1279",
       "_origin": "ast",
       "id": "src_tauri_src_rust_ue_tools_repak_rivals_retoc_rivals_src_lib_rs_fromstr",
-      "community": 30,
+      "community": 47,
       "norm_label": "fromstr"
     },
     {
@@ -21425,7 +21425,7 @@
       "source_location": "L1281",
       "_origin": "ast",
       "id": "src_lib_aeskey_from_str",
-      "community": 20,
+      "community": 47,
       "norm_label": ".from_str()"
     },
     {
@@ -21435,7 +21435,7 @@
       "source_location": "L1281",
       "_origin": "ast",
       "id": "src_tauri_src_rust_ue_tools_repak_rivals_retoc_rivals_src_lib_rs_err",
-      "community": 20,
+      "community": 59,
       "norm_label": "err"
     },
     {
@@ -21445,7 +21445,7 @@
       "source_location": "L1298",
       "_origin": "ast",
       "id": "src_lib_fiostoretocheader",
-      "community": 37,
+      "community": 47,
       "norm_label": "fiostoretocheader"
     },
     {
@@ -21645,7 +21645,7 @@
       "source_location": "L1504",
       "_origin": "ast",
       "id": "src_lib_read_meta",
-      "community": 37,
+      "community": 47,
       "norm_label": "read_meta()"
     },
     {
@@ -21765,7 +21765,7 @@
       "source_location": "L1588",
       "_origin": "ast",
       "id": "readablectx",
-      "community": 30,
+      "community": 37,
       "norm_label": "readablectx"
     },
     {
@@ -21795,7 +21795,7 @@
       "source_location": "L1708",
       "_origin": "ast",
       "id": "src_lib_align_usize",
-      "community": 25,
+      "community": 36,
       "norm_label": "align_usize()"
     },
     {
@@ -21825,7 +21825,7 @@
       "source_location": "L1736",
       "_origin": "ast",
       "id": "src_lib_toc_file_name",
-      "community": 122,
+      "community": 25,
       "norm_label": ".file_name()"
     },
     {
@@ -21865,7 +21865,7 @@
       "source_location": "L1802",
       "_origin": "ast",
       "id": "src_lib_toc_read",
-      "community": 122,
+      "community": 62,
       "norm_label": ".read()"
     },
     {
@@ -21875,7 +21875,7 @@
       "source_location": "L1802",
       "_origin": "ast",
       "id": "c",
-      "community": 122,
+      "community": 62,
       "norm_label": "c"
     },
     {
@@ -21885,7 +21885,7 @@
       "source_location": "L1893",
       "_origin": "ast",
       "id": "src_lib_fpackageid",
-      "community": 30,
+      "community": 47,
       "norm_label": "fpackageid"
     },
     {
@@ -21915,7 +21915,7 @@
       "source_location": "L1904",
       "_origin": "ast",
       "id": "src_tauri_src_rust_ue_tools_repak_rivals_retoc_rivals_src_lib_rs_display",
-      "community": 30,
+      "community": 47,
       "norm_label": "display"
     },
     {
@@ -21945,7 +21945,7 @@
       "source_location": "L1910",
       "_origin": "ast",
       "id": "src_lib_fpackageid_from_name",
-      "community": 30,
+      "community": 47,
       "norm_label": ".from_name()"
     },
     {
@@ -21965,7 +21965,7 @@
       "source_location": "L1922",
       "_origin": "ast",
       "id": "src_lib_lower_utf16_cityhash",
-      "community": 30,
+      "community": 47,
       "norm_label": "lower_utf16_cityhash()"
     },
     {
@@ -21975,7 +21975,7 @@
       "source_location": "L1936",
       "_origin": "ast",
       "id": "src_lib_test_package_id",
-      "community": 30,
+      "community": 25,
       "norm_label": "test_package_id()"
     },
     {
@@ -22055,7 +22055,7 @@
       "source_location": "L1980",
       "_origin": "ast",
       "id": "src_lib_fiochunkidraw_as_ref",
-      "community": 122,
+      "community": 25,
       "norm_label": ".as_ref()"
     },
     {
@@ -22205,7 +22205,7 @@
       "source_location": "L2020",
       "_origin": "ast",
       "id": "src_lib_fiochunkid_fmt",
-      "community": 30,
+      "community": 47,
       "norm_label": ".fmt()"
     },
     {
@@ -22245,7 +22245,7 @@
       "source_location": "L2061",
       "_origin": "ast",
       "id": "src_lib_fiochunkid_with_version",
-      "community": 122,
+      "community": 30,
       "norm_label": ".with_version()"
     },
     {
@@ -22255,7 +22255,7 @@
       "source_location": "L2068",
       "_origin": "ast",
       "id": "src_lib_fiochunkid_create",
-      "community": 122,
+      "community": 25,
       "norm_label": ".create()"
     },
     {
@@ -22265,7 +22265,7 @@
       "source_location": "L2068",
       "_origin": "ast",
       "id": "eiochunktype",
-      "community": 122,
+      "community": 25,
       "norm_label": "eiochunktype"
     },
     {
@@ -22275,7 +22275,7 @@
       "source_location": "L2075",
       "_origin": "ast",
       "id": "src_lib_fiochunkid_from_package_id",
-      "community": 122,
+      "community": 25,
       "norm_label": ".from_package_id()"
     },
     {
@@ -22295,7 +22295,7 @@
       "source_location": "L2088",
       "_origin": "ast",
       "id": "src_lib_fiochunkid_create_shader_library_chunk_id",
-      "community": 30,
+      "community": 47,
       "norm_label": ".create_shader_library_chunk_id()"
     },
     {
@@ -22315,7 +22315,7 @@
       "source_location": "L2099",
       "_origin": "ast",
       "id": "src_lib_fiochunkid_get_chunk_type",
-      "community": 30,
+      "community": 25,
       "norm_label": ".get_chunk_type()"
     },
     {
@@ -22335,7 +22335,7 @@
       "source_location": "L2111",
       "_origin": "ast",
       "id": "src_lib_fiochunkid_get_package_id",
-      "community": 30,
+      "community": 47,
       "norm_label": ".get_package_id()"
     },
     {
@@ -22355,7 +22355,7 @@
       "source_location": "L2119",
       "_origin": "ast",
       "id": "src_lib_fiocontainerid_from_name",
-      "community": 30,
+      "community": 47,
       "norm_label": ".from_name()"
     },
     {
@@ -22845,7 +22845,7 @@
       "source_location": "L2431",
       "_origin": "ast",
       "id": "src_lib_fiostoretocchunkinfo",
-      "community": 25,
+      "community": 30,
       "norm_label": "fiostoretocchunkinfo"
     },
     {
@@ -22855,7 +22855,7 @@
       "source_location": "L2450",
       "_origin": "ast",
       "id": "src_lib_eiochunktype",
-      "community": 30,
+      "community": 25,
       "norm_label": "eiochunktype"
     },
     {
@@ -22865,7 +22865,7 @@
       "source_location": "L2474",
       "_origin": "ast",
       "id": "src_lib_eiochunktype_new",
-      "community": 122,
+      "community": 25,
       "norm_label": ".new()"
     },
     {
@@ -23475,7 +23475,7 @@
       "source_location": "L94",
       "_origin": "ast",
       "id": "src_name_map_read_name_batch_parts",
-      "community": 15,
+      "community": 34,
       "norm_label": "read_name_batch_parts()"
     },
     {
@@ -25805,7 +25805,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "src_zen_get_package_name",
-      "community": 15,
+      "community": 31,
       "norm_label": "get_package_name()"
     },
     {
@@ -25815,7 +25815,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "src_tauri_src_rust_ue_tools_repak_rivals_retoc_rivals_src_zen_rs_eiocontainerheaderversion",
-      "community": 15,
+      "community": 33,
       "norm_label": "eiocontainerheaderversion"
     },
     {
@@ -25835,7 +25835,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "src_tauri_src_rust_ue_tools_repak_rivals_retoc_rivals_src_zen_rs_string",
-      "community": 15,
+      "community": 31,
       "norm_label": "string"
     },
     {
@@ -25845,7 +25845,7 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "src_zen_fzenpackagesummary",
-      "community": 31,
+      "community": 141,
       "norm_label": "fzenpackagesummary"
     },
     {
@@ -25855,7 +25855,7 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "src_tauri_src_rust_ue_tools_repak_rivals_retoc_rivals_src_zen_rs_fmappedname",
-      "community": 31,
+      "community": 141,
       "norm_label": "fmappedname"
     },
     {
@@ -25925,7 +25925,7 @@
       "source_location": "L187",
       "_origin": "ast",
       "id": "src_zen_fpackagefileversion_create_ue4",
-      "community": 117,
+      "community": 31,
       "norm_label": ".create_ue4()"
     },
     {
@@ -25935,7 +25935,7 @@
       "source_location": "L187",
       "_origin": "ast",
       "id": "src_tauri_src_rust_ue_tools_repak_rivals_retoc_rivals_src_zen_rs_eunrealengineobjectue4version",
-      "community": 117,
+      "community": 31,
       "norm_label": "eunrealengineobjectue4version"
     },
     {
@@ -25945,7 +25945,7 @@
       "source_location": "L188",
       "_origin": "ast",
       "id": "src_zen_fpackagefileversion_create_ue5",
-      "community": 125,
+      "community": 31,
       "norm_label": ".create_ue5()"
     },
     {
@@ -25955,7 +25955,7 @@
       "source_location": "L188",
       "_origin": "ast",
       "id": "src_tauri_src_rust_ue_tools_repak_rivals_retoc_rivals_src_zen_rs_eunrealengineobjectue5version",
-      "community": 125,
+      "community": 31,
       "norm_label": "eunrealengineobjectue5version"
     },
     {
@@ -26125,7 +26125,7 @@
       "source_location": "L302",
       "_origin": "ast",
       "id": "src_zen_eexportfilterflags",
-      "community": 31,
+      "community": 141,
       "norm_label": "eexportfilterflags"
     },
     {
@@ -26145,7 +26145,7 @@
       "source_location": "L321",
       "_origin": "ast",
       "id": "src_zen_fexportmapentry",
-      "community": 31,
+      "community": 141,
       "norm_label": "fexportmapentry"
     },
     {
@@ -26155,7 +26155,7 @@
       "source_location": "L325",
       "_origin": "ast",
       "id": "src_tauri_src_rust_ue_tools_repak_rivals_retoc_rivals_src_zen_rs_fpackageobjectindex",
-      "community": 31,
+      "community": 141,
       "norm_label": "fpackageobjectindex"
     },
     {
@@ -26185,7 +26185,7 @@
       "source_location": "L374",
       "_origin": "ast",
       "id": "src_zen_fexportmapentry_legacy_global_import_index",
-      "community": 31,
+      "community": 141,
       "norm_label": ".legacy_global_import_index()"
     },
     {
@@ -26195,7 +26195,7 @@
       "source_location": "L378",
       "_origin": "ast",
       "id": "src_zen_fexportmapentry_is_public_export",
-      "community": 31,
+      "community": 141,
       "norm_label": ".is_public_export()"
     },
     {
@@ -26615,7 +26615,7 @@
       "source_location": "L718",
       "_origin": "ast",
       "id": "src_zen_fzenpackageheader_package_name",
-      "community": 15,
+      "community": 31,
       "norm_label": ".package_name()"
     },
     {
@@ -26625,7 +26625,7 @@
       "source_location": "L722",
       "_origin": "ast",
       "id": "src_zen_fzenpackageheader_source_package_name",
-      "community": 15,
+      "community": 31,
       "norm_label": ".source_package_name()"
     },
     {
@@ -26635,7 +26635,7 @@
       "source_location": "L734",
       "_origin": "ast",
       "id": "src_zen_fzenpackageheader_get_package_name",
-      "community": 15,
+      "community": 31,
       "norm_label": ".get_package_name()"
     },
     {
@@ -26645,7 +26645,7 @@
       "source_location": "L748",
       "_origin": "ast",
       "id": "src_zen_fzenpackageheader_deserialize",
-      "community": 15,
+      "community": 77,
       "norm_label": ".deserialize()"
     },
     {
@@ -26655,7 +26655,7 @@
       "source_location": "L748",
       "_origin": "ast",
       "id": "src_tauri_src_rust_ue_tools_repak_rivals_retoc_rivals_src_zen_rs_option",
-      "community": 15,
+      "community": 77,
       "norm_label": "option"
     },
     {
@@ -26665,7 +26665,7 @@
       "source_location": "L748",
       "_origin": "ast",
       "id": "src_tauri_src_rust_ue_tools_repak_rivals_retoc_rivals_src_zen_rs_storeentry",
-      "community": 15,
+      "community": 77,
       "norm_label": "storeentry"
     },
     {
@@ -26675,7 +26675,7 @@
       "source_location": "L748",
       "_origin": "ast",
       "id": "src_tauri_src_rust_ue_tools_repak_rivals_retoc_rivals_src_zen_rs_eiostoretocversion",
-      "community": 15,
+      "community": 77,
       "norm_label": "eiostoretocversion"
     },
     {
@@ -26685,7 +26685,7 @@
       "source_location": "L960",
       "_origin": "ast",
       "id": "src_zen_fzenpackageheader_serialize",
-      "community": 31,
+      "community": 33,
       "norm_label": ".serialize()"
     },
     {
@@ -26695,7 +26695,7 @@
       "source_location": "L1177",
       "_origin": "ast",
       "id": "src_zen_test_zen_asset_parsing",
-      "community": 15,
+      "community": 31,
       "norm_label": "test_zen_asset_parsing()"
     },
     {
@@ -26705,7 +26705,7 @@
       "source_location": "L1193",
       "_origin": "ast",
       "id": "src_zen_run_parse",
-      "community": 15,
+      "community": 31,
       "norm_label": "run_parse()"
     },
     {
@@ -26715,7 +26715,7 @@
       "source_location": "L1193",
       "_origin": "ast",
       "id": "src_tauri_src_rust_ue_tools_repak_rivals_retoc_rivals_src_zen_rs_path",
-      "community": 15,
+      "community": 31,
       "norm_label": "path"
     },
     {
@@ -30595,7 +30595,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_activemodsview",
-      "community": 29,
+      "community": 96,
       "norm_label": "activemodsview.tsx"
     },
     {
@@ -30605,7 +30605,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "components_activemodsview_activemodsviewprops",
-      "community": 29,
+      "community": 96,
       "norm_label": "activemodsviewprops"
     },
     {
@@ -30615,7 +30615,7 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "components_activemodsview_activemodsview",
-      "community": 29,
+      "community": 96,
       "norm_label": "activemodsview()"
     },
     {
@@ -30625,7 +30625,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_addmodmodal",
-      "community": 2,
+      "community": 15,
       "norm_label": "addmodmodal.tsx"
     },
     {
@@ -30635,7 +30635,7 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "components_addmodmodal_addmodmodalprops",
-      "community": 2,
+      "community": 15,
       "norm_label": "addmodmodalprops"
     },
     {
@@ -30645,7 +30645,7 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "components_addmodmodal_addmodmodal",
-      "community": 2,
+      "community": 15,
       "norm_label": "addmodmodal()"
     },
     {
@@ -30655,7 +30655,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_assignmodidmodal",
-      "community": 17,
+      "community": 0,
       "norm_label": "assignmodidmodal.tsx"
     },
     {
@@ -30675,7 +30675,7 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "components_assignmodidmodal_assignmodidmodal",
-      "community": 17,
+      "community": 96,
       "norm_label": "assignmodidmodal()"
     },
     {
@@ -30805,7 +30805,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_browsepage",
-      "community": 29,
+      "community": 18,
       "norm_label": "browsepage.tsx"
     },
     {
@@ -30815,7 +30815,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "components_browsepage_browsepageprops",
-      "community": 29,
+      "community": 18,
       "norm_label": "browsepageprops"
     },
     {
@@ -30825,7 +30825,7 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "components_browsepage_browsepage",
-      "community": 29,
+      "community": 18,
       "norm_label": "browsepage()"
     },
     {
@@ -30965,7 +30965,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_crashdetectormodal",
-      "community": 96,
+      "community": 0,
       "norm_label": "crashdetectormodal.tsx"
     },
     {
@@ -30975,7 +30975,7 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "components_crashdetectormodal_crashdetectormodalprops",
-      "community": 96,
+      "community": 100,
       "norm_label": "crashdetectormodalprops"
     },
     {
@@ -30985,7 +30985,7 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "components_crashdetectormodal_crashdetectormodal",
-      "community": 96,
+      "community": 0,
       "norm_label": "crashdetectormodal()"
     },
     {
@@ -30995,7 +30995,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_createauthordialog",
-      "community": 18,
+      "community": 0,
       "norm_label": "createauthordialog.tsx"
     },
     {
@@ -31005,7 +31005,7 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "components_createauthordialog_createauthordialogprops",
-      "community": 18,
+      "community": 0,
       "norm_label": "createauthordialogprops"
     },
     {
@@ -31025,7 +31025,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_downloadspage",
-      "community": 29,
+      "community": 96,
       "norm_label": "downloadspage.tsx"
     },
     {
@@ -31035,7 +31035,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "components_downloadspage_downloadspageprops",
-      "community": 29,
+      "community": 96,
       "norm_label": "downloadspageprops"
     },
     {
@@ -31045,7 +31045,7 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "components_downloadspage_downloadspage",
-      "community": 29,
+      "community": 96,
       "norm_label": "downloadspage()"
     },
     {
@@ -31105,7 +31105,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_gameupdatemodal",
-      "community": 17,
+      "community": 0,
       "norm_label": "gameupdatemodal.tsx"
     },
     {
@@ -31115,7 +31115,7 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "components_gameupdatemodal_gameupdatestep",
-      "community": 17,
+      "community": 96,
       "norm_label": "gameupdatestep"
     },
     {
@@ -31125,7 +31125,7 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "components_gameupdatemodal_gameupdatephase",
-      "community": 17,
+      "community": 96,
       "norm_label": "gameupdatephase"
     },
     {
@@ -31135,7 +31135,7 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "components_gameupdatemodal_gameupdatemodalprops",
-      "community": 17,
+      "community": 0,
       "norm_label": "gameupdatemodalprops"
     },
     {
@@ -31145,7 +31145,7 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "components_gameupdatemodal_gameupdatemodal",
-      "community": 17,
+      "community": 96,
       "norm_label": "gameupdatemodal()"
     },
     {
@@ -31255,7 +31255,7 @@
       "source_location": "L684",
       "_origin": "ast",
       "id": "components_installedmodcard_installedmodcard",
-      "community": 29,
+      "community": 96,
       "norm_label": "installedmodcard"
     },
     {
@@ -31325,7 +31325,7 @@
       "source_location": "L96",
       "_origin": "ast",
       "id": "components_modcard_modcardinner",
-      "community": 29,
+      "community": 18,
       "norm_label": "modcardinner()"
     },
     {
@@ -31345,7 +31345,7 @@
       "source_location": "L675",
       "_origin": "ast",
       "id": "components_modcard_modcard",
-      "community": 29,
+      "community": 18,
       "norm_label": "modcard"
     },
     {
@@ -31515,7 +31515,7 @@
       "source_location": "L319",
       "_origin": "ast",
       "id": "components_modmodal_tobasename",
-      "community": 29,
+      "community": 18,
       "norm_label": "tobasename()"
     },
     {
@@ -31535,7 +31535,7 @@
       "source_location": "L354",
       "_origin": "ast",
       "id": "components_modmodal_getdownloaddisplayname",
-      "community": 29,
+      "community": 18,
       "norm_label": "getdownloaddisplayname()"
     },
     {
@@ -31555,7 +31555,7 @@
       "source_location": "L385",
       "_origin": "ast",
       "id": "components_modmodal_modmodal",
-      "community": 29,
+      "community": 18,
       "norm_label": "modmodal()"
     },
     {
@@ -31565,7 +31565,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_nsfwfilterprovider",
-      "community": 29,
+      "community": 18,
       "norm_label": "nsfwfilterprovider.tsx"
     },
     {
@@ -31575,7 +31575,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "components_nsfwfilterprovider_nsfwfiltercontexttype",
-      "community": 29,
+      "community": 18,
       "norm_label": "nsfwfiltercontexttype"
     },
     {
@@ -31585,7 +31585,7 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "components_nsfwfilterprovider_nsfwfiltercontext",
-      "community": 29,
+      "community": 18,
       "norm_label": "nsfwfiltercontext"
     },
     {
@@ -31595,7 +31595,7 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "components_nsfwfilterprovider_nsfwfilterproviderprops",
-      "community": 29,
+      "community": 18,
       "norm_label": "nsfwfilterproviderprops"
     },
     {
@@ -31605,7 +31605,7 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "components_nsfwfilterprovider_nsfwfilterprovider",
-      "community": 29,
+      "community": 18,
       "norm_label": "nsfwfilterprovider()"
     },
     {
@@ -31615,7 +31615,7 @@
       "source_location": "L67",
       "_origin": "ast",
       "id": "components_nsfwfilterprovider_usensfwfilter",
-      "community": 29,
+      "community": 18,
       "norm_label": "usensfwfilter()"
     },
     {
@@ -31655,7 +31655,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_nxmbackgroundlistener",
-      "community": 2,
+      "community": 15,
       "norm_label": "nxmbackgroundlistener.tsx"
     },
     {
@@ -31665,7 +31665,7 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "components_nxmbackgroundlistener_nxmbackgroundlistenerprops",
-      "community": 2,
+      "community": 15,
       "norm_label": "nxmbackgroundlistenerprops"
     },
     {
@@ -31675,7 +31675,7 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "components_nxmbackgroundlistener_handofffailure",
-      "community": 2,
+      "community": 15,
       "norm_label": "handofffailure"
     },
     {
@@ -31685,7 +31685,7 @@
       "source_location": "L43",
       "_origin": "ast",
       "id": "components_nxmbackgroundlistener_nxmbackgroundlistener",
-      "community": 2,
+      "community": 15,
       "norm_label": "nxmbackgroundlistener()"
     },
     {
@@ -31695,7 +31695,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_nxmhandoffprompt",
-      "community": 18,
+      "community": 7,
       "norm_label": "nxmhandoffprompt.tsx"
     },
     {
@@ -31705,7 +31705,7 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "components_nxmhandoffprompt_nxmhandoffpromptprops",
-      "community": 18,
+      "community": 7,
       "norm_label": "nxmhandoffpromptprops"
     },
     {
@@ -31715,7 +31715,7 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "components_nxmhandoffprompt_formatdelta",
-      "community": 18,
+      "community": 7,
       "norm_label": "formatdelta()"
     },
     {
@@ -31725,7 +31725,7 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "components_nxmhandoffprompt_nxmhandoffprompt",
-      "community": 18,
+      "community": 7,
       "norm_label": "nxmhandoffprompt()"
     },
     {
@@ -31775,7 +31775,7 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "components_searchheader_searchheader",
-      "community": 29,
+      "community": 18,
       "norm_label": "searchheader()"
     },
     {
@@ -31902,10 +31902,10 @@
       "label": "TabHeader()",
       "file_type": "code",
       "source_file": "src/components/TabHeader.tsx",
-      "source_location": "L32",
+      "source_location": "L36",
       "_origin": "ast",
       "id": "components_tabheader_tabheader",
-      "community": 96,
+      "community": 18,
       "norm_label": "tabheader()"
     },
     {
@@ -31975,7 +31975,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_themeprovider",
-      "community": 29,
+      "community": 17,
       "norm_label": "themeprovider.tsx"
     },
     {
@@ -31985,7 +31985,7 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "components_themeprovider_theme",
-      "community": 29,
+      "community": 17,
       "norm_label": "theme"
     },
     {
@@ -31995,7 +31995,7 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "components_themeprovider_themecontexttype",
-      "community": 29,
+      "community": 17,
       "norm_label": "themecontexttype"
     },
     {
@@ -32005,7 +32005,7 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "components_themeprovider_themecontext",
-      "community": 29,
+      "community": 17,
       "norm_label": "themecontext"
     },
     {
@@ -32015,7 +32015,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "components_themeprovider_usetheme",
-      "community": 29,
+      "community": 17,
       "norm_label": "usetheme()"
     },
     {
@@ -32025,7 +32025,7 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "components_themeprovider_themeproviderprops",
-      "community": 29,
+      "community": 17,
       "norm_label": "themeproviderprops"
     },
     {
@@ -32035,7 +32035,7 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "components_themeprovider_themeprovider",
-      "community": 29,
+      "community": 17,
       "norm_label": "themeprovider()"
     },
     {
@@ -32085,7 +32085,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ui_accordion",
-      "community": 107,
+      "community": 91,
       "norm_label": "accordion.tsx"
     },
     {
@@ -32095,7 +32095,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "ui_accordion_accordion",
-      "community": 107,
+      "community": 91,
       "norm_label": "accordion()"
     },
     {
@@ -32105,7 +32105,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "ui_accordion_accordionitem",
-      "community": 107,
+      "community": 91,
       "norm_label": "accordionitem()"
     },
     {
@@ -32115,7 +32115,7 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "ui_accordion_accordiontrigger",
-      "community": 107,
+      "community": 91,
       "norm_label": "accordiontrigger()"
     },
     {
@@ -32125,7 +32125,7 @@
       "source_location": "L50",
       "_origin": "ast",
       "id": "ui_accordion_accordioncontent",
-      "community": 107,
+      "community": 91,
       "norm_label": "accordioncontent()"
     },
     {
@@ -32255,7 +32255,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ui_alert",
-      "community": 7,
+      "community": 122,
       "norm_label": "alert.tsx"
     },
     {
@@ -32265,7 +32265,7 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "ui_alert_alertvariants",
-      "community": 7,
+      "community": 122,
       "norm_label": "alertvariants"
     },
     {
@@ -32275,7 +32275,7 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "ui_alert_alert",
-      "community": 7,
+      "community": 122,
       "norm_label": "alert()"
     },
     {
@@ -32285,7 +32285,7 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "ui_alert_alerttitle",
-      "community": 7,
+      "community": 122,
       "norm_label": "alerttitle()"
     },
     {
@@ -32295,7 +32295,7 @@
       "source_location": "L50",
       "_origin": "ast",
       "id": "ui_alert_alertdescription",
-      "community": 7,
+      "community": 122,
       "norm_label": "alertdescription()"
     },
     {
@@ -32475,7 +32475,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ui_button_variants",
-      "community": 18,
+      "community": 142,
       "norm_label": "button-variants.ts"
     },
     {
@@ -32485,7 +32485,7 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "ui_button_variants_buttonvariants",
-      "community": 18,
+      "community": 142,
       "norm_label": "buttonvariants"
     },
     {
@@ -32495,7 +32495,7 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "ui_button_variants_buttonvariantprops",
-      "community": 18,
+      "community": 142,
       "norm_label": "buttonvariantprops"
     },
     {
@@ -32505,7 +32505,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ui_button",
-      "community": 18,
+      "community": 0,
       "norm_label": "button.tsx"
     },
     {
@@ -32515,7 +32515,7 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "ui_button_buttonprops",
-      "community": 18,
+      "community": 0,
       "norm_label": "buttonprops"
     },
     {
@@ -32525,7 +32525,7 @@
       "source_location": "L47",
       "_origin": "ast",
       "id": "ui_button_button",
-      "community": 18,
+      "community": 0,
       "norm_label": "button"
     },
     {
@@ -32535,7 +32535,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ui_calendar",
-      "community": 107,
+      "community": 142,
       "norm_label": "calendar.tsx"
     },
     {
@@ -32545,7 +32545,7 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "ui_calendar_calendar",
-      "community": 107,
+      "community": 142,
       "norm_label": "calendar()"
     },
     {
@@ -33045,7 +33045,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ui_context_menu",
-      "community": 91,
+      "community": 92,
       "norm_label": "context-menu.tsx"
     },
     {
@@ -33055,7 +33055,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "ui_context_menu_contextmenu",
-      "community": 91,
+      "community": 92,
       "norm_label": "contextmenu()"
     },
     {
@@ -33065,7 +33065,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "ui_context_menu_contextmenutrigger",
-      "community": 91,
+      "community": 92,
       "norm_label": "contextmenutrigger()"
     },
     {
@@ -33075,7 +33075,7 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "ui_context_menu_contextmenugroup",
-      "community": 91,
+      "community": 92,
       "norm_label": "contextmenugroup()"
     },
     {
@@ -33085,7 +33085,7 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "ui_context_menu_contextmenuportal",
-      "community": 91,
+      "community": 92,
       "norm_label": "contextmenuportal()"
     },
     {
@@ -33095,7 +33095,7 @@
       "source_location": "L39",
       "_origin": "ast",
       "id": "ui_context_menu_contextmenusub",
-      "community": 91,
+      "community": 92,
       "norm_label": "contextmenusub()"
     },
     {
@@ -33105,7 +33105,7 @@
       "source_location": "L45",
       "_origin": "ast",
       "id": "ui_context_menu_contextmenuradiogroup",
-      "community": 91,
+      "community": 92,
       "norm_label": "contextmenuradiogroup()"
     },
     {
@@ -33115,7 +33115,7 @@
       "source_location": "L56",
       "_origin": "ast",
       "id": "ui_context_menu_contextmenusubtrigger",
-      "community": 91,
+      "community": 92,
       "norm_label": "contextmenusubtrigger()"
     },
     {
@@ -33125,7 +33125,7 @@
       "source_location": "L80",
       "_origin": "ast",
       "id": "ui_context_menu_contextmenusubcontent",
-      "community": 91,
+      "community": 92,
       "norm_label": "contextmenusubcontent()"
     },
     {
@@ -33135,7 +33135,7 @@
       "source_location": "L96",
       "_origin": "ast",
       "id": "ui_context_menu_contextmenucontent",
-      "community": 91,
+      "community": 92,
       "norm_label": "contextmenucontent()"
     },
     {
@@ -33145,7 +33145,7 @@
       "source_location": "L114",
       "_origin": "ast",
       "id": "ui_context_menu_contextmenuitem",
-      "community": 91,
+      "community": 92,
       "norm_label": "contextmenuitem()"
     },
     {
@@ -33155,7 +33155,7 @@
       "source_location": "L137",
       "_origin": "ast",
       "id": "ui_context_menu_contextmenucheckboxitem",
-      "community": 91,
+      "community": 92,
       "norm_label": "contextmenucheckboxitem()"
     },
     {
@@ -33165,7 +33165,7 @@
       "source_location": "L163",
       "_origin": "ast",
       "id": "ui_context_menu_contextmenuradioitem",
-      "community": 91,
+      "community": 92,
       "norm_label": "contextmenuradioitem()"
     },
     {
@@ -33175,7 +33175,7 @@
       "source_location": "L187",
       "_origin": "ast",
       "id": "ui_context_menu_contextmenulabel",
-      "community": 91,
+      "community": 92,
       "norm_label": "contextmenulabel()"
     },
     {
@@ -33185,7 +33185,7 @@
       "source_location": "L207",
       "_origin": "ast",
       "id": "ui_context_menu_contextmenuseparator",
-      "community": 91,
+      "community": 92,
       "norm_label": "contextmenuseparator()"
     },
     {
@@ -33195,7 +33195,7 @@
       "source_location": "L220",
       "_origin": "ast",
       "id": "ui_context_menu_contextmenushortcut",
-      "community": 91,
+      "community": 92,
       "norm_label": "contextmenushortcut()"
     },
     {
@@ -33205,7 +33205,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ui_dialog",
-      "community": 17,
+      "community": 0,
       "norm_label": "dialog.tsx"
     },
     {
@@ -33215,7 +33215,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "ui_dialog_dialog",
-      "community": 17,
+      "community": 0,
       "norm_label": "dialog()"
     },
     {
@@ -33225,7 +33225,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "ui_dialog_dialogtrigger",
-      "community": 17,
+      "community": 0,
       "norm_label": "dialogtrigger()"
     },
     {
@@ -33235,7 +33235,7 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "ui_dialog_dialogportal",
-      "community": 17,
+      "community": 0,
       "norm_label": "dialogportal()"
     },
     {
@@ -33245,7 +33245,7 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "ui_dialog_dialogclose",
-      "community": 17,
+      "community": 18,
       "norm_label": "dialogclose()"
     },
     {
@@ -33265,7 +33265,7 @@
       "source_location": "L49",
       "_origin": "ast",
       "id": "ui_dialog_dialogcontent",
-      "community": 17,
+      "community": 0,
       "norm_label": "dialogcontent()"
     },
     {
@@ -33275,7 +33275,7 @@
       "source_location": "L80",
       "_origin": "ast",
       "id": "ui_dialog_dialogheader",
-      "community": 17,
+      "community": 0,
       "norm_label": "dialogheader()"
     },
     {
@@ -33285,7 +33285,7 @@
       "source_location": "L90",
       "_origin": "ast",
       "id": "ui_dialog_dialogfooter",
-      "community": 18,
+      "community": 0,
       "norm_label": "dialogfooter()"
     },
     {
@@ -33295,7 +33295,7 @@
       "source_location": "L103",
       "_origin": "ast",
       "id": "ui_dialog_dialogtitle",
-      "community": 17,
+      "community": 0,
       "norm_label": "dialogtitle()"
     },
     {
@@ -33425,7 +33425,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ui_dropdown_menu",
-      "community": 91,
+      "community": 29,
       "norm_label": "dropdown-menu.tsx"
     },
     {
@@ -33435,7 +33435,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "ui_dropdown_menu_dropdownmenu",
-      "community": 91,
+      "community": 29,
       "norm_label": "dropdownmenu()"
     },
     {
@@ -33445,7 +33445,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "ui_dropdown_menu_dropdownmenuportal",
-      "community": 91,
+      "community": 29,
       "norm_label": "dropdownmenuportal()"
     },
     {
@@ -33455,7 +33455,7 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "ui_dropdown_menu_dropdownmenutrigger",
-      "community": 91,
+      "community": 29,
       "norm_label": "dropdownmenutrigger()"
     },
     {
@@ -33465,7 +33465,7 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "ui_dropdown_menu_dropdownmenucontent",
-      "community": 91,
+      "community": 29,
       "norm_label": "dropdownmenucontent()"
     },
     {
@@ -33475,7 +33475,7 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "ui_dropdown_menu_dropdownmenugroup",
-      "community": 91,
+      "community": 29,
       "norm_label": "dropdownmenugroup()"
     },
     {
@@ -33485,7 +33485,7 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "ui_dropdown_menu_dropdownmenuitem",
-      "community": 91,
+      "community": 29,
       "norm_label": "dropdownmenuitem()"
     },
     {
@@ -33495,7 +33495,7 @@
       "source_location": "L85",
       "_origin": "ast",
       "id": "ui_dropdown_menu_dropdownmenucheckboxitem",
-      "community": 91,
+      "community": 29,
       "norm_label": "dropdownmenucheckboxitem()"
     },
     {
@@ -33505,7 +33505,7 @@
       "source_location": "L111",
       "_origin": "ast",
       "id": "ui_dropdown_menu_dropdownmenuradiogroup",
-      "community": 91,
+      "community": 29,
       "norm_label": "dropdownmenuradiogroup()"
     },
     {
@@ -33515,7 +33515,7 @@
       "source_location": "L122",
       "_origin": "ast",
       "id": "ui_dropdown_menu_dropdownmenuradioitem",
-      "community": 91,
+      "community": 29,
       "norm_label": "dropdownmenuradioitem()"
     },
     {
@@ -33525,7 +33525,7 @@
       "source_location": "L146",
       "_origin": "ast",
       "id": "ui_dropdown_menu_dropdownmenulabel",
-      "community": 91,
+      "community": 29,
       "norm_label": "dropdownmenulabel()"
     },
     {
@@ -33535,7 +33535,7 @@
       "source_location": "L166",
       "_origin": "ast",
       "id": "ui_dropdown_menu_dropdownmenuseparator",
-      "community": 91,
+      "community": 29,
       "norm_label": "dropdownmenuseparator()"
     },
     {
@@ -33545,7 +33545,7 @@
       "source_location": "L179",
       "_origin": "ast",
       "id": "ui_dropdown_menu_dropdownmenushortcut",
-      "community": 91,
+      "community": 29,
       "norm_label": "dropdownmenushortcut()"
     },
     {
@@ -33555,7 +33555,7 @@
       "source_location": "L195",
       "_origin": "ast",
       "id": "ui_dropdown_menu_dropdownmenusub",
-      "community": 91,
+      "community": 29,
       "norm_label": "dropdownmenusub()"
     },
     {
@@ -33565,7 +33565,7 @@
       "source_location": "L201",
       "_origin": "ast",
       "id": "ui_dropdown_menu_dropdownmenusubtrigger",
-      "community": 91,
+      "community": 29,
       "norm_label": "dropdownmenusubtrigger()"
     },
     {
@@ -33575,7 +33575,7 @@
       "source_location": "L225",
       "_origin": "ast",
       "id": "ui_dropdown_menu_dropdownmenusubcontent",
-      "community": 91,
+      "community": 29,
       "norm_label": "dropdownmenusubcontent()"
     },
     {
@@ -34195,7 +34195,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ui_popover",
-      "community": 18,
+      "community": 107,
       "norm_label": "popover.tsx"
     },
     {
@@ -34205,7 +34205,7 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "ui_popover_popover",
-      "community": 18,
+      "community": 107,
       "norm_label": "popover()"
     },
     {
@@ -34215,7 +34215,7 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "ui_popover_popovertrigger",
-      "community": 18,
+      "community": 107,
       "norm_label": "popovertrigger()"
     },
     {
@@ -34225,7 +34225,7 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "ui_popover_popovercontent",
-      "community": 18,
+      "community": 107,
       "norm_label": "popovercontent()"
     },
     {
@@ -34235,7 +34235,7 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "ui_popover_popoveranchor",
-      "community": 18,
+      "community": 107,
       "norm_label": "popoveranchor()"
     },
     {
@@ -34475,7 +34475,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ui_separator",
-      "community": 7,
+      "community": 1,
       "norm_label": "separator.tsx"
     },
     {
@@ -34485,7 +34485,7 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "ui_separator_separator",
-      "community": 7,
+      "community": 1,
       "norm_label": "separator()"
     },
     {
@@ -34925,7 +34925,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ui_sonner",
-      "community": 96,
+      "community": 17,
       "norm_label": "sonner.tsx"
     },
     {
@@ -34935,7 +34935,7 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "ui_sonner_toaster",
-      "community": 96,
+      "community": 17,
       "norm_label": "toaster()"
     },
     {
@@ -34945,7 +34945,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ui_switch",
-      "community": 7,
+      "community": 107,
       "norm_label": "switch.tsx"
     },
     {
@@ -34955,7 +34955,7 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "ui_switch_switch",
-      "community": 7,
+      "community": 107,
       "norm_label": "switch()"
     },
     {
@@ -35105,7 +35105,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ui_textarea",
-      "community": 0,
+      "community": 107,
       "norm_label": "textarea.tsx"
     },
     {
@@ -35115,7 +35115,7 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "ui_textarea_textarea",
-      "community": 0,
+      "community": 107,
       "norm_label": "textarea()"
     },
     {
@@ -35295,7 +35295,7 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "lib_api_apierror",
-      "community": 2,
+      "community": 15,
       "norm_label": "apierror"
     },
     {
@@ -35305,7 +35305,7 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "lib_api_apierror_constructor",
-      "community": 2,
+      "community": 15,
       "norm_label": ".constructor()"
     },
     {
@@ -35345,7 +35345,7 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "lib_api_apiuploadmodresponse",
-      "community": 2,
+      "community": 15,
       "norm_label": "apiuploadmodresponse"
     },
     {
@@ -35385,7 +35385,7 @@
       "source_location": "L88",
       "_origin": "ast",
       "id": "lib_api_apinxmdownloadprogress",
-      "community": 2,
+      "community": 15,
       "norm_label": "apinxmdownloadprogress"
     },
     {
@@ -35395,7 +35395,7 @@
       "source_location": "L100",
       "_origin": "ast",
       "id": "lib_api_apinxmhandoffsummary",
-      "community": 2,
+      "community": 15,
       "norm_label": "apinxmhandoffsummary"
     },
     {
@@ -35595,7 +35595,7 @@
       "source_location": "L291",
       "_origin": "ast",
       "id": "lib_api_taglookupresponse",
-      "community": 29,
+      "community": 96,
       "norm_label": "taglookupresponse"
     },
     {
@@ -35835,7 +35835,7 @@
       "source_location": "L606",
       "_origin": "ast",
       "id": "lib_api_getnxmprotocolstatus",
-      "community": 2,
+      "community": 7,
       "norm_label": "getnxmprotocolstatus()"
     },
     {
@@ -35845,7 +35845,7 @@
       "source_location": "L610",
       "_origin": "ast",
       "id": "lib_api_registernxmprotocol",
-      "community": 2,
+      "community": 7,
       "norm_label": "registernxmprotocol()"
     },
     {
@@ -35855,7 +35855,7 @@
       "source_location": "L619",
       "_origin": "ast",
       "id": "lib_api_unregisternxmprotocol",
-      "community": 2,
+      "community": 7,
       "norm_label": "unregisternxmprotocol()"
     },
     {
@@ -35875,7 +35875,7 @@
       "source_location": "L649",
       "_origin": "ast",
       "id": "lib_api_getlastnxmurl",
-      "community": 2,
+      "community": 7,
       "norm_label": "getlastnxmurl()"
     },
     {
@@ -35905,7 +35905,7 @@
       "source_location": "L695",
       "_origin": "ast",
       "id": "lib_api_getmoddetails",
-      "community": 2,
+      "community": 15,
       "norm_label": "getmoddetails()"
     },
     {
@@ -36045,7 +36045,7 @@
       "source_location": "L843",
       "_origin": "ast",
       "id": "lib_api_apidownload",
-      "community": 96,
+      "community": 100,
       "norm_label": "apidownload"
     },
     {
@@ -36115,7 +36115,7 @@
       "source_location": "L933",
       "_origin": "ast",
       "id": "lib_api_disableallmods",
-      "community": 96,
+      "community": 2,
       "norm_label": "disableallmods()"
     },
     {
@@ -36235,7 +36235,7 @@
       "source_location": "L1081",
       "_origin": "ast",
       "id": "lib_api_deletelocaldownloads",
-      "community": 2,
+      "community": 15,
       "norm_label": "deletelocaldownloads()"
     },
     {
@@ -36245,7 +36245,7 @@
       "source_location": "L1101",
       "_origin": "ast",
       "id": "lib_api_listnxmhandoffs",
-      "community": 2,
+      "community": 15,
       "norm_label": "listnxmhandoffs()"
     },
     {
@@ -36275,7 +36275,7 @@
       "source_location": "L1122",
       "_origin": "ast",
       "id": "lib_api_ingestnxmhandoff",
-      "community": 2,
+      "community": 15,
       "norm_label": "ingestnxmhandoff()"
     },
     {
@@ -36315,7 +36315,7 @@
       "source_location": "L1164",
       "_origin": "ast",
       "id": "lib_api_lookuptags",
-      "community": 29,
+      "community": 96,
       "norm_label": "lookuptags()"
     },
     {
@@ -36325,7 +36325,7 @@
       "source_location": "L1171",
       "_origin": "ast",
       "id": "lib_api_dismissnxmhandoff",
-      "community": 2,
+      "community": 15,
       "norm_label": "dismissnxmhandoff()"
     },
     {
@@ -36335,7 +36335,7 @@
       "source_location": "L1193",
       "_origin": "ast",
       "id": "lib_api_cancelnxmhandoff",
-      "community": 2,
+      "community": 15,
       "norm_label": "cancelnxmhandoff()"
     },
     {
@@ -36715,7 +36715,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_categoryutils",
-      "community": 29,
+      "community": 96,
       "norm_label": "categoryutils.ts"
     },
     {
@@ -36725,7 +36725,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_categoryutils_category_keywords",
-      "community": 29,
+      "community": 96,
       "norm_label": "category_keywords"
     },
     {
@@ -36735,7 +36735,7 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "lib_categoryutils_category_token_set",
-      "community": 29,
+      "community": 96,
       "norm_label": "category_token_set"
     },
     {
@@ -36745,7 +36745,7 @@
       "source_location": "L45",
       "_origin": "ast",
       "id": "lib_categoryutils_normalizetag",
-      "community": 29,
+      "community": 96,
       "norm_label": "normalizetag()"
     },
     {
@@ -36755,7 +36755,7 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "lib_categoryutils_buildtagset",
-      "community": 29,
+      "community": 96,
       "norm_label": "buildtagset()"
     },
     {
@@ -36765,7 +36765,7 @@
       "source_location": "L65",
       "_origin": "ast",
       "id": "lib_categoryutils_derivecategorytags",
-      "community": 29,
+      "community": 96,
       "norm_label": "derivecategorytags()"
     },
     {
@@ -36775,7 +36775,7 @@
       "source_location": "L78",
       "_origin": "ast",
       "id": "lib_categoryutils_categoriesmatchtag",
-      "community": 29,
+      "community": 96,
       "norm_label": "categoriesmatchtag()"
     },
     {
@@ -36785,7 +36785,7 @@
       "source_location": "L88",
       "_origin": "ast",
       "id": "lib_categoryutils_getcategorykeywords",
-      "community": 29,
+      "community": 96,
       "norm_label": "getcategorykeywords()"
     },
     {
@@ -36795,7 +36795,7 @@
       "source_location": "L92",
       "_origin": "ast",
       "id": "lib_categoryutils_getcategorytokenset",
-      "community": 29,
+      "community": 96,
       "norm_label": "getcategorytokenset()"
     },
     {
@@ -36805,7 +36805,7 @@
       "source_location": "L96",
       "_origin": "ast",
       "id": "lib_categoryutils_extractnoncategorytags",
-      "community": 29,
+      "community": 96,
       "norm_label": "extractnoncategorytags()"
     },
     {
@@ -36815,7 +36815,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_crashparser",
-      "community": 96,
+      "community": 100,
       "norm_label": "crashparser.ts"
     },
     {
@@ -36825,67 +36825,107 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "lib_crashparser_crashinfo",
-      "community": 96,
+      "community": 100,
       "norm_label": "crashinfo"
+    },
+    {
+      "label": "SkinCoord",
+      "file_type": "code",
+      "source_file": "src/lib/crashParser.ts",
+      "source_location": "L34",
+      "_origin": "ast",
+      "id": "lib_crashparser_skincoord",
+      "community": 100,
+      "norm_label": "skincoord"
     },
     {
       "label": "getElementText()",
       "file_type": "code",
       "source_file": "src/lib/crashParser.ts",
-      "source_location": "L30",
+      "source_location": "L45",
       "_origin": "ast",
       "id": "lib_crashparser_getelementtext",
-      "community": 96,
+      "community": 100,
       "norm_label": "getelementtext()"
     },
     {
       "label": "parseCrashContext()",
       "file_type": "code",
       "source_file": "src/lib/crashParser.ts",
-      "source_location": "L38",
+      "source_location": "L53",
       "_origin": "ast",
       "id": "lib_crashparser_parsecrashcontext",
-      "community": 96,
+      "community": 100,
       "norm_label": "parsecrashcontext()"
+    },
+    {
+      "label": "parseSkinCoord()",
+      "file_type": "code",
+      "source_file": "src/lib/crashParser.ts",
+      "source_location": "L156",
+      "_origin": "ast",
+      "id": "lib_crashparser_parseskincoord",
+      "community": 100,
+      "norm_label": "parseskincoord()"
+    },
+    {
+      "label": "extractSkinCoords()",
+      "file_type": "code",
+      "source_file": "src/lib/crashParser.ts",
+      "source_location": "L176",
+      "_origin": "ast",
+      "id": "lib_crashparser_extractskincoords",
+      "community": 100,
+      "norm_label": "extractskincoords()"
+    },
+    {
+      "label": "hasMissingCompanionPak()",
+      "file_type": "code",
+      "source_file": "src/lib/crashParser.ts",
+      "source_location": "L205",
+      "_origin": "ast",
+      "id": "lib_crashparser_hasmissingcompanionpak",
+      "community": 100,
+      "norm_label": "hasmissingcompanionpak()"
     },
     {
       "label": "MOD_CRASH_PATTERNS",
       "file_type": "code",
       "source_file": "src/lib/crashParser.ts",
-      "source_location": "L144",
+      "source_location": "L242",
       "_origin": "ast",
       "id": "lib_crashparser_mod_crash_patterns",
-      "community": 96,
+      "community": 100,
       "norm_label": "mod_crash_patterns"
     },
     {
       "label": "SuspiciousMod",
       "file_type": "code",
       "source_file": "src/lib/crashParser.ts",
-      "source_location": "L163",
+      "source_location": "L267",
       "_origin": "ast",
       "id": "lib_crashparser_suspiciousmod",
-      "community": 96,
+      "community": 100,
       "norm_label": "suspiciousmod"
     },
     {
       "label": "correlateCrashWithMods()",
       "file_type": "code",
       "source_file": "src/lib/crashParser.ts",
-      "source_location": "L177",
+      "source_location": "L296",
       "_origin": "ast",
       "id": "lib_crashparser_correlatecrashwithmods",
-      "community": 96,
+      "community": 100,
       "norm_label": "correlatecrashwithmods()"
     },
     {
       "label": "formatCrashTime()",
       "file_type": "code",
       "source_file": "src/lib/crashParser.ts",
-      "source_location": "L289",
+      "source_location": "L480",
       "_origin": "ast",
       "id": "lib_crashparser_formatcrashtime",
-      "community": 96,
+      "community": 0,
       "norm_label": "formatcrashtime()"
     },
     {
@@ -37225,7 +37265,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_nexussso",
-      "community": 0,
+      "community": 19,
       "norm_label": "nexussso.ts"
     },
     {
@@ -37235,7 +37275,7 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "lib_nexussso_nexusssoresponse",
-      "community": 0,
+      "community": 19,
       "norm_label": "nexusssoresponse"
     },
     {
@@ -37245,7 +37285,7 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "lib_nexussso_nexusssoresult",
-      "community": 0,
+      "community": 19,
       "norm_label": "nexusssoresult"
     },
     {
@@ -37255,7 +37295,7 @@
       "source_location": "L47",
       "_origin": "ast",
       "id": "lib_nexussso_nexusssostatuscallback",
-      "community": 0,
+      "community": 19,
       "norm_label": "nexusssostatuscallback"
     },
     {
@@ -37265,7 +37305,7 @@
       "source_location": "L55",
       "_origin": "ast",
       "id": "lib_nexussso_generateuuid",
-      "community": 0,
+      "community": 19,
       "norm_label": "generateuuid()"
     },
     {
@@ -37275,7 +37315,7 @@
       "source_location": "L76",
       "_origin": "ast",
       "id": "lib_nexussso_initiatenexussso",
-      "community": 0,
+      "community": 19,
       "norm_label": "initiatenexussso()"
     },
     {
@@ -37285,7 +37325,7 @@
       "source_location": "L256",
       "_origin": "ast",
       "id": "lib_nexussso_cancelnexussso",
-      "community": 0,
+      "community": 19,
       "norm_label": "cancelnexussso()"
     },
     {
@@ -37295,7 +37335,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_nxmhelpers",
-      "community": 2,
+      "community": 15,
       "norm_label": "nxmhelpers.ts"
     },
     {
@@ -37305,7 +37345,7 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "lib_nxmhelpers_getmodlabel",
-      "community": 2,
+      "community": 15,
       "norm_label": "getmodlabel()"
     },
     {
@@ -37315,7 +37355,7 @@
       "source_location": "L53",
       "_origin": "ast",
       "id": "lib_nxmhelpers_getmodlabelsync",
-      "community": 2,
+      "community": 15,
       "norm_label": "getmodlabelsync()"
     },
     {
@@ -37325,7 +37365,7 @@
       "source_location": "L67",
       "_origin": "ast",
       "id": "lib_nxmhelpers_waitforhandoffoptions",
-      "community": 2,
+      "community": 15,
       "norm_label": "waitforhandoffoptions"
     },
     {
@@ -37335,7 +37375,7 @@
       "source_location": "L72",
       "_origin": "ast",
       "id": "lib_nxmhelpers_formatbytes",
-      "community": 2,
+      "community": 15,
       "norm_label": "formatbytes()"
     },
     {
@@ -37345,7 +37385,7 @@
       "source_location": "L86",
       "_origin": "ast",
       "id": "lib_nxmhelpers_parsenumber",
-      "community": 2,
+      "community": 15,
       "norm_label": "parsenumber()"
     },
     {
@@ -37355,7 +37395,7 @@
       "source_location": "L97",
       "_origin": "ast",
       "id": "lib_nxmhelpers_waitformatchinghandoff",
-      "community": 2,
+      "community": 15,
       "norm_label": "waitformatchinghandoff()"
     },
     {
@@ -37365,7 +37405,7 @@
       "source_location": "L139",
       "_origin": "ast",
       "id": "lib_nxmhelpers_monitornxmprogressoptions",
-      "community": 2,
+      "community": 15,
       "norm_label": "monitornxmprogressoptions"
     },
     {
@@ -37375,7 +37415,7 @@
       "source_location": "L144",
       "_origin": "ast",
       "id": "lib_nxmhelpers_monitornxmprogresshandle",
-      "community": 2,
+      "community": 15,
       "norm_label": "monitornxmprogresshandle"
     },
     {
@@ -37385,7 +37425,7 @@
       "source_location": "L148",
       "_origin": "ast",
       "id": "lib_nxmhelpers_monitornxmdownloadprogress",
-      "community": 2,
+      "community": 15,
       "norm_label": "monitornxmdownloadprogress()"
     },
     {
@@ -37395,7 +37435,7 @@
       "source_location": "L197",
       "_origin": "ast",
       "id": "lib_nxmhelpers_nxmprogresscontroller",
-      "community": 2,
+      "community": 15,
       "norm_label": "nxmprogresscontroller"
     },
     {
@@ -37405,7 +37445,7 @@
       "source_location": "L203",
       "_origin": "ast",
       "id": "lib_nxmhelpers_createprogresscontrolleroptions",
-      "community": 2,
+      "community": 15,
       "norm_label": "createprogresscontrolleroptions"
     },
     {
@@ -37415,7 +37455,7 @@
       "source_location": "L211",
       "_origin": "ast",
       "id": "lib_nxmhelpers_createnxmprogresscontroller",
-      "community": 2,
+      "community": 15,
       "norm_label": "createnxmprogresscontroller()"
     },
     {
@@ -37425,7 +37465,7 @@
       "source_location": "L340",
       "_origin": "ast",
       "id": "lib_nxmhelpers_isnexusofficialnaming",
-      "community": 2,
+      "community": 15,
       "norm_label": "isnexusofficialnaming()"
     },
     {
@@ -37435,7 +37475,7 @@
       "source_location": "L352",
       "_origin": "ast",
       "id": "lib_nxmhelpers_parsenexusfilename",
-      "community": 2,
+      "community": 15,
       "norm_label": "parsenexusfilename()"
     },
     {
@@ -37575,7 +37615,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_toasthelpers",
-      "community": 2,
+      "community": 15,
       "norm_label": "toasthelpers.ts"
     },
     {
@@ -37585,7 +37625,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "lib_toasthelpers_createtoastdeduplicator",
-      "community": 2,
+      "community": 15,
       "norm_label": "createtoastdeduplicator()"
     },
     {
@@ -37595,7 +37635,7 @@
       "source_location": "L57",
       "_origin": "ast",
       "id": "lib_toasthelpers_calculatebackoff",
-      "community": 2,
+      "community": 15,
       "norm_label": "calculatebackoff()"
     },
     {
@@ -37605,7 +37645,7 @@
       "source_location": "L71",
       "_origin": "ast",
       "id": "lib_toasthelpers_simplehash",
-      "community": 2,
+      "community": 15,
       "norm_label": "simplehash()"
     },
     {
@@ -37615,7 +37655,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_updateutils",
-      "community": 96,
+      "community": 17,
       "norm_label": "updateutils.ts"
     },
     {
@@ -37625,7 +37665,7 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "lib_updateutils_normalizeversionforcheck",
-      "community": 96,
+      "community": 17,
       "norm_label": "normalizeversionforcheck()"
     },
     {
@@ -134599,6 +134639,16 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/lib/crashParser.ts",
+      "source_location": "L176",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "lib_crashparser",
+      "target": "lib_crashparser_extractskincoords"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/crashParser.ts",
       "source_location": "L215",
       "weight": 1.0,
       "confidence_score": 1.0,
@@ -134614,6 +134664,16 @@
       "confidence_score": 1.0,
       "source": "lib_crashparser",
       "target": "lib_crashparser_getelementtext"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/crashParser.ts",
+      "source_location": "L205",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "lib_crashparser",
+      "target": "lib_crashparser_hasmissingcompanionpak"
     },
     {
       "relation": "contains",
@@ -134639,6 +134699,26 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/lib/crashParser.ts",
+      "source_location": "L156",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "lib_crashparser",
+      "target": "lib_crashparser_parseskincoord"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/crashParser.ts",
+      "source_location": "L34",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "lib_crashparser",
+      "target": "lib_crashparser_skincoord"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/crashParser.ts",
       "source_location": "L163",
       "weight": 1.0,
       "confidence_score": 1.0,
@@ -134655,6 +134735,39 @@
       "confidence_score": 1.0,
       "source": "lib_crashparser_parsecrashcontext",
       "target": "lib_crashparser_getelementtext"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/crashParser.ts",
+      "source_location": "L180",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "lib_crashparser_extractskincoords",
+      "target": "lib_crashparser_parseskincoord"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/crashParser.ts",
+      "source_location": "L323",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "lib_crashparser_correlatecrashwithmods",
+      "target": "lib_crashparser_extractskincoords"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/crashParser.ts",
+      "source_location": "L392",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "lib_crashparser_correlatecrashwithmods",
+      "target": "lib_crashparser_hasmissingcompanionpak"
     },
     {
       "relation": "contains",
@@ -135963,5 +136076,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "7f78234892f5314306a270a45c19f73e25ad7737"
+  "built_at_commit": "0834fd1a09f1d225eafaee1b7337a81f1d2bd240"
 }

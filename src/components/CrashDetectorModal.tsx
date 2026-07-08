@@ -68,12 +68,18 @@ export function CrashDetectorModal({
     [suspicious, rest],
   );
 
-  // Pre-select suspicious mods when modal opens
+  // Pre-select suspicious mods when modal opens.
+  // Priority: if any exact/skin matches exist → select only those.
+  // Fallback: if only character/fallback matches exist → select those too.
   useMemo(() => {
     if (open && crashInfo) {
       resetState();
-      const preSelected = new Set(suspicious.map((s) => s.mod.id));
-      setSelectedIds(preSelected);
+      const skinOrExact = suspicious.filter(
+        (s) => s.matchType === "exact" || s.matchType === "skin",
+      );
+      const toSelect =
+        skinOrExact.length > 0 ? skinOrExact : suspicious;
+      setSelectedIds(new Set(toSelect.map((s) => s.mod.id)));
     }
   }, [open, crashInfo]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -162,6 +168,7 @@ export function CrashDetectorModal({
           background: "var(--color-surface-1, #1a1a2e)",
           borderRadius: "16px",
         }}
+        showCloseButton={false}
       >
         {/* ── Header gradient strip ─────────────────────────────── */}
         <div
@@ -397,30 +404,57 @@ export function CrashDetectorModal({
               >
                 {allActiveMods.map((mod) => {
                   const suspiciousEntry = suspicious.find((s) => s.mod.id === mod.id);
-                  const isSuspicious = !!suspiciousEntry;
+                  const matchType = suspiciousEntry?.matchType;
+                  const reason = suspiciousEntry?.reason;
                   const isChecked = selectedIds.has(mod.id);
                   const displayName =
                     mod.name || mod.mod_name || `Download #${mod.id}`;
+
+                  // Badge config per tier
+                  const badge: { label: string; bg: string; color: string; border: string } | null =
+                    matchType === "exact"
+                      ? { label: "Exact Skin Match", bg: "rgba(220,38,38,0.25)", color: "#f87171", border: "rgba(220,38,38,0.5)" }
+                      : matchType === "skin"
+                      ? { label: "Skin Match", bg: "rgba(234,88,12,0.22)", color: "#fb923c", border: "rgba(234,88,12,0.45)" }
+                      : matchType === "character"
+                      ? { label: "Character Match", bg: "rgba(234,179,8,0.18)", color: "#facc15", border: "rgba(234,179,8,0.35)" }
+                      : matchType === "fallback"
+                      ? { label: "Suspected", bg: "rgba(234,88,12,0.12)", color: "#fdba74", border: "rgba(234,88,12,0.25)" }
+                      : null;
+
+                  // Row background — gradient red for exact/skin, neutral for rest
+                  const rowBg =
+                    matchType === "exact"
+                      ? "rgba(220,38,38,0.16)"
+                      : matchType === "skin"
+                      ? "rgba(220,38,38,0.10)"
+                      : isChecked
+                      ? "rgba(220,38,38,0.08)"
+                      : "rgba(255,255,255,0.04)";
+
+                  const rowBorder =
+                    matchType === "exact"
+                      ? "rgba(220,38,38,0.40)"
+                      : matchType === "skin"
+                      ? "rgba(234,88,12,0.35)"
+                      : isChecked
+                      ? "rgba(220,38,38,0.20)"
+                      : "rgba(255,255,255,0.06)";
 
                   return (
                     <label
                       key={mod.id}
                       htmlFor={`crash-mod-${mod.id}`}
+                      title={reason ?? undefined}
                       style={{
                         display: "flex",
-                        alignItems: "center",
+                        alignItems: "flex-start",
                         gap: "10px",
                         padding: "8px 12px",
                         borderRadius: "8px",
                         cursor: "pointer",
-                        background: isChecked
-                          ? "rgba(220,38,38,0.12)"
-                          : "rgba(255,255,255,0.04)",
-                        border: `1px solid ${
-                          isChecked
-                            ? "rgba(220,38,38,0.25)"
-                            : "rgba(255,255,255,0.06)"
-                        }`,
+                        background: rowBg,
+                        border: `1px solid ${rowBorder}`,
                         transition: "all 0.15s ease",
                       }}
                     >
@@ -429,7 +463,7 @@ export function CrashDetectorModal({
                         type="checkbox"
                         checked={isChecked}
                         onChange={() => toggleSelect(mod.id)}
-                        style={{ accentColor: "#dc2626", cursor: "pointer" }}
+                        style={{ accentColor: "#dc2626", cursor: "pointer", marginTop: "2px" }}
                       />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p
@@ -447,21 +481,39 @@ export function CrashDetectorModal({
                             {mod.active_paks.length !== 1 ? "s" : ""}
                           </p>
                         )}
+                        {reason && (
+                          <p
+                            className="text-xs"
+                            style={{
+                              marginTop: "2px",
+                              color:
+                                matchType === "exact"
+                                  ? "#f87171"
+                                  : matchType === "skin"
+                                  ? "#fb923c"
+                                  : "#facc15",
+                              whiteSpace: "normal",
+                            }}
+                          >
+                            {reason}
+                          </p>
+                        )}
                       </div>
-                      {isSuspicious && (
+                      {badge && (
                         <span
                           style={{
                             fontSize: "10px",
                             padding: "2px 6px",
                             borderRadius: "99px",
-                            background: "rgba(234,88,12,0.2)",
-                            color: "#fb923c",
-                            border: "1px solid rgba(234,88,12,0.3)",
+                            background: badge.bg,
+                            color: badge.color,
+                            border: `1px solid ${badge.border}`,
                             fontWeight: 600,
                             flexShrink: 0,
+                            marginTop: "2px",
                           }}
                         >
-                          Suspected
+                          {badge.label}
                         </span>
                       )}
                     </label>

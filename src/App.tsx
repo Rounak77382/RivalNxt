@@ -2373,6 +2373,8 @@ export default function App() {
                 onOpenBootstrap={handleOpenBootstrap}
                 onOpenBackup={() => setBackupOpen(true)}
                 onDisableAllMods={handleDisableAllMods}
+                hasLastCrash={crashInfo !== null}
+                onViewLastCrash={() => setCrashDetectorOpen(true)}
               />
 
               {/* Tab Content */}
@@ -2524,6 +2526,7 @@ export default function App() {
             onDismiss={() => setCrashDetectorOpen(false)}
             onDeactivated={() => {
               setCrashDetectorOpen(false);
+              setCrashInfo(null);
               void refreshMods({ quiet: true, includeConflicts: true });
             }}
           />

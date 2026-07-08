@@ -2064,7 +2064,7 @@ def get_custom_author(conn, author_id: int):
     }
 
 
-def search_custom_authors(conn, query: str, limit: int = 20):
+def search_custom_authors(conn, query: str, limit: int = 100):
     """Search custom_authors + mods table by partial name match.
 
     Returns a unified list: persisted custom authors first, then Nexus authors

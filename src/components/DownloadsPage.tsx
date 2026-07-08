@@ -199,6 +199,7 @@ export function DownloadsPage({
         mod.name.toLowerCase().includes(q) ||
         mod.description.toLowerCase().includes(q) ||
         mod.author.toLowerCase().includes(q) ||
+        (mod.customAuthorName && mod.customAuthorName.toLowerCase().includes(q)) ||
         mod.tags.some((t) => t.toLowerCase().includes(q)),
     );
   }
