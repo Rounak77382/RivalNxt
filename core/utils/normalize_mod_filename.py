@@ -138,12 +138,13 @@ def normalize_mod_filename(
                         "file_md5": computed_md5
                     }
                     
-    # 4. Failed to resolve or verify
+    # 4. Failed to verify via API, or no API key, or file not found in API response
+    # If we have a candidate_mod_id, we can still assume it's valid to prevent showing 'Assign Mod ID' when we already know it.
     return {
-        "backendModId": None,
+        "backendModId": candidate_mod_id,
         "renamed": False,
-        "canonical_path": None,
-        "needsManualModId": True,
-        "version": None,
+        "canonical_path": path,
+        "needsManualModId": candidate_mod_id is None,
+        "version": version,
         "file_md5": computed_md5
     }

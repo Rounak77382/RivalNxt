@@ -70,8 +70,8 @@
     "semantic_hash": "5e016ca3b1cb496df198611b8727f7cb"
   },
   "core/db/db.py": {
-    "mtime": 1782753591.6814668,
-    "ast_hash": "7cba767f1043ea1a7d6f1d55e05ecffb",
+    "mtime": 1783553723.484068,
+    "ast_hash": "8f71b333c9bc5f2085602cad768c1ac5",
     "semantic_hash": ""
   },
   "core/db/migrations/0001_conflicts_materialized.sql": {
@@ -1145,8 +1145,8 @@
     "semantic_hash": "4e312505cce9724b2453adb42457422e"
   },
   "src/components/DownloadsPage.tsx": {
-    "mtime": 1782811737.4488094,
-    "ast_hash": "e41cb7782b495783c6f3367d37b4ec17",
+    "mtime": 1783553716.630086,
+    "ast_hash": "5e2136c7ecbfeed1b44d30f5bcec73e5",
     "semantic_hash": ""
   },
   "src/components/DownloadsSidebar.tsx": {
