@@ -2455,9 +2455,13 @@ export function ModModal({
                                   status.display_version.trim() !== "",
                               )?.display_version || entry.version,
                             );
-                            const entryLabel = entry.name?.trim()
+                            let entryLabel = entry.name?.trim()
                               ? entry.name
                               : mod.name;
+                            
+                            if (entryLabel) {
+                              entryLabel = entryLabel.replace(/\s+\d+\s+.*?\s+\d{4}\s\d{2}\s\d{2}T\d{2}\s\d{2}Z\s+[a-zA-Z0-9]+$/, '').trim();
+                            }
                             return (
                               <div
                                 key={entry.id}
