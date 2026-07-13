@@ -425,7 +425,7 @@ cargo fmt --check  # Code formatting check
 
 **Useful Commands**
 
-```
+```bash
 # Database inspection
 python -X utf8 -m scripts.inspect_db
 
@@ -434,6 +434,9 @@ python -X utf8 -m scripts.rebuild_sqlite
 
 # Check missing metadata
 python -X utf8 -m scripts.report_missing_tags
+
+# Generate or update Graphify Knowledge Graph
+graphify update .
 ```
 
 **VS Code Extensions** (Recommended)

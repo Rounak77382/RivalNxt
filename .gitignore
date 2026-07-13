@@ -165,11 +165,9 @@ extracted_wheel/
 **/scratch/
 
 # Graphify
-graphify-out/cost.json
-graphify-out/cache/
+graphify-out/
 
-# BUT explicitly allow the shared team rules
-!.agents/rules/
-!.agents/workflows/
-!.codex/hooks.json
-!.cursor/rules/
+# Ignore AI assistant configuration and rule directories
+.agents/
+.codex/
+.cursor/
