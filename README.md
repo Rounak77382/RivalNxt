@@ -26,24 +26,31 @@ _One desktop app to manage, activate, and validate Marvel Rivals mods with confl
 
 - **Smart Mod Management** - Activate, deactivate, and organize mods with per-mod and bulk actions
 - **Conflict Detection** - Automatic detection and resolution of mod conflicts with tag rebuilding
+- **Crash Detection** - Persistent crash log parsing utility to quickly identify faulty mods causing game crashes
+- **Backup & Restore** - Comprehensive backup system allowing safe save and recovery of mod configurations
+- **Custom Tagging** - User-defined custom tag system with advanced filtering and search indexing
 - **Auto-Detection** - Automatically detects Marvel Rivals installation path via Steam/Epic Games registry and archive tools (WinRAR)
 - **One-Click Downloads** - Click "Download with Mod Manager" on NexusMods to instantly download and install mods
 - **Background Processing** - Automatic download processing via NXM protocol without manual intervention
 
 **🔧 Technical Highlights**
 
-- **Local-First Database** - Portable SQLite with health checks and inspection utilities
+- **Local-First Database** - Portable SQLite with health checks, robust conflict checks, and inspection utilities
 - **Rust-Powered Core** - Native Rust `rust-ue-tools` library with PyO3 bindings via Maturin
 - **Modern Tech Stack** - Tauri 2 desktop shell + React/Vite frontend + FastAPI/Python backend
+- **AI Knowledge Graph** - Built-in cross-language AST knowledge graph generation tool (`graphify`) for AI agent assistance
 - **CI/CD Automation** - GitHub Actions workflow for automated builds and releases
 - **One-Click Build** - Complete build script for easy local development setup
 
 **🌐 NexusMods Integration**
 
+- **Collections Support** - Full support for Nexus Collections and mass downloads with duplicate handling
 - **Browser Integration** - "Download with Mod Manager" button on NexusMods automatically opens RivalNxt
-- **NXM Protocol** - Bi-directional handoff system with Windows registry integration
+- **NXM Protocol** - Persistent handoff system and background downloading via Windows registry integration
 - **Background Processing** - Automatic download processing via `NxmBackgroundListener` component
-- **API Integration** - Metadata fetching and update notifications
+- **Image Uploads** - Native drag-and-drop custom image uploading directly in the mod interface
+- **Dynamic Meta Resolution** - Intelligent fallback resolution using Fandom Wiki to identify character skins accurately
+- **API Integration** - Metadata fetching, automated ingestion, and update notifications
 - **Test Functionality** - Built-in protocol validation tools
 
 **⚡ Rust UE Tools Library**
