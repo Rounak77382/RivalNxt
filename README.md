@@ -26,9 +26,13 @@ _One desktop app to manage, activate, and validate Marvel Rivals mods with confl
 
 - **Smart Mod Management** - Activate, deactivate, and organize mods with per-mod and bulk actions
 - **Conflict Detection** - Automatic detection and resolution of mod conflicts with tag rebuilding
+- **Game Update Auto-Detection** - Automatically detects game updates on startup to dynamically rebuild character and skin data
 - **Crash Detection** - Persistent crash log parsing utility to quickly identify faulty mods causing game crashes
 - **Backup & Restore** - Comprehensive backup system allowing safe save and recovery of mod configurations
-- **Custom Tagging** - User-defined custom tag system with advanced filtering and search indexing
+- **Custom Tagging** - Intelligent tag engine with custom tag support, advanced filtering, and search indexing
+- **Outdated Mod Cleanup** - Automated scanning and deep cleanup for outdated versions of downloaded mods
+- **Hierarchical File Tree** - Nested file tree renderer for granular pak activation in complex mod folder structures
+- **Quick Start** - Direct "Start Game" button integrated into the main header for faster game launches
 - **Auto-Detection** - Automatically detects Marvel Rivals installation path via Steam/Epic Games registry and archive tools (WinRAR)
 - **One-Click Downloads** - Click "Download with Mod Manager" on NexusMods to instantly download and install mods
 - **Background Processing** - Automatic download processing via NXM protocol without manual intervention
