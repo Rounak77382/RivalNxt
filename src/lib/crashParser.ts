@@ -480,6 +480,16 @@ export function correlateCrashWithMods(
 export function formatCrashTime(timeOfCrash: string | null): string {
   if (!timeOfCrash) return "Unknown time";
   try {
+    // Check if it's an Unreal Engine FDateTime tick count (e.g. 639193107780020000)
+    if (/^\d{17,19}$/.test(timeOfCrash)) {
+      const ticks = BigInt(timeOfCrash);
+      // FDateTime ticks are 100-nanosecond intervals since Jan 1, 0001
+      // Unix epoch (Jan 1, 1970) in FDateTime ticks is 621355968000000000
+      const jsTimeMs = Number((ticks - 621355968000000000n) / 10000n);
+      const date = new Date(jsTimeMs);
+      if (!isNaN(date.getTime())) return date.toLocaleString();
+    }
+
     const date = new Date(timeOfCrash);
     if (isNaN(date.getTime())) return timeOfCrash;
     return date.toLocaleString();
