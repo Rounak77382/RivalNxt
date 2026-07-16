@@ -191,7 +191,40 @@ jobs:
           echo "Sidecar size: $sidecarSize MB"
         shell: pwsh
 
-      # Step 4: Build Tauri Application
+      # Step 4a: Wait for GitHub API to be available (guards against transient 503 errors)
+      - name: Verify GitHub Release API is reachable
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          $maxAttempts = 5
+          $attempt = 0
+          do {
+            $attempt++
+            try {
+              $headers = @{ Authorization = "Bearer $env:GITHUB_TOKEN"; "User-Agent" = "RivalNxt-CI" }
+              $url = "https://api.github.com/repos/$env:REPO/releases/tags/$env:TAG_NAME"
+              $response = Invoke-RestMethod -Uri $url -Headers $headers -ErrorAction Stop
+              Write-Host "✅ Release API reachable (attempt $attempt)"
+              break
+            } catch {
+              $status = $_.Exception.Response.StatusCode.value__
+              if ($status -ge 500 -and $attempt -lt $maxAttempts) {
+                Write-Warning "⚠️ GitHub API returned $status (attempt $attempt/$maxAttempts). Retrying in 20s..."
+                Start-Sleep -Seconds 20
+              } elseif ($status -eq 404) {
+                Write-Host "ℹ️ Release not found yet (404) — tauri-action will create it. Continuing."
+                break
+              } else {
+                Write-Warning "⚠️ API check failed with status $status — continuing anyway."
+                break
+              }
+            }
+          } while ($attempt -lt $maxAttempts)
+
+      # Step 4b: Build Tauri Application and upload release assets
       - name: Build Tauri App
         uses: tauri-apps/tauri-action@v0
         env:
@@ -202,10 +235,9 @@ jobs:
           releaseBody: "See the assets below to download this version."
           releaseDraft: false
           prerelease: false
-          args:
-            --verbose
+          args: --verbose
 
-            # Step 5: Compute SHA256 checksum + filename for installer
+      # Step 5: Compute SHA256 checksum + filename for installer
       - name: Compute SHA256 checksum
         id: sha
         shell: pwsh
