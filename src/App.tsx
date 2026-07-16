@@ -1007,15 +1007,6 @@ export default function App() {
       options: { toastId?: string | number; progressDescription?: string } = {},
     ) => {
       responseLatestVersion = result.latest_version || responseLatestVersion;
-      await refreshMods({ quiet: true });
-      // Auto-refresh after update completes
-      void refreshMods({ includeConflicts: true });
-      // Force sidebar summary refresh (downloads summary / last-check)
-      try {
-        setConflictsReloadToken((t) => t + 1);
-      } catch (e) {
-        // ignore if token state isn't available
-      }
       const message = result.already_latest
         ? `${displayName} is already on the latest version (${
             responseLatestVersion || "unknown"
@@ -1034,11 +1025,15 @@ export default function App() {
         warningText && warningText.length > 0
           ? warningText
           : progressDescription;
+
+      // Show toast IMMEDIATELY — don't wait for the refresh
       toast.success(message, {
         description,
         id: options.toastId,
         duration: 4000,
       });
+
+      // Clear the spinner flag right away so the card updates instantly
       setMods((prev) =>
         prev.map((mod) =>
           mod.id === modId
@@ -1050,6 +1045,30 @@ export default function App() {
             : mod,
         ),
       );
+
+      // Fast UI update: fetch DB state without the slow filesystem scan
+      try {
+        const deduped = await fetchServerMods();
+        setMods(deduped);
+        void fetchCollectionsCount();
+      } catch (e) {
+        console.warn("[applyUpdateSuccess] fast fetchServerMods failed", e);
+      }
+
+      // Heavy background work: scan filesystem + rebuild conflict table
+      // This runs non-blocking so the UI is already updated above
+      void (async () => {
+        try {
+          await scanActive();
+          await refreshConflicts();
+          setConflictsReloadToken((t) => t + 1);
+          const deduped = await fetchServerMods();
+          setMods(deduped);
+          void fetchCollectionsCount();
+        } catch (e) {
+          console.warn("[applyUpdateSuccess] background refresh failed", e);
+        }
+      })();
     };
 
     try {
@@ -1522,19 +1541,21 @@ export default function App() {
   };
 
   const refreshMods = async (
-    options: { quiet?: boolean; includeConflicts?: boolean } = {},
+    options: { quiet?: boolean; includeConflicts?: boolean; skipScan?: boolean } = {},
   ) => {
     // Keep ref updated so event listener always calls the latest version
-    refreshModsRef.current = () => refreshMods({ quiet: true });
-    const { quiet = false, includeConflicts = false } = options;
+    refreshModsRef.current = () => refreshMods({ quiet: true, skipScan: true });
+    const { quiet = false, includeConflicts = false, skipScan = false } = options;
     try {
-      try {
-        await scanActive();
-      } catch (scanError) {
-        console.warn("[App] scanActive during refresh failed", scanError);
-      }
-      if (includeConflicts) {
-        await refreshConflicts();
+      if (!skipScan) {
+        try {
+          await scanActive();
+        } catch (scanError) {
+          console.warn("[App] scanActive during refresh failed", scanError);
+        }
+        if (includeConflicts) {
+          await refreshConflicts();
+        }
       }
       const deduped = await fetchServerMods();
       if (!quiet) {
@@ -1707,8 +1728,8 @@ export default function App() {
     [refreshMods],
   );
 
-  const handleRefresh = () => {
-    void refreshMods({ includeConflicts: true });
+  const handleRefresh = (opts?: { skipScan?: boolean }) => {
+    void refreshMods({ includeConflicts: !opts?.skipScan, skipScan: opts?.skipScan });
     void fetchCollectionsCount();
   };
 
@@ -2366,8 +2387,6 @@ export default function App() {
                 downloadsCount={installedMods.length}
                 activeCount={activeMods.length}
                 collectionsCount={collectionsCount}
-                updatesCount={updatesCount}
-                activeModsCount={activeMods.length}
                 onRefresh={handleRefresh}
                 onOpenSettings={handleOpenSettings}
                 onOpenBootstrap={handleOpenBootstrap}

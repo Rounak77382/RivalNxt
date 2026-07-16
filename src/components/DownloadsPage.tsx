@@ -21,7 +21,7 @@ interface DownloadsPageProps {
   onConflictStateChanged?: () => void;
   viewMode: "grid" | "list";
   onViewModeChange: (mode: "grid" | "list") => void;
-  onRefresh?: () => void;
+  onRefresh?: (opts?: { skipScan?: boolean }) => void;
   selectedCustomTags?: string[];
   onAssignModId?: (modId: string) => void;
 }

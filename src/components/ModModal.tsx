@@ -374,7 +374,7 @@ interface ModModalProps {
   onInstall: (modId: string) => void;
   onFavorite: (modId: string) => void;
   onConflictStateChanged?: () => void;
-  onRefresh?: () => void;
+  onRefresh?: (opts?: { skipScan?: boolean }) => void;
   // NEW: open on a specific tab (default = "overview")
   initialTab?: "overview" | "files" | "changelog" | "images" | "assets";
   // NEW: called when user clicks Update on a specific variant
@@ -1393,7 +1393,7 @@ export function ModModal({
         );
         setIsTagDropdownOpen(false);
         setTagSearchValue("");
-        onRefresh?.();
+        onRefresh?.({ skipScan: true });
         toast.success(`Tag "${trimmed}" added`);
       } catch (err) {
         toast.error((err as any)?.message || "Failed to add tag");
@@ -1416,7 +1416,7 @@ export function ModModal({
         });
         await removeModCustomTag(effectiveModId, tagId);
         setCustomTags((prev) => prev.filter((ct) => ct.id !== tagId));
-        onRefresh?.();
+        onRefresh?.({ skipScan: true });
         toast.success(`Tag "${tagName}" removed`);
       } catch (err) {
         toast.error((err as any)?.message || "Failed to remove tag");
@@ -1683,7 +1683,7 @@ export function ModModal({
                       currentAuthorName={mod.customAuthorName} 
                       onSave={() => {
                         if (onRefresh) {
-                          onRefresh();
+                          onRefresh({ skipScan: true });
                         } else {
                           window.dispatchEvent(new CustomEvent("refresh-downloads"));
                         }

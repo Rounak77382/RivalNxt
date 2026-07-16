@@ -1,4 +1,4 @@
-## 🎉 Version 0.8.0 – What's New
+# 🎉 Version 0.8.0 – What's New
 
 ### 🚀 New Features
 
@@ -13,7 +13,6 @@
 * 🌐 **Dynamic Fandom Wiki Skin Resolver**: Integrated an automated fallback crawler that queries the Marvel Rivals Fandom Wiki API to dynamically resolve unlocalized new skin names at extraction time.
 * 🔍 **Enhanced Sorting Options**: Added a new "Uploaded" sort option across search, browse, and download views, and updated the conflict list to sort by detection timestamp.
 * 🧠 **AI Knowledge Graph (Graphify)**: Integrated a cross-language AST knowledge graph generation tool (`graphify`) for enhanced AI agent assistance and updated project manifest generation.
-
 
 ### 🐛 Bug Fixes & Under the Hood
 
@@ -34,16 +33,16 @@
 2. Run the installer
 3. Launch RivalNxt from your Start Menu
 4. Configure in Settings:
-   - **Local downloads directory** → Select the folder `where your Marvel Rivals mods are downloaded/saved (create anywhere or use existing folder)
-   - **Sign in with Nexus** → Click the sign-in button to connect your Nexus Mods account automatically
-   - _Or_ **Nexus Personal API Key** → Paste your [API key](https://next.nexusmods.com/settings/api-keys) manually if you prefer
+   * **Local downloads directory** → Select the folder `where your Marvel Rivals mods are downloaded/saved (create anywhere or use existing folder)
+   * **Sign in with Nexus** → Click the sign-in button to connect your Nexus Mods account automatically
+   * _Or_ **Nexus Personal API Key** → Paste your [API key](https://next.nexusmods.com/settings/api-keys) manually if you prefer
 
 > 📖 **Need more help?** See the [full installation guide](https://github.com/Rounak77382/RivalNxt?tab=readme-ov-file#-installation) for detailed setup instructions.
 
 ### 📥 Downloads
 
-| File                                  | Platform    | Checksum                 |
-| ------------------------------------- | ----------- | ------------------------ |
+| File                                    | Platform    | Checksum                   |
+| --------------------------------------- | ----------- | -------------------------- |
 | [<INSTALLER_FILENAME>](<INSTALLER_URL>) | x64 Windows | [checksum](<CHECKSUM_URL>) |
 
 > To verify the download on Windows, run `certutil -hashfile <INSTALLER_FILENAME> SHA256` and compare it with the `.sha256` file.

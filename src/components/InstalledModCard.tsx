@@ -41,7 +41,7 @@ interface InstalledModCardProps {
   onFavorite: (modId: string) => void;
   onOpenFilesTab: (modId: string) => void;
   onAssignModId?: (modId: string) => void;
-  onRefresh?: () => void;
+  onRefresh?: (opts?: { skipScan?: boolean }) => void;
 }
 
 function InstalledModCardInner({
@@ -446,7 +446,7 @@ function InstalledModCardInner({
                     onSave={() => {
                       // Call direct refresh prop first (fastest), then event as fallback
                       if (onRefresh) {
-                        onRefresh();
+                        onRefresh({ skipScan: true });
                       } else {
                         window.dispatchEvent(new CustomEvent("refresh-downloads"));
                       }

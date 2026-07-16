@@ -1,6 +1,6 @@
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { Bell, Settings, RefreshCw, Rocket, Play, Archive, PowerOff, ShieldAlert } from "lucide-react";
+import { Settings, RefreshCw, Rocket, Play, Archive, PowerOff, ShieldAlert } from "lucide-react";
 import { open } from "@tauri-apps/plugin-shell";
 import {
   AlertDialog,
@@ -20,8 +20,7 @@ interface TabHeaderProps {
   downloadsCount: number;
   activeCount: number;
   collectionsCount?: number;
-  updatesCount?: number;
-  activeModsCount?: number;
+
   onRefresh?: () => void;
   onOpenSettings?: () => void;
   onOpenBootstrap?: () => void;
@@ -39,8 +38,7 @@ export function TabHeader({
   downloadsCount,
   activeCount,
   collectionsCount = 0,
-  updatesCount = 0,
-  activeModsCount = 0,
+
   onRefresh,
   onOpenSettings,
   onOpenBootstrap,
