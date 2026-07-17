@@ -27,6 +27,7 @@ _One desktop app to manage, activate, and validate Marvel Rivals mods with confl
 - **Smart Mod Management** - Activate, deactivate, and organize mods with per-mod and bulk actions
 - **Conflict Detection** - Automatic detection and resolution of mod conflicts with tag rebuilding
 - **Game Update Auto-Detection** - Automatically detects game updates on startup to dynamically rebuild character and skin data
+- **Automated Mod Recovery** - Uses MD5 hashing and background daemons to automatically recover and link broken or misnamed mod files
 - **Crash Detection** - Persistent crash log parsing utility to quickly identify faulty mods causing game crashes
 - **Backup & Restore** - Comprehensive backup system allowing safe save and recovery of mod configurations
 - **Custom Tagging** - Intelligent tag engine with custom tag support, advanced filtering, and search indexing
@@ -449,6 +450,20 @@ python -X utf8 -m scripts.report_missing_tags
 # Generate or update Graphify Knowledge Graph
 graphify update .
 ```
+
+### 🤖 Graphify Knowledge Graph for AI Agents
+
+RivalNxt uses `graphify` to generate a cross-language Abstract Syntax Tree (AST) knowledge graph. This allows AI assistants to instantly understand the complex React + Python + Rust architecture without manually scanning every file.
+
+**Setup Instructions:**
+1. Run the update command in the project root:
+   ```bash
+   graphify update .
+   ```
+2. A `graphify-out/` folder will be generated containing the knowledge graph (`graph.json`) and a readable Wiki.
+3. AI agents configured in this project (via `.agents/` rules) will automatically query this graph to answer architecture questions accurately.
+
+> **Note:** Always run `graphify update .` after making significant structural changes to keep the AI context fresh!
 
 **VS Code Extensions** (Recommended)
 
