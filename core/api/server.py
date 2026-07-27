@@ -2297,27 +2297,116 @@ def get_bootstrap_status() -> Dict[str, Any]:
 	}
 
 
+# --- /api/debug/log limits -------------------------------------------------
+# The endpoint accepted an unbounded dict and json.dumps'd it straight into
+# backend.log with no size cap and no rate limit, so a frontend loop could fill
+# the user's disk.
+DEBUG_LOG_MAX_MESSAGE_CHARS = 2048
+DEBUG_LOG_MAX_DATA_CHARS = 8192
+DEBUG_LOG_RATE_LIMIT_PER_SEC = 20
+
+_DEBUG_LOG_BUCKET_LOCK = threading.Lock()
+_DEBUG_LOG_BUCKET: Dict[str, float] = {"tokens": float(DEBUG_LOG_RATE_LIMIT_PER_SEC), "updated": 0.0}
+
+
+def _debug_log_clock() -> float:
+	"""Indirection so tests can freeze time; a rate-limit test that depends on
+	wall-clock duration is flaky by construction."""
+	return time.time()
+
+
+def _debug_log_take_token(now: Optional[float] = None) -> bool:
+	"""Token bucket refilling at DEBUG_LOG_RATE_LIMIT_PER_SEC tokens/second.
+
+	Returns True when a request may proceed, False when it should be rejected
+	with HTTP 429.
+	"""
+	current = _debug_log_clock() if now is None else now
+	capacity = float(DEBUG_LOG_RATE_LIMIT_PER_SEC)
+	with _DEBUG_LOG_BUCKET_LOCK:
+		last = _DEBUG_LOG_BUCKET["updated"]
+		if last <= 0.0:
+			_DEBUG_LOG_BUCKET["tokens"] = capacity
+		else:
+			elapsed = max(0.0, current - last)
+			_DEBUG_LOG_BUCKET["tokens"] = min(
+				capacity, _DEBUG_LOG_BUCKET["tokens"] + elapsed * capacity
+			)
+		_DEBUG_LOG_BUCKET["updated"] = current
+
+		if _DEBUG_LOG_BUCKET["tokens"] < 1.0:
+			return False
+		_DEBUG_LOG_BUCKET["tokens"] -= 1.0
+		return True
+
+
+def _reset_debug_log_bucket() -> None:
+	"""Test hook: restore the bucket to full."""
+	with _DEBUG_LOG_BUCKET_LOCK:
+		_DEBUG_LOG_BUCKET["tokens"] = float(DEBUG_LOG_RATE_LIMIT_PER_SEC)
+		_DEBUG_LOG_BUCKET["updated"] = 0.0
+
+
 @app.post("/api/debug/log")
 def debug_log(body: Dict[str, Any]) -> Dict[str, str]:
-	"""Frontend debug logging endpoint - logs to backend.log"""
+	"""Frontend debug logging endpoint - logs to backend.log.
+
+	Bounded in both size and rate: an unbounded log sink reachable from the
+	renderer is a disk-exhaustion path.
+	"""
 	import logging
 	logger = logging.getLogger("modmanager.frontend")
-	
+
+	if not _debug_log_take_token():
+		raise HTTPException(
+			status_code=429,
+			detail=(
+				f"debug log rate limit exceeded "
+				f"({DEBUG_LOG_RATE_LIMIT_PER_SEC} requests/second)"
+			),
+		)
+
 	message = body.get("message", "")
+	if not isinstance(message, str):
+		message = str(message)
+	if len(message) > DEBUG_LOG_MAX_MESSAGE_CHARS:
+		raise HTTPException(
+			status_code=413,
+			detail=(
+				f"message exceeds {DEBUG_LOG_MAX_MESSAGE_CHARS} characters "
+				f"(got {len(message)})"
+			),
+		)
+
 	data = body.get("data", {})
-	level = body.get("level", "INFO").upper()
-	
-	log_msg = f"[FRONTEND] {message}"
+	serialized_data = ""
 	if data:
-		log_msg += f" | Data: {json.dumps(data)}"
-	
+		try:
+			serialized_data = json.dumps(data, default=str)
+		except (TypeError, ValueError):
+			serialized_data = repr(data)
+		if len(serialized_data) > DEBUG_LOG_MAX_DATA_CHARS:
+			raise HTTPException(
+				status_code=413,
+				detail=(
+					f"data exceeds {DEBUG_LOG_MAX_DATA_CHARS} serialized characters "
+					f"(got {len(serialized_data)})"
+				),
+			)
+
+	level = str(body.get("level", "INFO")).upper()
+
+	log_msg = f"[FRONTEND] {message}"
+	if serialized_data:
+		log_msg += f" | Data: {serialized_data}"
+
 	if level == "ERROR":
 		logger.error(log_msg)
 	elif level == "WARN":
 		logger.warning(log_msg)
 	else:
 		logger.info(log_msg)
-	
+
 	return {"status": "logged"}
 
 
