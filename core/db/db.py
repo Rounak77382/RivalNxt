@@ -889,26 +889,43 @@ def versions_equivalent(local: Optional[str], reference: Optional[str]) -> bool:
     if local_trimmed == reference_trimmed:
         return True
 
-    # New logic: compare components up to the minimum number of parts present in either.
-    # This ensures that "2" and "2.177.1" match, and "1.2.123" and "1.2" match,
-    # while "1.2" and "1.3" remain different.
+    # Prefix-equivalence is DIRECTIONAL.
+    #
+    # Local archive filenames often carry extra trailing junk that Nexus does
+    # not: a file sub-id or an upload timestamp, e.g. local "2.0.1743611945" or
+    # "2.177.1" against a Nexus version of "2.0" / "2". Truncating the local
+    # value to the remote's precision correctly treats those as the same
+    # release.
+    #
+    # The reverse must NOT be treated as equivalent. If the remote carries more
+    # precision than the local value (local "2" vs remote "2.5"), truncating to
+    # the shorter side compares only the major component, reports "match", and
+    # silently swallows a real update. The previous implementation used
+    # min(l_count, r_count), which did exactly that.
     def _get_parts_count(v: str) -> int:
         return len([p for p in re.split(r"[^0-9]+", v) if p])
 
     l_count = _get_parts_count(local_trimmed)
     r_count = _get_parts_count(reference_trimmed)
 
-    # Use existing make_version_key to get normalized numeric components (handles timestamp shifting)
+    if l_count == 0 or r_count == 0:
+        return False
+
+    # Remote is more precise than local -> cannot claim equivalence.
+    if r_count > l_count:
+        return False
+
+    # Use make_version_key for normalised numeric components; it also shifts a
+    # long third segment into the build slot so "2.0.<timestamp>" aligns with
+    # "2.0" on major/minor.
     _, l_maj, l_min, l_patch, l_build = make_version_key(local_trimmed)
     _, r_maj, r_min, r_patch, r_build = make_version_key(reference_trimmed)
 
     l_nums = [l_maj, l_min, l_patch, l_build]
     r_nums = [r_maj, r_min, r_patch, r_build]
 
-    # Compare up to the length of the version string that has fewer parts (capped at 4)
-    num_to_compare = min(l_count, r_count, 4)
-    if num_to_compare == 0:
-        return False
+    # Compare at the remote's precision (it is the shorter side here).
+    num_to_compare = min(r_count, 4)
 
     for i in range(num_to_compare):
         if l_nums[i] != r_nums[i]:
@@ -1066,14 +1083,20 @@ def replace_local_downloads(conn: sqlite3.Connection, rows: Iterable[Dict[str, A
 def fetch_pak_version_status(
     conn: sqlite3.Connection,
     *,
-    only_needs_update: bool = False,
     mod_id: Optional[int] = None,
     download_ids: Optional[Sequence[int]] = None,
 ) -> List[Dict[str, Any]]:
+    """Return per-pak version status rows, post-processed for update decisions.
+
+    The `only_needs_update` parameter was removed deliberately. It appended
+    "needs_update = 1" to the SQL, filtering on the *view's* flag -- but the
+    Python post-processing below can then flip needs_update to False
+    (equivalent versions, or a remote downgrade). Callers therefore received
+    rows claiming to need an update that did not. Filter on the returned
+    `needs_update` field instead; it is the authoritative value.
+    """
     clauses: List[str] = []
     params: List[Any] = []
-    if only_needs_update:
-        clauses.append("needs_update = 1")
     if mod_id is not None:
         try:
             clauses.append("mod_id = ?")

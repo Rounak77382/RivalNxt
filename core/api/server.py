@@ -3088,7 +3088,7 @@ def check_mod_update(mod_id: int) -> Dict[str, Any]:
 	conn = get_db()
 	try:
 		metadata_info = _sync_mod_metadata(conn, mod_id, None)
-		rows = fetch_pak_version_status(conn, mod_id=mod_id, only_needs_update=False)
+		rows = fetch_pak_version_status(conn, mod_id=mod_id)
 		pending: List[Dict[str, Any]] = []
 		checked_downloads: Set[int] = set()
 		for entry in rows:
@@ -4295,10 +4295,15 @@ def get_pak_version_status_endpoint(
 		filtered_ids = sorted(ids)
 		rows = fetch_pak_version_status(
 			conn,
-			only_needs_update=only_needs_update,
 			mod_id=mod_id,
 			download_ids=filtered_ids if filtered_ids else None,
 		)
+		# Filter AFTER post-processing. Filtering in SQL (as fetch_pak_version_status
+		# used to) tests the view's raw needs_update flag, which the post-processing
+		# can still flip to False for equivalent versions or remote downgrades --
+		# so ?only_needs_update=true used to return rows with needs_update: false.
+		if only_needs_update:
+			rows = [r for r in rows if r.get("needs_update")]
 		return rows
 	finally:
 		try:
