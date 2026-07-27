@@ -224,7 +224,12 @@ def init_schema(conn: sqlite3.Connection) -> None:
         );
         """
     )
-    cur.execute("CREATE INDEX IF NOT EXISTS idx_pak_assets_asset_path ON pak_assets(asset_path);")
+    # (asset_path, pak_name) rather than asset_path alone: the conflict-detection
+    # aggregate groups by asset_path and counts DISTINCT pak_name, so both columns
+    # in one index turn an index-scan-plus-table-lookup into a COVERING index
+    # scan. asset_path stays the leading column, so plain "WHERE asset_path = ?"
+    # lookups are still an indexed seek. See migration 0020.
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_pak_assets_asset_pak ON pak_assets(asset_path, pak_name);")
     cur.execute(
         """
         CREATE TABLE IF NOT EXISTS pak_assets_json (
