@@ -51,11 +51,22 @@ def get_connection(db_path: Optional[str] = None) -> sqlite3.Connection:
     except Exception:
         pass
     conn = sqlite3.connect(db_path)
-    conn.execute("PRAGMA busy_timeout = 5000;")
+    # 15s, not 5s: a full conflict rebuild on a large library can hold the write
+    # lock longer than 5s, which surfaced to callers as SQLITE_BUSY.
+    conn.execute("PRAGMA busy_timeout = 15000;")
     # Pragmas tuned for local app usage
     conn.execute("PRAGMA foreign_keys = ON;")
     conn.execute("PRAGMA journal_mode = WAL;")
     conn.execute("PRAGMA synchronous = NORMAL;")
+    # ~20MB page cache (negative value = KiB) and 256MB mmap window. The
+    # conflict rebuild and tagging queries scan pak_assets repeatedly; keeping
+    # those pages resident avoids re-reading them from disk each pass.
+    conn.execute("PRAGMA cache_size = -20000;")
+    try:
+        conn.execute("PRAGMA mmap_size = 268435456;")
+    except sqlite3.OperationalError:
+        # mmap is unavailable on some builds/filesystems; harmless to skip.
+        pass
     return conn
 
 def init_schema(conn: sqlite3.Connection) -> None:
