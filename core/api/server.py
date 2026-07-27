@@ -3151,21 +3151,40 @@ def submit_nxm_handoff(payload: Optional[Dict[str, Any]] = Body(default=None)) -
 
 		if nxm_request.is_collection and nxm_request.collection_slug:
 			logger.info(f"[nxm_handoff] Received collection URL for slug {nxm_request.collection_slug}")
-			revision_data = _fetch_collection_from_nexus(nxm_request.collection_slug, nxm_request.collection_revision)
-			conn = get_db()
+			# Collection imports get the same failure tracking as per-mod
+			# downloads. Previously a transient Nexus outage produced a 502 with
+			# no record, so nothing counted retries, nothing backed off, and the
+			# UI had no way to show the import as failed.
+			slug_key = f"collection:{nxm_request.collection_slug}"
+			skip, skip_reason = _collection_import_should_skip(slug_key)
+			if skip:
+				raise HTTPException(status_code=429, detail=skip_reason)
 			try:
-				cid = _upsert_collection(conn, revision_data, nxm_request.collection_slug)
-				return {
-					"ok": True,
-					"message": f"Collection {nxm_request.collection_slug} imported successfully",
-					"is_collection": True,
-					"collection_id": cid
-				}
-			finally:
+				revision_data = _fetch_collection_from_nexus(
+					nxm_request.collection_slug, nxm_request.collection_revision
+				)
+				conn = get_db()
 				try:
-					conn.close()
-				except Exception:
-					pass
+					cid = _upsert_collection(conn, revision_data, nxm_request.collection_slug)
+				finally:
+					try:
+						conn.close()
+					except Exception:
+						pass
+			except HTTPException as exc:
+				_record_collection_import_failure(slug_key, str(exc.detail))
+				raise
+			except Exception as exc:
+				_record_collection_import_failure(slug_key, str(exc))
+				raise
+
+			_clear_collection_import_failure(slug_key)
+			return {
+				"ok": True,
+				"message": f"Collection {nxm_request.collection_slug} imported successfully",
+				"is_collection": True,
+				"collection_id": cid
+			}
 		
 	except NXMParseError as exc:
 		# Even if parsing fails, we still stored the raw URL
@@ -6657,6 +6676,9 @@ def set_active_paks(download_id: int, payload: Dict[str, Any] = Body(...)) -> Di
 	req_active = payload.get("active_paks")
 	if not isinstance(req_active, list):
 		raise HTTPException(status_code=400, detail="active_paks must be an array of strings")
+	# Batch callers (collection activate/deactivate) pass False and issue a single
+	# rebuild for the whole set instead of one per mod.
+	should_rebuild_conflicts = payload.get("rebuild_conflicts", True) is not False
 	desired_raw: List[str] = []
 	desired_source_map: Dict[str, str] = {}  # basename.lower() → original relative path
 	for x in req_active:
@@ -7162,7 +7184,8 @@ def set_active_paks(download_id: int, payload: Dict[str, Any] = Body(...)) -> Di
 		scan_active_main(_get_scan_active_args())
 	except Exception:
 		pass
-	_safe_rebuild_conflicts(conn, active_only=True, purpose="set_active_paks")
+	if should_rebuild_conflicts:
+		_safe_rebuild_conflicts(conn, active_only=True, purpose="set_active_paks")
 	try:
 		conn.close()
 	except Exception:
@@ -7935,6 +7958,306 @@ def update_mod_file_state(collection_id: int, file_id: int, body: Dict[str, Any]
 			conn.close()
 		except Exception:
 			pass
+def _record_collection_import_failure(slug_key: str, error: str) -> None:
+	"""Persist a collection-import failure in handoff_failures.
+
+	Collection imports had no failure tracking at all: a transient Nexus outage
+	returned a 502 with no record, so retries were uncounted and unbacked-off.
+	Reuses handoff_failures with a "collection:<slug>" key so the existing
+	retry-ceiling and backoff logic applies unchanged.
+	"""
+	conn = get_db()
+	try:
+		cur = conn.cursor()
+		existing = cur.execute(
+			"SELECT retry_count FROM handoff_failures WHERE file_id = ?", (slug_key,)
+		).fetchone()
+		new_count = (int(existing[0] or 0) + 1) if existing else 1
+		cur.execute(
+			"""
+			INSERT INTO handoff_failures
+				(file_id, mod_id, error_message, retry_count, last_attempt_at, handoff_id)
+			VALUES (?, NULL, ?, ?, datetime('now'), ?)
+			ON CONFLICT(file_id) DO UPDATE SET
+				error_message = excluded.error_message,
+				retry_count = excluded.retry_count,
+				last_attempt_at = excluded.last_attempt_at
+			""",
+			(slug_key, error, new_count, slug_key),
+		)
+		conn.commit()
+		logger.warning(
+			"[collections] Import failure #%s for %s: %s", new_count, slug_key, error
+		)
+	except Exception as db_err:
+		logger.warning("[collections] Could not record import failure: %s", db_err)
+	finally:
+		try:
+			conn.close()
+		except Exception:
+			pass
+
+
+def _clear_collection_import_failure(slug_key: str) -> None:
+	conn = get_db()
+	try:
+		conn.execute("DELETE FROM handoff_failures WHERE file_id = ?", (slug_key,))
+		conn.commit()
+	except Exception as db_err:
+		logger.debug("[collections] Could not clear import failure: %s", db_err)
+	finally:
+		try:
+			conn.close()
+		except Exception:
+			pass
+
+
+def _collection_import_should_skip(slug_key: str) -> Tuple[bool, Optional[str]]:
+	"""Apply the same retry ceiling / backoff as per-mod handoffs."""
+	from core.api.services.handoffs import (
+		HANDOFF_FAILURE_BACKOFF_SECONDS,
+		MAX_HANDOFF_RETRIES,
+		_parse_last_attempt,
+	)
+
+	conn = get_db()
+	try:
+		row = conn.execute(
+			"SELECT retry_count, error_message, last_attempt_at "
+			"FROM handoff_failures WHERE file_id = ?",
+			(slug_key,),
+		).fetchone()
+		if not row:
+			return False, None
+		retry_count = int(row[0] or 0)
+		if retry_count >= MAX_HANDOFF_RETRIES:
+			return True, (
+				f"Collection import has failed {retry_count} times "
+				f"(max {MAX_HANDOFF_RETRIES}). Last error: {row[1]}"
+			)
+		last_attempt = _parse_last_attempt(row[2])
+		if last_attempt is not None:
+			elapsed = time.time() - last_attempt
+			if 0 <= elapsed < HANDOFF_FAILURE_BACKOFF_SECONDS:
+				remaining = int(HANDOFF_FAILURE_BACKOFF_SECONDS - elapsed)
+				return True, (
+					f"Collection import is in backoff ({remaining}s remaining after "
+					f"{retry_count} failures)"
+				)
+		return False, None
+	except Exception as db_err:
+		logger.debug("[collections] Skip check failed: %s", db_err)
+		return False, None
+	finally:
+		try:
+			conn.close()
+		except Exception:
+			pass
+
+
+def _collection_members(conn, collection_id: int) -> List[Dict[str, Any]]:
+	"""Resolve a collection's membership to local downloads, in one query.
+
+	Matches on mod_id + version first, then falls back to file_id recorded in
+	local_downloads' owning mod. Returns one row per collection entry with the
+	local download attached when it is installed.
+	"""
+	cur = conn.cursor()
+	rows = cur.execute(
+		"""
+		SELECT cmf.file_id,
+		       cmf.mod_id,
+		       cmf.version,
+		       cmf.file_name,
+		       cmf.mod_name,
+		       cmf.optional,
+		       cmf.download_state,
+		       ld.id       AS local_download_id,
+		       ld.contents AS local_contents,
+		       ld.active_paks AS local_active_paks
+		FROM collection_mod_files cmf
+		LEFT JOIN local_downloads ld
+		       ON ld.mod_id = cmf.mod_id
+		WHERE cmf.collection_id = ?
+		ORDER BY cmf.id
+		""",
+		(collection_id,),
+	).fetchall()
+	columns = [d[0] for d in cur.description]
+	return [dict(zip(columns, row)) for row in rows]
+
+
+def _collection_exists(conn, collection_id: int) -> bool:
+	return (
+		conn.execute(
+			"SELECT 1 FROM collections WHERE id = ?", (collection_id,)
+		).fetchone()
+		is not None
+	)
+
+
+def _set_collection_activation(collection_id: int, *, activate: bool) -> Dict[str, Any]:
+	"""Activate or deactivate every installed mod in a collection.
+
+	Enabling a 40-mod collection previously meant 40 separate
+	PATCH /api/collections/{cid}/mod-files/{fid}/state calls from the frontend,
+	each triggering its own conflict rebuild. This resolves the whole membership
+	set, applies the file operations, and rebuilds conflicts exactly ONCE.
+	"""
+	conn = get_db()
+	try:
+		if not _collection_exists(conn, collection_id):
+			raise HTTPException(status_code=404, detail="collection not found")
+
+		members = _collection_members(conn, collection_id)
+		applied: List[Dict[str, Any]] = []
+		skipped: List[Dict[str, Any]] = []
+
+		for member in members:
+			download_id = member.get("local_download_id")
+			if download_id is None:
+				skipped.append(
+					{
+						"file_id": member.get("file_id"),
+						"mod_id": member.get("mod_id"),
+						"mod_name": member.get("mod_name"),
+						"reason": "not_installed",
+					}
+				)
+				continue
+
+			if activate:
+				try:
+					desired = json.loads(member.get("local_contents") or "[]")
+				except Exception:
+					desired = []
+				desired = [p for p in desired if isinstance(p, str)]
+			else:
+				desired = []
+
+			try:
+				# rebuild_conflicts=False: one rebuild for the whole batch below.
+				set_active_paks(
+					download_id,
+					{"active_paks": desired, "rebuild_conflicts": False},
+				)
+				applied.append(
+					{
+						"file_id": member.get("file_id"),
+						"mod_id": member.get("mod_id"),
+						"local_download_id": download_id,
+						"paks": desired,
+					}
+				)
+			except HTTPException:
+				raise
+			except Exception as exc:
+				logger.warning(
+					"[collections] Failed to %s download %s: %s",
+					"activate" if activate else "deactivate",
+					download_id,
+					exc,
+				)
+				skipped.append(
+					{
+						"file_id": member.get("file_id"),
+						"mod_id": member.get("mod_id"),
+						"local_download_id": download_id,
+						"reason": str(exc),
+					}
+				)
+
+		# ONE rebuild for the whole collection, not one per mod.
+		_safe_rebuild_conflicts(
+			conn,
+			active_only=True,
+			purpose="collection_activate" if activate else "collection_deactivate",
+		)
+
+		return {
+			"ok": True,
+			"collection_id": collection_id,
+			"activated" if activate else "deactivated": len(applied),
+			"applied": applied,
+			"skipped": skipped,
+			"total_members": len(members),
+		}
+	finally:
+		try:
+			conn.close()
+		except Exception:
+			pass
+
+
+@app.post("/api/collections/{collection_id}/activate")
+def activate_collection(collection_id: int) -> Dict[str, Any]:
+	"""Enable every installed mod in a collection with one conflict rebuild."""
+	return _set_collection_activation(collection_id, activate=True)
+
+
+@app.post("/api/collections/{collection_id}/deactivate")
+def deactivate_collection(collection_id: int) -> Dict[str, Any]:
+	"""Disable every installed mod in a collection with one conflict rebuild."""
+	return _set_collection_activation(collection_id, activate=False)
+
+
+@app.post("/api/collections/{collection_id}/check-updates")
+def check_collection_updates(collection_id: int) -> Dict[str, Any]:
+	"""Report which of a collection's mods have updates available.
+
+	Uses ONE fetch_pak_version_status call across the collection's whole mod_id
+	set instead of N per-mod /check-update round trips.
+	"""
+	conn = get_db()
+	try:
+		if not _collection_exists(conn, collection_id):
+			raise HTTPException(status_code=404, detail="collection not found")
+
+		members = _collection_members(conn, collection_id)
+		download_ids = sorted(
+			{
+				int(m["local_download_id"])
+				for m in members
+				if m.get("local_download_id") is not None
+			}
+		)
+		if not download_ids:
+			return {
+				"ok": True,
+				"collection_id": collection_id,
+				"needs_update": False,
+				"pending": [],
+				"checked_download_ids": [],
+			}
+
+		rows = fetch_pak_version_status(conn, download_ids=download_ids)
+		pending = [
+			{
+				"pak_name": r.get("pak_name"),
+				"mod_id": r.get("mod_id"),
+				"local_download_id": r.get("local_download_id"),
+				"local_version": r.get("local_version"),
+				"reference_version": r.get("reference_version"),
+				"reference_file_id": r.get("reference_file_id"),
+				"version_status": r.get("version_status"),
+			}
+			for r in rows
+			if r.get("needs_update")
+		]
+		return {
+			"ok": True,
+			"collection_id": collection_id,
+			"needs_update": bool(pending),
+			"pending": pending,
+			"checked_download_ids": download_ids,
+		}
+	finally:
+		try:
+			conn.close()
+		except Exception:
+			pass
+
+
 @app.post("/api/mods/assign-mod-id")
 def assign_mod_id(payload: Dict[str, Any] = Body(...)) -> Dict[str, Any]:
 	local_paths = payload.get("local_paths", [])
