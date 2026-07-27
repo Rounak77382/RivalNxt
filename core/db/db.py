@@ -1833,16 +1833,46 @@ def rebuild_conflicts(conn: sqlite3.Connection, *, active_only: bool | None = No
 
         # Snapshot existing detected_at timestamps so returning conflicts keep
         # their original first-detected time after the rebuild.
-        prev_detected: dict[str, str] = {}
+        #
+        # This used to read every (asset_path, detected_at) pair into a Python
+        # dict and then issue ONE UPDATE PER ASSET PATH after repopulating --
+        # thousands of round trips inside the rebuild on a large library. The
+        # snapshot now lives in a TEMP TABLE and is carried forward by a join
+        # inside the INSERT below, so the second pass disappears entirely.
+        has_detected_at = False
         try:
-            for row in cur.execute(f"SELECT asset_path, detected_at FROM {conflicts_tbl} WHERE detected_at IS NOT NULL").fetchall():
-                prev_detected[row[0]] = row[1]
+            cur.execute("DROP TABLE IF EXISTS temp._prev_detected;")
+            cur.execute(
+                f"""
+                CREATE TEMP TABLE _prev_detected AS
+                SELECT asset_path, detected_at
+                FROM {conflicts_tbl}
+                WHERE detected_at IS NOT NULL;
+                """
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS temp.idx__prev_detected "
+                "ON _prev_detected(asset_path);"
+            )
+            has_detected_at = True
         except Exception:
             # Column may not exist yet (pre-migration); ignore.
-            pass
+            try:
+                cur.execute("DROP TABLE IF EXISTS temp._prev_detected;")
+            except Exception:
+                pass
 
         cur.execute(f"DELETE FROM {conflicts_tbl};")
         cur.execute(f"DELETE FROM {participants_tbl};")
+
+        # A returning conflict keeps its original first-detected time; a newly
+        # detected one gets now(). COALESCE over the LEFT JOIN does both.
+        if has_detected_at:
+            detected_at_expr = "COALESCE(pd.detected_at, datetime('now'))"
+            detected_at_join = "LEFT JOIN _prev_detected pd ON pd.asset_path = g.asset_path"
+        else:
+            detected_at_expr = "datetime('now')"
+            detected_at_join = ""
 
         agg_sql = f"""
             WITH {active_cte}
@@ -1872,7 +1902,13 @@ def rebuild_conflicts(conn: sqlite3.Connection, *, active_only: bool | None = No
                 HAVING mod_count > 1
             )
             INSERT INTO {conflicts_tbl}(asset_path, distinct_mods, distinct_paks, generated_at, detected_at)
-            SELECT asset_path, mod_count, pak_count, datetime('now'), datetime('now') FROM grouped;
+            SELECT g.asset_path,
+                   g.mod_count,
+                   g.pak_count,
+                   datetime('now'),
+                   {detected_at_expr}
+            FROM grouped g
+            {detected_at_join};
         """
         # execute(), NOT executescript(): executescript() issues an implicit
         # COMMIT before running, which committed the DELETE above as its own
@@ -1880,14 +1916,11 @@ def rebuild_conflicts(conn: sqlite3.Connection, *, active_only: bool | None = No
         # statements here are single INSERTs, so execute() is sufficient.
         cur.execute(agg_sql)
 
-        # Restore previously-known detected_at for returning conflicts so they
-        # retain their original detection time instead of being reset to now.
-        if prev_detected:
-            for asset_path, detected_at in prev_detected.items():
-                cur.execute(
-                    f"UPDATE {conflicts_tbl} SET detected_at = ? WHERE asset_path = ?",
-                    (detected_at, asset_path),
-                )
+        # detected_at is carried forward by the join above, so no second pass.
+        try:
+            cur.execute("DROP TABLE IF EXISTS temp._prev_detected;")
+        except Exception:
+            pass
 
         part_sql = f"""
             WITH {active_cte}
