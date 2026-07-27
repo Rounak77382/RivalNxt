@@ -1125,10 +1125,17 @@ def fetch_pak_version_status(
         results.append(entry)
     return results
 
-def _get_mods_folder_for_deletion() -> Path:
-    """Get the mods folder path for file deletion operations."""
-    from core.config.settings import SETTINGS
-    return SETTINGS.marvel_rivals_root / "MarvelGame" / "~mods"
+def _get_mods_folder_for_deletion() -> Optional[Path]:
+    """Get the ~mods folder path for file deletion operations.
+
+    Previously built the wrong 2-segment path ("MarvelGame/~mods"), which never
+    exists. Since the removal helpers below early-return when the directory is
+    missing, delete_outdated_versions deleted DB rows but removed nothing from
+    disk, orphaning active .pak files. Now shares one helper with every other
+    call site.
+    """
+    from core.config.settings import get_mods_dir
+    return get_mods_dir()
 
 
 def _remove_in_mods_by_names(mods_dir: Path, names: List[str]) -> List[str]:
@@ -1230,7 +1237,10 @@ def delete_local_downloads(
                 if isinstance(active_paks, list) and active_paks:
                     # Remove files from ~mods folder - use active_paks to know what's actually active
                     mods_dir = _get_mods_folder_for_deletion()
-                    
+                    if mods_dir is None:
+                        # No game root configured; nothing to remove from disk.
+                        continue
+
                     # Use the ACTIVE pak names (what's actually in ~mods), not contents
                     # active_paks contains the basenames of files that are currently active
                     pak_names = [os.path.basename(p) for p in active_paks if isinstance(p, str)]

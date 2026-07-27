@@ -36,7 +36,8 @@ def _load_env_mods_folder() -> Path:
             pass
     if not root:
         raise SystemExit("MARVEL_RIVALS_ROOT is not set. Configure it in environment or .env")
-    mods_dir = Path(root).expanduser() / "MarvelGame/Marvel/Content/Paks/~mods"
+    from core.config.settings import get_mods_dir
+    mods_dir = get_mods_dir(root)
     mods_dir.mkdir(parents=True, exist_ok=True)
     return mods_dir
 

@@ -57,7 +57,8 @@ def extract_character_and_skin_data() -> Dict[str, Any]:
     if not current_settings.marvel_rivals_root:
         raise ValueError("marvel_rivals_root is not configured in settings")
     
-    paks_dir = current_settings.marvel_rivals_root / "MarvelGame" / "Marvel" / "Content" / "Paks"
+    from core.config.settings import get_paks_dir
+    paks_dir = get_paks_dir(current_settings.marvel_rivals_root)
     
     # Step 1: Extract character names
     print("[1/4] Extracting character names from locres...")

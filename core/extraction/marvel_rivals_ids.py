@@ -446,7 +446,8 @@ def main():
     print("MARVEL RIVALS COMPLETE SKIN DATA EXTRACTION - 100% PAK SOURCED")
     print("="*80)
     
-    paks_dir = SETTINGS.marvel_rivals_root / "MarvelGame" / "Marvel" / "Content" / "Paks"
+    from core.config.settings import get_paks_dir
+    paks_dir = get_paks_dir(SETTINGS.marvel_rivals_root)
     
     print("\n[1/4] Extracting character names from locres...")
     character_names = extract_character_names_from_locres(paks_dir)

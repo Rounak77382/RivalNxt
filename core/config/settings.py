@@ -241,3 +241,46 @@ def configure(**overrides: object) -> AppSettings:
 	print(f"[Settings]   marvel_rivals_local_downloads_root: {SETTINGS.marvel_rivals_local_downloads_root}")
 	save_settings(SETTINGS)
 	return SETTINGS
+
+
+# ---------------------------------------------------------------------------
+# Canonical game-directory layout helpers
+# ---------------------------------------------------------------------------
+# Marvel Rivals stores its PAK containers at:
+#   <game root>/MarvelGame/Marvel/Content/Paks
+# and user mods in the "~mods" subfolder of that directory.
+#
+# This layout was previously open-coded at 9 separate call sites, one of which
+# (core/db/db.py `_get_mods_folder_for_deletion`) used the wrong 2-segment path
+# "MarvelGame/~mods". Because the pak-removal helpers early-return when the
+# directory does not exist, delete_outdated_versions silently removed nothing
+# from disk while still deleting the DB rows -- leaving orphaned .pak files
+# active in-game with no database record. Route every caller through here.
+
+RELATIVE_PAKS_PATH = Path("MarvelGame") / "Marvel" / "Content" / "Paks"
+RELATIVE_MODS_PATH = RELATIVE_PAKS_PATH / "~mods"
+
+
+def get_paks_dir(marvel_rivals_root: Optional[Path | str] = None) -> Optional[Path]:
+	"""Return <game root>/MarvelGame/Marvel/Content/Paks.
+
+	Falls back to the live SETTINGS value when no root is supplied. Returns
+	None when no game root is configured, so callers must handle the unset case
+	rather than silently operating on a bogus relative path.
+	"""
+	root = marvel_rivals_root if marvel_rivals_root is not None else SETTINGS.marvel_rivals_root
+	if not root:
+		return None
+	return Path(root).expanduser() / RELATIVE_PAKS_PATH
+
+
+def get_mods_dir(marvel_rivals_root: Optional[Path | str] = None) -> Optional[Path]:
+	"""Return <game root>/MarvelGame/Marvel/Content/Paks/~mods.
+
+	Falls back to the live SETTINGS value when no root is supplied. Returns
+	None when no game root is configured.
+	"""
+	root = marvel_rivals_root if marvel_rivals_root is not None else SETTINGS.marvel_rivals_root
+	if not root:
+		return None
+	return Path(root).expanduser() / RELATIVE_MODS_PATH

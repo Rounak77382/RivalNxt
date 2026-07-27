@@ -326,10 +326,11 @@ def _get_actually_active_filenames(logger) -> Optional[Set[str]]:
 	or None if the game directory or settings are not configured.
 	"""
 	try:
+		from core.config.settings import get_mods_dir
 		current_settings = _get_current_settings()
 		if current_settings.marvel_rivals_root:
-			mods_dir = current_settings.marvel_rivals_root.expanduser() / "MarvelGame" / "Marvel" / "Content" / "Paks" / "~mods"
-			if mods_dir.is_dir():
+			mods_dir = get_mods_dir(current_settings.marvel_rivals_root)
+			if mods_dir is not None and mods_dir.is_dir():
 				filenames = set()
 				for file in mods_dir.rglob("*.pak"):
 					if file.is_file():
@@ -2162,8 +2163,9 @@ def check_game_version() -> Dict[str, Any]:
 			"latest_file": None,
 		}
 
-	paks_dir = Path(current_settings.marvel_rivals_root) / "MarvelGame" / "Marvel" / "Content" / "Paks"
-	if not paks_dir.exists() or not paks_dir.is_dir():
+	from core.config.settings import get_paks_dir
+	paks_dir = get_paks_dir(current_settings.marvel_rivals_root)
+	if paks_dir is None or not paks_dir.exists() or not paks_dir.is_dir():
 		return {
 			"ok": False,
 			"error": f"Paks directory not found: {paks_dir}",
@@ -5382,7 +5384,13 @@ def _mods_folder_from_env() -> Path:
 			status_code=400,
 			detail="MARVEL_RIVALS_ROOT is not configured. Update core/config/settings.py with your Marvel Rivals installation path.",
 		)
-	mods_dir = root.expanduser() / "MarvelGame/Marvel/Content/Paks/~mods"
+	from core.config.settings import get_mods_dir
+	mods_dir = get_mods_dir(root)
+	if mods_dir is None:
+		raise HTTPException(
+			status_code=400,
+			detail="MARVEL_RIVALS_ROOT is not configured.",
+		)
 	return mods_dir
 
 

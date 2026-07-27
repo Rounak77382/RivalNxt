@@ -13,7 +13,7 @@ from core.config import settings
 from core.config.settings import AppSettings
 from core.db import get_connection, init_schema, update_local_download_active_paks
 
-RELATIVE_MODS_PATH = Path("MarvelGame/Marvel/Content/Paks/~mods")
+from core.config.settings import RELATIVE_MODS_PATH  # canonical game layout
 
 def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
