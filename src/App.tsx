@@ -65,6 +65,7 @@ import {
   type ApiUpdateSettingsRequest,
   type ApiBootstrapStatus,
 } from "./lib/api";
+import { nextPollDelay } from "./lib/pollingHelpers";
 import {
   deriveCategoryTags,
   categoriesMatchTag,
@@ -459,26 +460,55 @@ export default function App() {
     }
   }, [updateNxmEntry]);
 
+  // Adaptive cadence: poll every ACTIVE_POLL_MS only while a handoff is
+  // actually in flight, otherwise back off to IDLE_POLL_MS. Each poll opens a
+  // backend SQLite connection, so a fixed fast interval meant continuous DB
+  // traffic on a completely idle app.
   useEffect(() => {
     if (!backendReady) {
       return undefined;
     }
-    void fetchNxmQueue();
-    const interval = window.setInterval(() => {
-      void fetchNxmQueue();
-    }, 10000);
-    return () => window.clearInterval(interval);
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let cancelled = false;
+
+    const tick = async () => {
+      await fetchNxmQueue();
+      if (cancelled) return;
+      const handoffs = Object.values(nxmEntriesRef.current).map((e) => e.summary);
+      timer = setTimeout(tick, nextPollDelay(handoffs));
+    };
+
+    void tick();
+
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
   }, [backendReady, fetchNxmQueue]);
 
+  // Collections count changes only in response to an import, which always
+  // coincides with handoff activity. Poll fast while downloads are in flight,
+  // slowly otherwise.
   useEffect(() => {
     if (!backendReady) {
       return undefined;
     }
-    void fetchCollectionsCount();
-    const interval = window.setInterval(() => {
-      void fetchCollectionsCount();
-    }, 5000);
-    return () => window.clearInterval(interval);
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let cancelled = false;
+
+    const tick = async () => {
+      await fetchCollectionsCount();
+      if (cancelled) return;
+      const handoffs = Object.values(nxmEntriesRef.current).map((e) => e.summary);
+      timer = setTimeout(tick, nextPollDelay(handoffs, { activeMs: 5000, idleMs: 30000 }));
+    };
+
+    void tick();
+
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
   }, [backendReady, fetchCollectionsCount]);
 
   // ── Crash Detector: start watcher & listen for events ────────────────

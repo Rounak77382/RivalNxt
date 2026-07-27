@@ -36,9 +36,11 @@ import {
   deleteCollection,
   ApiCollection,
   ApiCollectionModFile,
+  ApiNxmHandoffSummary,
   listNxmHandoffs,
   listDownloads,
 } from "../lib/api";
+import { nextPollDelay } from "../lib/pollingHelpers";
 
 const normalizeFilename = (filename: string): string => {
   if (!filename) return "";
@@ -249,22 +251,33 @@ export function CollectionsPage({
     return () => clearInterval(interval);
   }, [installedModsIndex]);
 
+  // Adaptive handoff polling. Previously a flat setInterval(…, 1000) with an
+  // empty dep array, so it hammered the backend once a second for as long as
+  // this page was mounted -- even with nothing downloading. Now it polls fast
+  // only while a handoff is in flight and backs off to IDLE_POLL_MS otherwise.
+  // Uses a self-rescheduling timeout so the cadence can change between ticks.
   useEffect(() => {
-    let timer: any = null;
-    const fetchHandoffs = async () => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let cancelled = false;
+
+    const tick = async () => {
+      let handoffs: ApiNxmHandoffSummary[] = [];
       try {
-        const handoffs = await listNxmHandoffs();
+        handoffs = await listNxmHandoffs();
+        if (cancelled) return;
         setActiveHandoffs(handoffs);
       } catch (err) {
         console.error("Failed to fetch handoffs in CollectionsPage:", err);
       }
+      if (cancelled) return;
+      timer = setTimeout(tick, nextPollDelay(handoffs));
     };
 
-    fetchHandoffs();
-    timer = setInterval(fetchHandoffs, 1000);
+    void tick();
 
     return () => {
-      if (timer) clearInterval(timer);
+      cancelled = true;
+      if (timer) clearTimeout(timer);
     };
   }, []);
 

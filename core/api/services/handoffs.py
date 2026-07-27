@@ -35,7 +35,13 @@ def _purge_expired(now: Optional[float] = None) -> None:
 
 
 def _purge_expired_failures(now: Optional[float] = None) -> None:
-    """Remove failure records that are beyond the backoff window."""
+    """Remove failure records that are beyond the backoff window.
+
+    Also drops benign "duplicate download" rows from the persistent table.
+    That cleanup used to live inside list_handoffs(), which meant a plain GET
+    /api/nxm/handoffs performed writes -- and the frontend polled that endpoint
+    once per second.
+    """
     current = time.time() if now is None else now
     with _FAILURE_LOCK:
         expired = [
@@ -45,6 +51,37 @@ def _purge_expired_failures(now: Optional[float] = None) -> None:
         ]
         for handoff_id in expired:
             _HANDOFF_FAILURES.pop(handoff_id, None)
+
+    _purge_benign_duplicate_failures()
+
+
+def _purge_benign_duplicate_failures() -> int:
+    """Delete "duplicate download" failure rows; they mean the file is already
+    present, not that anything failed. Returns the number of rows removed."""
+    from core.api.dependencies import get_db
+
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """
+            DELETE FROM handoff_failures
+            WHERE LOWER(COALESCE(error_message, '')) LIKE '%duplicate download detected%'
+               OR LOWER(COALESCE(error_message, '')) LIKE '%already exists%'
+            """
+        )
+        removed = cur.rowcount or 0
+        conn.commit()
+        return removed
+    except Exception as db_err:
+        import sys
+        print(f"[PURGE DUPLICATE FAILURES ERROR] {db_err}", file=sys.stderr)
+        return 0
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
 
 
 def register_handoff(nxm: NXMRequest, *, metadata: Dict[str, Any]) -> Dict[str, Any]:
@@ -149,19 +186,20 @@ def list_handoffs() -> List[Dict[str, Any]]:
         except Exception:
             pass
 
-    # Merge persistent failures as synthetic failed handoffs if not already in-memory
-    stale_duplicate_file_ids: list[str] = []
+    # Merge persistent failures as synthetic failed handoffs if not already in-memory.
+    # NOTE: this function is a pure read. Cleanup of benign duplicate rows lives in
+    # _purge_benign_duplicate_failures(), called from _purge_expired_failures() on
+    # the write paths -- a polled GET must not issue DELETEs.
     for fail in db_failures:
         fid_str = fail["file_id"].strip()
         if fid_str in in_memory_file_ids:
             continue
 
         # Skip "duplicate download detected" failures — these mean the file IS already
-        # downloaded, not that there was a real error. Surface them as already-downloaded
-        # rather than as failed, and auto-remove the stale DB record.
+        # downloaded, not that there was a real error, so they are not surfaced as
+        # failed handoffs.
         error_msg = (fail.get("error_message") or "").lower()
         if "duplicate download detected" in error_msg or "already exists" in error_msg:
-            stale_duplicate_file_ids.append(fid_str)
             continue
 
         synthetic_id = fail["handoff_id"] or f"failed-{fid_str}"
@@ -189,27 +227,6 @@ def list_handoffs() -> List[Dict[str, Any]]:
             }
         }
         in_memory.append(synthetic_record)
-
-    # Auto-clean stale "duplicate download" failure records from the DB.
-    # These are benign — the file was already present — so there is no value in retaining them.
-    if stale_duplicate_file_ids:
-        conn2 = get_db()
-        try:
-            cur2 = conn2.cursor()
-            placeholders = ",".join("?" for _ in stale_duplicate_file_ids)
-            cur2.execute(
-                f"DELETE FROM handoff_failures WHERE file_id IN ({placeholders})",
-                tuple(stale_duplicate_file_ids),
-            )
-            conn2.commit()
-        except Exception as cleanup_err:
-            import sys
-            print(f"[LIST HANDOFFS CLEANUP ERROR] {cleanup_err}", file=sys.stderr)
-        finally:
-            try:
-                conn2.close()
-            except Exception:
-                pass
 
     return in_memory
 
