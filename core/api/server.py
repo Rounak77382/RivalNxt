@@ -349,6 +349,115 @@ def _safe_rebuild_conflicts(
 		return None
 
 
+# =============================================================================
+# Debounced conflict rebuild
+# =============================================================================
+# A conflict rebuild scans pak_assets JOIN mod_paks. Running it synchronously per
+# ingest made a burst of ingests (collection import, bulk scan) do that work once
+# per mod. Requests coalesce into a single rebuild shortly after the burst ends.
+CONFLICT_REBUILD_DEBOUNCE_SECONDS = 2.0
+
+_CONFLICT_REBUILD_LOCK = threading.Lock()
+_CONFLICT_REBUILD_PENDING = False
+_CONFLICT_REBUILD_ACTIVE_ONLY: Optional[bool] = None
+_CONFLICT_REBUILD_DEADLINE = 0.0
+_CONFLICT_REBUILD_THREAD: Optional[threading.Thread] = None
+# Test hook: counts completed debounced rebuilds.
+_CONFLICT_REBUILD_RUNS = 0
+
+
+def _merge_active_only(current: Optional[bool], incoming: Optional[bool]) -> Optional[bool]:
+	"""Widen the pending scope so no requested snapshot is skipped.
+
+	None means "both snapshots" and therefore subsumes either single one; two
+	different single scopes together also mean both.
+	"""
+	if current is None or incoming is None:
+		return None
+	if bool(current) != bool(incoming):
+		return None
+	return current
+
+
+def _conflict_rebuild_worker() -> None:
+	"""Wait out the debounce window, then rebuild once for the whole burst."""
+	global _CONFLICT_REBUILD_PENDING, _CONFLICT_REBUILD_ACTIVE_ONLY
+	global _CONFLICT_REBUILD_THREAD, _CONFLICT_REBUILD_RUNS
+
+	while True:
+		with _CONFLICT_REBUILD_LOCK:
+			remaining = _CONFLICT_REBUILD_DEADLINE - time.monotonic()
+			if remaining <= 0:
+				active_only = _CONFLICT_REBUILD_ACTIVE_ONLY
+				_CONFLICT_REBUILD_PENDING = False
+				_CONFLICT_REBUILD_ACTIVE_ONLY = None
+				_CONFLICT_REBUILD_THREAD = None
+				break
+		time.sleep(min(remaining, 0.25))
+
+	conn = None
+	try:
+		conn = get_db()
+		_safe_rebuild_conflicts(conn, active_only=active_only, purpose="debounced_ingest")
+		with _CONFLICT_REBUILD_LOCK:
+			_CONFLICT_REBUILD_RUNS += 1
+	except Exception:
+		logger.exception("Debounced conflict rebuild failed")
+	finally:
+		if conn is not None:
+			try:
+				conn.close()
+			except Exception:
+				pass
+
+
+def _schedule_conflict_rebuild(*, active_only: Optional[bool], purpose: str) -> bool:
+	"""Request a coalesced conflict rebuild. Returns True if one is pending.
+
+	Consecutive calls inside the debounce window extend the deadline and widen
+	the scope rather than each triggering their own rebuild.
+	"""
+	global _CONFLICT_REBUILD_PENDING, _CONFLICT_REBUILD_ACTIVE_ONLY
+	global _CONFLICT_REBUILD_DEADLINE, _CONFLICT_REBUILD_THREAD
+
+	with _CONFLICT_REBUILD_LOCK:
+		_CONFLICT_REBUILD_DEADLINE = time.monotonic() + CONFLICT_REBUILD_DEBOUNCE_SECONDS
+		if _CONFLICT_REBUILD_PENDING:
+			_CONFLICT_REBUILD_ACTIVE_ONLY = _merge_active_only(
+				_CONFLICT_REBUILD_ACTIVE_ONLY, active_only
+			)
+			logger.debug("[conflicts] Coalesced rebuild request from %s", purpose)
+			return True
+
+		_CONFLICT_REBUILD_PENDING = True
+		_CONFLICT_REBUILD_ACTIVE_ONLY = active_only
+		thread = threading.Thread(
+			target=_conflict_rebuild_worker,
+			daemon=True,
+			name="ConflictRebuildDebounce",
+		)
+		_CONFLICT_REBUILD_THREAD = thread
+
+	thread.start()
+	logger.debug("[conflicts] Scheduled debounced rebuild from %s", purpose)
+	return True
+
+
+def _wait_for_conflict_rebuild(timeout: float = 30.0) -> bool:
+	"""Block until no debounced rebuild is pending. Test/shutdown helper."""
+	deadline = time.monotonic() + timeout
+	while time.monotonic() < deadline:
+		with _CONFLICT_REBUILD_LOCK:
+			thread = _CONFLICT_REBUILD_THREAD
+			if not _CONFLICT_REBUILD_PENDING and thread is None:
+				return True
+		if thread is not None:
+			thread.join(timeout=max(0.0, deadline - time.monotonic()))
+		else:
+			time.sleep(0.02)
+	return False
+
+
 def _get_current_settings():
 	"""Get the current global SETTINGS object from settings module."""
 	from core.config.settings import SETTINGS as CURRENT_SETTINGS
@@ -2058,8 +2167,18 @@ def _ingest_resolved_download(
 		if resolved_mod_id is None and metadata_mod_id_hint is not None:
 			resolved_mod_id = metadata_mod_id_hint
 
-		# Refresh conflict tables after finalizing mod IDs so new installs register
-		_safe_rebuild_conflicts(conn, active_only=None, purpose="ingest_mod")
+		# Refresh conflict tables after finalizing mod IDs so new installs register.
+		#
+		# active_only=False, not None: a freshly ingested mod is not active yet
+		# (active_paks is inserted as '[]' above), so the _active snapshot cannot
+		# have changed. Rebuilding both doubled the work -- and each _rebuild scans
+		# pak_assets JOIN mod_paks twice, so this was four full scans per ingest.
+		#
+		# Scheduled rather than run inline so a burst of ingests (collection
+		# import, bulk scan) coalesces into one rebuild instead of one per mod.
+		conflicts_pending = _schedule_conflict_rebuild(
+			active_only=False, purpose="ingest_mod"
+		)
 
 		res = {
 			"ok": True,
@@ -2077,6 +2196,9 @@ def _ingest_resolved_download(
 			res["source_url"] = source_url
 		if tag_warning:
 			res["tag_warning"] = tag_warning
+		# Tells the frontend the conflict tables are not authoritative yet, so it
+		# should re-fetch rather than assume the rebuild completed synchronously.
+		res["conflicts_rebuild_pending"] = bool(conflicts_pending)
 		res.update(metadata_info)
 		return res
 	finally:
