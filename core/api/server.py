@@ -1627,6 +1627,56 @@ def _find_duplicate_download(
 _PAK_ENTRY_SUFFIXES = (".pak", ".utoc", ".ucas", ".sig")
 
 
+def _merge_pak_bundle(
+	pak_map: Dict[str, List[str]],
+) -> Tuple[Dict[str, List[str]], Dict[str, bool]]:
+	"""Collapse a raw pak asset map into one entry per logical container.
+
+	An IoStore mod ships as a ``.pak`` / ``.utoc`` / ``.ucas`` triple describing a
+	single container. This keys everything under the ``.pak`` name and unions the
+	asset lists, so conflict detection and tagging see one provider rather than
+	three.
+
+	Returns ``(merged_assets, io_store_flags)`` where ``io_store_flags[name]`` is
+	True when any member of the bundle was a ``.utoc`` (i.e. the mod uses
+	IoStore).
+
+	This logic existed twice verbatim in _ingest_resolved_download -- once for the
+	initial upsert and once after a mod_id was discovered. Divergence between the
+	two copies is exactly how "conflicts show for one mod but not another" bugs
+	appear, so it lives in one place now.
+	"""
+	merged_assets: Dict[str, List[str]] = {}
+	io_store_flags: Dict[str, bool] = {}
+
+	for raw_pak_name, assets in (pak_map or {}).items():
+		if not raw_pak_name:
+			continue
+		lower_pak = raw_pak_name.lower()
+		# Normalize extension: .utoc/.ucas -> .pak
+		if lower_pak.endswith(".utoc") or lower_pak.endswith(".ucas"):
+			normalized_name = raw_pak_name[:-5] + ".pak"
+		else:
+			normalized_name = raw_pak_name
+
+		# Track whether this bundle involves IoStore (any .utoc member).
+		if normalized_name not in io_store_flags:
+			io_store_flags[normalized_name] = False
+		if lower_pak.endswith(".utoc"):
+			io_store_flags[normalized_name] = True
+
+		bucket = merged_assets.setdefault(normalized_name, [])
+		if assets:
+			bucket.extend(assets)
+
+	# Deduplicate and order deterministically so repeated ingests of the same
+	# archive produce byte-identical rows.
+	for normalized_name, assets in merged_assets.items():
+		merged_assets[normalized_name] = sorted(set(assets))
+
+	return merged_assets, io_store_flags
+
+
 def _enumerate_pak_entries(root_dir: str) -> List[str]:
 	"""List Unreal container files under ``root_dir`` as archive-relative paths.
 
@@ -1882,44 +1932,17 @@ def _ingest_resolved_download(
 				resolved_mod_id = mod_id
 
 		source_zip = path.name
-		io_store_flag: Optional[int]
-		try:
-			io_store_flag = 1 if any(k.lower().endswith(".utoc") for k in pak_map.keys()) else 0
-		except Exception:
-			io_store_flag = None
 
 		# Merge paks (e.g. .pak + .utoc) into a single entry keyed by the .pak name
-		merged_pak_map: Dict[str, List[str]] = {}
-		merged_io_store: Dict[str, bool] = {}
-		
-		for raw_pak_name, assets in pak_map.items():
-			# Normalize extension: .utoc/.ucas -> .pak
-			lower_pak = raw_pak_name.lower()
-			if lower_pak.endswith(".utoc"):
-				normalized_name = raw_pak_name[:-5] + ".pak"
-			elif lower_pak.endswith(".ucas"):
-				normalized_name = raw_pak_name[:-5] + ".pak"
-			else:
-				normalized_name = raw_pak_name
-				
-			# Track if this bundle involves IoStore (if any part is .utoc)
-			is_utoc = lower_pak.endswith(".utoc")
-			if normalized_name not in merged_io_store:
-				merged_io_store[normalized_name] = False
-			if is_utoc:
-				merged_io_store[normalized_name] = True
-				
-			if normalized_name not in merged_pak_map:
-				merged_pak_map[normalized_name] = []
-			merged_pak_map[normalized_name].extend(assets)
+		# (io_store is tracked per-bundle by _merge_pak_bundle; the previous
+		# archive-wide io_store_flag fed only a dead local and is gone.)
+		merged_pak_map, merged_io_store = _merge_pak_bundle(pak_map)
 
 		total_paks = 0
 		total_assets = 0
 		for pak_name, assets in merged_pak_map.items():
-			# Deduplicate assets
-			assets = sorted(list(set(assets)))
 			io_store = merged_io_store.get(pak_name, False)
-			
+
 			total_paks += 1
 			total_assets += len(assets)
 			upsert_mod_pak(
@@ -1958,37 +1981,13 @@ def _ingest_resolved_download(
 				metadata_info.setdefault("metadata_warning", "Failed to link discovered mod ID to local download")
 			if "metadata_warning" not in metadata_info:
 				try:
-					io_bool = bool(io_store_flag) if io_store_flag is not None else None
-					# Merge paks when updating with discovered mod_id
-					update_merged_pak_map: Dict[str, List[str]] = {}
-					update_merged_io_store: Dict[str, bool] = {}
-					
-					for raw_pak_name, assets in pak_map.items():
-						# Normalize extension: .utoc/.ucas -> .pak
-						lower_pak = raw_pak_name.lower()
-						if lower_pak.endswith(".utoc"):
-							normalized_name = raw_pak_name[:-5] + ".pak"
-						elif lower_pak.endswith(".ucas"):
-							normalized_name = raw_pak_name[:-5] + ".pak"
-						else:
-							normalized_name = raw_pak_name
-							
-						# Track if this bundle involves IoStore
-						is_utoc = lower_pak.endswith(".utoc")
-						if normalized_name not in update_merged_io_store:
-							update_merged_io_store[normalized_name] = False
-						if is_utoc:
-							update_merged_io_store[normalized_name] = True
-							
-						if normalized_name not in update_merged_pak_map:
-							update_merged_pak_map[normalized_name] = []
-						update_merged_pak_map[normalized_name].extend(assets)
-					
+					# Re-key the same bundle now that a mod_id is known. Shares one
+					# helper with the initial upsert above so the two cannot drift.
+					update_merged_pak_map, update_merged_io_store = _merge_pak_bundle(pak_map)
+
 					for pak_name, assets in update_merged_pak_map.items():
-						# Deduplicate assets
-						assets = sorted(list(set(assets)))
 						io_store = update_merged_io_store.get(pak_name, False)
-						
+
 						upsert_mod_pak(
 							conn,
 							pak_name=pak_name,
