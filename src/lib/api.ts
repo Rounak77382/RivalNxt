@@ -1463,3 +1463,139 @@ export async function clearModAuthor(modKey: string): Promise<void> {
     );
   }
 }
+
+// ─── Backup / restore ────────────────────────────────────────────────────────
+// Backup used to be entirely client-side: a JSON projection of mod metadata with
+// the index kept in localStorage. mods.db and settings.json were never captured,
+// and clearing webview storage orphaned every archive. These endpoints make the
+// backend (and the filesystem) authoritative.
+
+export type ApiBackupInfo = {
+  name: string;
+  path: string;
+  created_at: string | null;
+  size_bytes: number;
+  manifest_version: number | null;
+  total_mods: number | null;
+  active_mods: number | null;
+  data_dir: string | null;
+  marvel_rivals_root: string | null;
+  downloads_root: string | null;
+};
+
+export type ApiBackupCreateResult = ApiBackupInfo & {
+  ok: boolean;
+  archive_name: string;
+};
+
+export type ApiBackupRestoreResult = {
+  ok: boolean;
+  restored_from: string;
+  manifest_version: number | null;
+  created_at: string | null;
+  remapped_paths: number;
+  restored_settings: boolean;
+  safety_snapshot: string | null;
+};
+
+export async function createBackup(name?: string): Promise<ApiBackupCreateResult> {
+  const baseUrl = await getBaseUrl();
+  const res = await fetch(`${baseUrl}/api/backup/create`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(name ? { name } : {}),
+  });
+  if (!res.ok) await handleError(res, "POST", "/api/backup/create");
+  return (await res.json()) as ApiBackupCreateResult;
+}
+
+export async function listServerBackups(): Promise<ApiBackupInfo[]> {
+  const baseUrl = await getBaseUrl();
+  const res = await fetch(`${baseUrl}/api/backup/list`);
+  if (!res.ok) await handleError(res, "GET", "/api/backup/list");
+  const data = (await res.json()) as { ok: boolean; backups: ApiBackupInfo[] };
+  return data.backups ?? [];
+}
+
+export async function restoreBackup(
+  path: string,
+  options: { remapPaths?: boolean } = {},
+): Promise<ApiBackupRestoreResult> {
+  const baseUrl = await getBaseUrl();
+  const res = await fetch(`${baseUrl}/api/backup/restore`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      path,
+      remap_paths: options.remapPaths !== false,
+    }),
+  });
+  if (!res.ok) await handleError(res, "POST", "/api/backup/restore");
+  return (await res.json()) as ApiBackupRestoreResult;
+}
+
+// ─── Collection bulk operations ──────────────────────────────────────────────
+// Enabling a collection previously meant one PATCH per member file, each
+// triggering its own conflict rebuild.
+
+export type ApiCollectionBulkResult = {
+  ok: boolean;
+  collection_id: number;
+  activated?: number;
+  deactivated?: number;
+  applied: Array<{ file_id: number; mod_id: number | null; local_download_id: number }>;
+  skipped: Array<{ file_id: number; mod_id: number | null; reason: string }>;
+  total_members: number;
+};
+
+export async function activateCollection(
+  collectionId: number,
+): Promise<ApiCollectionBulkResult> {
+  const baseUrl = await getBaseUrl();
+  const res = await fetch(`${baseUrl}/api/collections/${collectionId}/activate`, {
+    method: "POST",
+  });
+  if (!res.ok) await handleError(res, "POST", `/api/collections/${collectionId}/activate`);
+  return (await res.json()) as ApiCollectionBulkResult;
+}
+
+export async function deactivateCollection(
+  collectionId: number,
+): Promise<ApiCollectionBulkResult> {
+  const baseUrl = await getBaseUrl();
+  const res = await fetch(`${baseUrl}/api/collections/${collectionId}/deactivate`, {
+    method: "POST",
+  });
+  if (!res.ok) {
+    await handleError(res, "POST", `/api/collections/${collectionId}/deactivate`);
+  }
+  return (await res.json()) as ApiCollectionBulkResult;
+}
+
+export type ApiCollectionUpdateCheck = {
+  ok: boolean;
+  collection_id: number;
+  needs_update: boolean;
+  pending: Array<{
+    pak_name: string | null;
+    mod_id: number | null;
+    local_download_id: number | null;
+    local_version: string | null;
+    reference_version: string | null;
+  }>;
+  checked_download_ids: number[];
+};
+
+export async function checkCollectionUpdates(
+  collectionId: number,
+): Promise<ApiCollectionUpdateCheck> {
+  const baseUrl = await getBaseUrl();
+  const res = await fetch(
+    `${baseUrl}/api/collections/${collectionId}/check-updates`,
+    { method: "POST" },
+  );
+  if (!res.ok) {
+    await handleError(res, "POST", `/api/collections/${collectionId}/check-updates`);
+  }
+  return (await res.json()) as ApiCollectionUpdateCheck;
+}

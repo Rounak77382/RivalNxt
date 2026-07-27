@@ -7958,6 +7958,54 @@ def update_mod_file_state(collection_id: int, file_id: int, body: Dict[str, Any]
 			conn.close()
 		except Exception:
 			pass
+# =============================================================================
+# Backup / restore
+# =============================================================================
+class BackupCreatePayload(BaseModel):
+	name: Optional[str] = None
+
+
+class BackupRestorePayload(BaseModel):
+	path: str
+	remap_paths: bool = True
+
+
+@app.post("/api/backup/create")
+def create_backup_route(payload: Optional[BackupCreatePayload] = Body(default=None)) -> Dict[str, Any]:
+	"""Snapshot the database + settings into a zip under <data_dir>/backups."""
+	from core.backup import BackupError, create_backup
+
+	try:
+		return create_backup(name=(payload.name if payload else None))
+	except BackupError as exc:
+		raise HTTPException(status_code=400, detail=str(exc))
+
+
+@app.get("/api/backup/list")
+def list_backups_route() -> Dict[str, Any]:
+	"""Enumerate backups from disk.
+
+	The filesystem is the source of truth. The frontend previously kept the index
+	in localStorage, so clearing webview storage orphaned every archive.
+	"""
+	from core.backup import list_backups
+
+	backups = list_backups()
+	return {"ok": True, "backups": backups, "count": len(backups)}
+
+
+@app.post("/api/backup/restore")
+def restore_backup_route(payload: BackupRestorePayload) -> Dict[str, Any]:
+	"""Restore a backup archive over the live database."""
+	from core.backup import BackupError, restore_backup
+
+	try:
+		return restore_backup(path=payload.path, remap_paths=payload.remap_paths)
+	except BackupError as exc:
+		# A rejected archive leaves the live database untouched.
+		raise HTTPException(status_code=400, detail=str(exc))
+
+
 def _record_collection_import_failure(slug_key: str, error: str) -> None:
 	"""Persist a collection-import failure in handoff_failures.
 
