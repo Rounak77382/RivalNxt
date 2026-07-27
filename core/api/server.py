@@ -1624,6 +1624,31 @@ def _find_duplicate_download(
 	return None
 
 
+_PAK_ENTRY_SUFFIXES = (".pak", ".utoc", ".ucas", ".sig")
+
+
+def _enumerate_pak_entries(root_dir: str) -> List[str]:
+	"""List Unreal container files under ``root_dir`` as archive-relative paths.
+
+	Replaces a second ``list_entries(archive)`` pass over the original archive:
+	the archive has already been fully extracted, so walking the extracted tree
+	yields the same information without decompressing anything again.
+
+	Paths are returned relative to ``root_dir`` with forward slashes, preserving
+	the hierarchical layout that ``list_entries`` reported (the UI displays it,
+	and ``set_active_paks`` resolves basenames out of it).
+	"""
+	entries: List[str] = []
+	for current_root, _dirs, files in os.walk(root_dir):
+		for filename in files:
+			if not filename.lower().endswith(_PAK_ENTRY_SUFFIXES):
+				continue
+			relative = os.path.relpath(os.path.join(current_root, filename), root_dir)
+			entries.append(relative.replace(os.sep, "/"))
+	entries.sort()
+	return entries
+
+
 def _ingest_resolved_download(
 	path: Path,
 	*,
@@ -1695,48 +1720,42 @@ def _ingest_resolved_download(
 			# Extract archive to temporary directory
 			tmpdir = tempfile.mkdtemp(prefix="ingest_mod_")
 			extract_archive(str(path), tmpdir)
-			
-			# Enumerate archive contents to preserve hierarchical paths for the UI
-			try:
-				all_entries = list_entries(str(path))
-				# Filter for relevant Unreal Engine file types
-				contents = [
-					e for e in all_entries 
-					if e.lower().endswith(('.pak', '.utoc', '.ucas', '.sig'))
-				]
-				logger.info(f"[ingest] Enumerated {len(contents)} relevant file(s) from archive: {contents}")
-			except Exception as e:
-				logger.warning(f"[ingest] Failed to list archive entries for {path.name}: {e}")
-				contents = []
+
+			# Enumerate from the EXTRACTED TREE, not by re-reading the archive.
+			# This previously called list_entries(path), which decompresses the
+			# archive header a second time -- the whole file has already been
+			# extracted to tmpdir one line above. os.path.relpath preserves the
+			# hierarchical layout (e.g. "subdir/xl/thing.pak") that list_entries
+			# provided and that the UI and set_active_paks rely on.
+			contents = _enumerate_pak_entries(tmpdir)
+			logger.info(f"[ingest] Enumerated {len(contents)} relevant file(s) from extracted archive: {contents}")
 
 			# Extract PAK asset map from the extracted folder for conflict detection
 			pak_map = extract_pak_asset_map_from_folder(tmpdir, aes_key=aes_key)
-			
+
 			if contents or pak_map:
 				if not contents and pak_map:
-					# Fallback to pak_map keys if archive enumeration failed but map has entries
+					# Asset map found paks the extension walk missed.
 					contents = list(pak_map.keys())
-				
+				elif contents and not pak_map:
+					# The Rust asset map came back empty (encrypted, unsupported
+					# container, missing Oodle DLL...). Seed pak_map from the
+					# enumerated basenames so the io_store check below still has
+					# entries to inspect, matching the old fallback behaviour.
+					logger.warning(
+						f"[ingest] Asset map empty for {path.name}; seeding pak_map "
+						f"from {len(contents)} enumerated container(s)."
+					)
+					for entry in contents:
+						base = os.path.basename(entry)
+						if base.lower().endswith((".pak", ".utoc", ".ucas")):
+							pak_map.setdefault(base, [])
+
 				# Collapse bundled .pak + .utoc pairs (preserves hierarchical paths correctly)
 				contents = collapse_pak_bundle(contents)
 				logger.info(f"[ingest] Final contents after collapsing: {contents}")
 			else:
-				logger.warning(f"[ingest] No PAK files found via asset map (Rust) or enumeration (list_entries) in archive {path.name}. Falling back to directory scan.")
-				fallback_paks = []
-				for root, _, files in os.walk(tmpdir):
-					for file in files:
-						lower = file.lower()
-						if lower.endswith(".pak") or lower.endswith(".utoc"):
-							fallback_paks.append(file)
-							# Populate pak_map with empty assets so io_store check works
-							pak_map[file] = []
-				
-				if fallback_paks:
-					contents = fallback_paks
-					contents = collapse_pak_bundle(contents)
-					logger.info(f"[ingest] Fallback found {len(contents)} PAK file(s): {contents}")
-				else:
-					logger.warning(f"[ingest] No PAK files found in archive {path.name}")
+				logger.warning(f"[ingest] No PAK files found in archive {path.name}")
 		except Exception as e:
 			# Log the error but don't fail - we'll store minimal info
 			ingest_prep_error = e

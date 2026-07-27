@@ -56,7 +56,19 @@ def get_connection(db_path: Optional[str] = None) -> sqlite3.Connection:
     conn.execute("PRAGMA busy_timeout = 15000;")
     # Pragmas tuned for local app usage
     conn.execute("PRAGMA foreign_keys = ON;")
-    conn.execute("PRAGMA journal_mode = WAL;")
+    # journal_mode is a PERSISTENT database property, but switching it acquires a
+    # brief exclusive lock. Unconditionally issuing it on every open means
+    # concurrent openers race and one of them gets SQLITE_BUSY
+    # ("database is locked") -- reproducible with 4 threads opening at once.
+    # It only ever needs setting on a database that is not already in WAL.
+    try:
+        current_mode = conn.execute("PRAGMA journal_mode;").fetchone()
+        if not current_mode or str(current_mode[0]).lower() != "wal":
+            conn.execute("PRAGMA journal_mode = WAL;")
+    except sqlite3.OperationalError as exc:
+        # Another connection is mid-switch. The mode is persistent, so whoever
+        # wins the race sets it for everyone; carry on with the default journal.
+        print(f"[db] Could not set journal_mode=WAL (continuing): {exc}")
     conn.execute("PRAGMA synchronous = NORMAL;")
     # ~20MB page cache (negative value = KiB) and 256MB mmap window. The
     # conflict rebuild and tagging queries scan pak_assets repeatedly; keeping
