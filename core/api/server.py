@@ -1990,13 +1990,31 @@ def _ingest_resolved_download(
 			bulk_upsert_pak_assets(conn, pak_name, assets, replace=True)
 			upsert_pak_assets_json(conn, pak_name, assets, mod_id=resolved_mod_id)
 
+		# Tag ONLY this mod's paks, on the connection we already hold.
+		#
+		# This previously called scripts.build_asset_tags.main([]) and
+		# scripts.build_pak_tags.main([]) in-process. Each opened its own SQLite
+		# connection (write contention with this one), re-ran init_schema +
+		# run_migrations, and rescanned the WHOLE library -- build_pak_tags
+		# fetchall()'d every row of pak_assets into Python and re-upserted tags
+		# for every pak in the database. A single ingest was O(all assets), so
+		# bulk-importing N mods was O(N x library).
+		tag_warning: Optional[str] = None
 		try:
-			from scripts import build_asset_tags as _bat  # type: ignore
-			from scripts import build_pak_tags as _bpt  # type: ignore
-			_bat.main([])
-			_bpt.main([])
-		except Exception:
-			pass
+			from core.tagging import tag_paks as _tag_paks
+
+			tag_stats = _tag_paks(conn, list(merged_pak_map.keys()))
+			logger.info(
+				"[ingest] Tagged %s asset(s) across %s pak(s) for %s",
+				tag_stats.get("assets_tagged"),
+				tag_stats.get("paks_tagged"),
+				path.name,
+			)
+		except Exception as exc:
+			# Was a bare `except Exception: pass`, so every tagging failure during
+			# ingest was silently invisible. Surface it to the caller instead.
+			tag_warning = f"Tag build failed: {exc}"
+			logger.warning("[ingest] Tag build failed for %s: %s", path.name, exc, exc_info=True)
 
 		metadata_info = _sync_mod_metadata(
 			conn,
@@ -2057,6 +2075,8 @@ def _ingest_resolved_download(
 		}
 		if source_url:
 			res["source_url"] = source_url
+		if tag_warning:
+			res["tag_warning"] = tag_warning
 		res.update(metadata_info)
 		return res
 	finally:

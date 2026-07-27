@@ -51,70 +51,17 @@ def main(argv=None) -> int:
     conn = get_connection(args.db_path)
     ensure_schema(conn)
 
-    entity_map = tagger.load_entity_map(args.map_path)
-    cur = conn.cursor()
+    # Thin wrapper over core.tagging.service, which owns the tagging logic so the
+    # ingest path can run it scoped to a single mod's paks instead of rescanning
+    # the whole library.
+    from core.tagging.service import tag_all_assets
 
     if args.rebuild:
         log.info("Truncating asset_tags ...")
-        cur.execute("DELETE FROM asset_tags;")
-        conn.commit()
 
-    # Select distinct asset paths missing in asset_tags, or all if rebuild.
-    if args.rebuild:
-        q = "SELECT DISTINCT asset_path FROM pak_assets"
-        params = ()
-    else:
-        q = """
-            SELECT DISTINCT pa.asset_path
-            FROM pak_assets pa
-            LEFT JOIN asset_tags t ON t.asset_path = pa.asset_path
-            WHERE t.asset_path IS NULL
-        """
-        params = ()
-    if args.limit:
-        q += " LIMIT ?"
-        params = (args.limit,)
-
-    rows = cur.execute(q, params).fetchall()
-    log.info("Assets to tag: %d", len(rows))
-    if not rows:
-        log.info("No asset paths to tag.")
-        return 0
-
-    to_upsert = []
-    skipped = 0
-    for (asset_path,) in rows:
-        tag = tagger.tag_asset(asset_path, entity_map).strip()
-        # Skip if no meaningful tag was generated
-        if not tag:
-            skipped += 1
-            continue
-        entity, category = split_tag(tag)
-        entity = entity.strip() if isinstance(entity, str) and entity.strip() else None
-        category = category.strip() if isinstance(category, str) and category.strip() else None
-        # Skip if no meaningful category was found (which should be rare now with updated logic)
-        if not category:
-            skipped += 1
-            continue
-        full_tag = f"{entity},{category}" if entity else category
-        to_upsert.append((asset_path, entity, category, full_tag))
-
-    cur.executemany(
-        """
-        INSERT INTO asset_tags(asset_path, entity, category, tag)
-        VALUES(?, ?, ?, ?)
-        ON CONFLICT(asset_path) DO UPDATE SET
-            entity = excluded.entity,
-            category = excluded.category,
-            tag = excluded.tag
-        ;
-        """,
-        to_upsert,
-    )
+    written = tag_all_assets(conn, rebuild=bool(args.rebuild))
     conn.commit()
-    log.info("Tagged %d asset path(s).", len(to_upsert))
-    if skipped:
-        log.debug("Skipped %d asset path(s) without resolvable tags.", skipped)
+    log.info("Tagged %d asset path(s).", written)
     return 0
 
 

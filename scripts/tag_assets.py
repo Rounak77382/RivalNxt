@@ -54,8 +54,17 @@ def load_entity_map(path: Optional[str]) -> Dict[str, str]:
     db_mapping = load_entity_map_from_db()
     if db_mapping:
         return db_mapping
-    
-    # Fallback to JSON file if database fails
+
+    return load_entity_map_from_json(path)
+
+
+def load_entity_map_from_json(path: Optional[str]) -> Dict[str, str]:
+    """Load entity mapping from character_ids.json only -- no DB access.
+
+    Split out from load_entity_map so callers that already hold a database
+    connection can use the JSON fallback without load_entity_map_from_db()
+    opening a second connection behind their back.
+    """
     mapping: Dict[str, str] = {}
     if not path:
         # Try default in repo root

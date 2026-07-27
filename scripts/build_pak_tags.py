@@ -114,15 +114,16 @@ def main(argv=None) -> int:
     conn = get_connection(args.db_path)
     ensure_schema(conn)
 
+    # Thin wrapper over core.tagging.service. The old inline implementation
+    # fetchall()'d every row of pak_assets into Python on every call -- including
+    # from the ingest path, once per mod.
+    from core.tagging.service import rebuild_all_pak_tags
+
     if args.rebuild:
         log.info("Truncating pak_tags_json ...")
-        conn.execute("DELETE FROM pak_tags_json;")
-        conn.commit()
 
-    rows = fetch_pak_asset_tags(conn, args.limit)
-    log.info("Fetched %d pak-asset-tag rows", len(rows))
-    agg = build_pak_tags(rows)
-    count = upsert_pak_tags(conn, agg)
+    count = rebuild_all_pak_tags(conn, rebuild=bool(args.rebuild))
+    conn.commit()
     log.info("Upserted tags for %d paks.", count)
     if args.sample and args.sample > 0:
         cur = conn.cursor()
