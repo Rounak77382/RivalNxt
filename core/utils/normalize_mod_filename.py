@@ -74,8 +74,14 @@ def normalize_mod_filename(
     # 2.5 If still None, let's try the MD5 lookup on Nexus!
     if candidate_mod_id is None and api_key:
         try:
+            # Stream in 1 MiB chunks. `hashlib.md5(f.read())` loaded the entire
+            # archive into memory first, which is an OOM risk on multi-GB mods --
+            # and this runs on the ingest hot path.
+            _digest = hashlib.md5()
             with open(path, 'rb') as f:
-                file_hash = hashlib.md5(f.read()).hexdigest()
+                for _chunk in iter(lambda: f.read(1024 * 1024), b""):
+                    _digest.update(_chunk)
+            file_hash = _digest.hexdigest()
             computed_md5 = file_hash
             status, md5_response = get_mod_by_md5(api_key, game_domain, file_hash)
             if status == 200 and isinstance(md5_response, list) and len(md5_response) > 0:

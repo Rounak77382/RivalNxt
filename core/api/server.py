@@ -220,19 +220,47 @@ else:
 # =============================================================================
 # Background MD5 Backfill — compute and store hashes for existing unlinked mods
 # =============================================================================
+# Read size for streaming hashes. Mod archives routinely run to several GB, so
+# the whole file must never be materialised in memory.
+MD5_CHUNK_BYTES = 1024 * 1024  # 1 MiB
+# Rows to accumulate between commits. Committing per row meant one fsync per
+# file; batching amortises that.
+MD5_COMMIT_BATCH = 50
+
+
+def compute_file_md5(path: Union[str, Path], chunk_size: int = MD5_CHUNK_BYTES) -> str:
+	"""Return the MD5 of ``path``, reading it in ``chunk_size`` pieces.
+
+	Replaces ``hashlib.md5(fh.read())``, which loaded an entire archive into RAM
+	before hashing it -- an OOM risk on multi-GB mods.
+	"""
+	import hashlib as _hashlib
+
+	digest = _hashlib.md5()
+	with open(path, "rb") as fh:
+		while True:
+			chunk = fh.read(chunk_size)
+			if not chunk:
+				break
+			digest.update(chunk)
+	return digest.hexdigest()
+
+
 def _md5_backfill_worker() -> None:
 	"""Daemon thread: compute MD5 hashes for all non-conforming mods in local_downloads
 	that are missing a hash and don't yet have a mod_id.
 	Runs once on startup with small sleeps so it doesn't block normal app usage.
 	"""
-	import hashlib as _hashlib
-
 	logger.info("[MD5 Backfill] Starting background MD5 backfill for unlinked mods...")
 	try:
 		from core.api.dependencies import get_db
 		from core.config.settings import SETTINGS as _SETTINGS
 
-		downloads_root = Path(_SETTINGS.marvel_rivals_local_downloads_root)
+		downloads_root_raw = _SETTINGS.marvel_rivals_local_downloads_root
+		if not downloads_root_raw:
+			logger.info("[MD5 Backfill] No downloads root configured; nothing to do.")
+			return
+		downloads_root = Path(downloads_root_raw)
 		conn = get_db()
 		cur = conn.cursor()
 
@@ -247,6 +275,7 @@ def _md5_backfill_worker() -> None:
 
 		logger.info(f"[MD5 Backfill] Found {len(rows)} file(s) to hash.")
 
+		pending = 0
 		for (rel_path,) in rows:
 			try:
 				abs_path = downloads_root / rel_path
@@ -257,20 +286,25 @@ def _md5_backfill_worker() -> None:
 					else:
 						continue
 
-				with open(abs_path, "rb") as fh:
-					file_hash = _hashlib.md5(fh.read()).hexdigest()
+				file_hash = compute_file_md5(abs_path)
 
 				cur.execute(
 					"UPDATE local_downloads SET file_md5 = ? WHERE path = ?",
 					(file_hash, rel_path),
 				)
-				conn.commit()
+				pending += 1
+				if pending >= MD5_COMMIT_BATCH:
+					conn.commit()
+					pending = 0
 				logger.debug(f"[MD5 Backfill] Hashed {rel_path} -> {file_hash}")
 				time.sleep(0.05)
 
 			except Exception as e:
 				logger.debug(f"[MD5 Backfill] Skipped {rel_path}: {e}")
 				continue
+
+		if pending:
+			conn.commit()
 
 		logger.info("[MD5 Backfill] Backfill complete.")
 		try:
