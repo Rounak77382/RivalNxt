@@ -1874,7 +1874,11 @@ def rebuild_conflicts(conn: sqlite3.Connection, *, active_only: bool | None = No
             INSERT INTO {conflicts_tbl}(asset_path, distinct_mods, distinct_paks, generated_at, detected_at)
             SELECT asset_path, mod_count, pak_count, datetime('now'), datetime('now') FROM grouped;
         """
-        cur.executescript(agg_sql)
+        # execute(), NOT executescript(): executescript() issues an implicit
+        # COMMIT before running, which committed the DELETE above as its own
+        # transaction and left readers able to observe an empty table. Both
+        # statements here are single INSERTs, so execute() is sufficient.
+        cur.execute(agg_sql)
 
         # Restore previously-known detected_at for returning conflicts so they
         # retain their original detection time instead of being reset to now.
@@ -1909,20 +1913,42 @@ def rebuild_conflicts(conn: sqlite3.Connection, *, active_only: bool | None = No
             FROM {conflicts_tbl} g
             JOIN base b ON b.asset_path = g.asset_path;
         """
-        cur.executescript(part_sql)
+        cur.execute(part_sql)
 
         count_conflicts = cur.execute(f"SELECT COUNT(*) FROM {conflicts_tbl}").fetchone()[0]
         results[conflicts_tbl] = count_conflicts
 
-    if active_only is None:
-        _rebuild(active=False)
-        _rebuild(active=True)
-    elif bool(active_only):
-        _rebuild(active=True)
-    else:
-        _rebuild(active=False)
+    # One transaction for the whole rebuild. Every DELETE and its repopulating
+    # INSERT must land together, or concurrent readers on other connections see a
+    # half-rebuilt (or empty) conflicts table. BEGIN IMMEDIATE takes the write
+    # lock up front rather than upgrading from a read lock mid-transaction, which
+    # avoids a busy/deadlock window under concurrency.
+    started_txn = False
+    if not conn.in_transaction:
+        try:
+            cur.execute("BEGIN IMMEDIATE;")
+            started_txn = True
+        except sqlite3.OperationalError:
+            # Another writer holds the lock, or a transaction is already open;
+            # fall back to the implicit transaction.
+            pass
 
-    conn.commit()
+    try:
+        if active_only is None:
+            _rebuild(active=False)
+            _rebuild(active=True)
+        elif bool(active_only):
+            _rebuild(active=True)
+        else:
+            _rebuild(active=False)
+        conn.commit()
+    except Exception:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        raise
+
     return results
 
 
