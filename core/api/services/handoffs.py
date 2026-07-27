@@ -84,7 +84,12 @@ def register_handoff(nxm: NXMRequest, *, metadata: Dict[str, Any]) -> Dict[str, 
                 conn.close()
             except Exception:
                 pass
-        return record
+
+    # NOTE: this return must stay at function scope. It previously sat inside
+    # the `if nxm.file_id is not None` block, so a handoff without a file_id
+    # returned None -- and submit_nxm_handoff dereferences record["id"]
+    # unguarded, turning that into a TypeError 500.
+    return record
 
 
 def snapshot_metadata(nxm: NXMRequest) -> Dict[str, Any]:
