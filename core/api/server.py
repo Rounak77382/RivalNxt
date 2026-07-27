@@ -1576,12 +1576,16 @@ def _find_duplicate_download(
 	Returns (download_id, name, version, path) if duplicate found AND file exists.
 	Uses exact string matching for name and version (case-insensitive).
 	"""
+	# "name = ? COLLATE NOCASE" is sargable against idx_local_downloads_name_nocase.
+	# The previous "LOWER(name) = LOWER(?)" wrapped the column in a function,
+	# which made the predicate non-sargable and forced a full table scan on
+	# every duplicate check.
 	if mod_id is not None:
 		rows = cur.execute(
 			"""
 			SELECT id, name, version, path
 			FROM local_downloads
-			WHERE LOWER(name) = LOWER(?) AND mod_id = ?
+			WHERE name = ? COLLATE NOCASE AND mod_id = ?
 			""",
 			(candidate_name, mod_id),
 		).fetchall()
@@ -1590,7 +1594,7 @@ def _find_duplicate_download(
 			"""
 			SELECT id, name, version, path
 			FROM local_downloads
-			WHERE LOWER(name) = LOWER(?)
+			WHERE name = ? COLLATE NOCASE
 			""",
 			(candidate_name,),
 		).fetchall()

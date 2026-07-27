@@ -81,6 +81,12 @@ def init_schema(conn: sqlite3.Connection) -> None:
     cur.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_local_downloads_id_unique ON local_downloads(id);")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_local_downloads_mod_id ON local_downloads(mod_id);")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_local_downloads_name ON local_downloads(name);")
+    # Backs _find_duplicate_download's "name = ? COLLATE NOCASE" seek. Must be
+    # declared NOCASE or the planner cannot use it for that predicate.
+    cur.execute(
+        "CREATE INDEX IF NOT EXISTS idx_local_downloads_name_nocase "
+        "ON local_downloads(name COLLATE NOCASE);"
+    )
     cur.execute(
         """
         CREATE TABLE IF NOT EXISTS mods (
