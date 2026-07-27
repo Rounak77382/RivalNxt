@@ -36,7 +36,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Literal, Optional, Set, Tuple, Union
 
-from fastapi import Body, FastAPI, File, HTTPException, Query, Response, UploadFile
+from fastapi import Body, FastAPI, File, HTTPException, Query, Request, Response, UploadFile
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -142,6 +143,28 @@ _CANCELLED_HANDOFFS_LOCK = threading.Lock()
 
 class DownloadCancelledError(Exception):
 	"""Raised when a download is stopped by a user cancel request."""
+
+
+class DuplicateDownloadError(Exception):
+	"""Raised when an ingest matches an existing local download."""
+
+	def __init__(
+		self,
+		download_id: int,
+		*,
+		existing_name: Optional[str] = None,
+		existing_version: Optional[str] = None,
+		existing_path: Optional[str] = None,
+		candidate_name: Optional[str] = None,
+		candidate_version: Optional[str] = None,
+	) -> None:
+		super().__init__(f"duplicate download detected (id={download_id})")
+		self.download_id = download_id
+		self.existing_name = existing_name
+		self.existing_version = existing_version
+		self.existing_path = existing_path
+		self.candidate_name = candidate_name
+		self.candidate_version = candidate_version
 
 
 verify_required_dns_hosts()
@@ -514,6 +537,78 @@ app.add_middleware(
 	allow_methods=["*"],
 	allow_headers=["*"],
 )
+
+
+# =============================================================================
+# Error handling
+# =============================================================================
+# Only CORSMiddleware was registered here; there was no exception handler at all.
+# Any unhandled exception became FastAPI's default 500 with an opaque
+# "Internal Server Error" body and nothing tying the user's toast to a log line.
+# There were also 18+ hand-rolled `raise HTTPException(status_code=500,
+# detail=str(e))` sites leaking raw exception text to the UI.
+
+# HTTP 499 (nginx's "client closed request") is the closest match for a
+# user-cancelled download: not a server fault, not a client error the user can
+# fix. The frontend already treats 499 as cancellation.
+HTTP_STATUS_CANCELLED = 499
+
+
+def _new_correlation_id() -> str:
+	return uuid.uuid4().hex[:12]
+
+
+@app.exception_handler(DownloadCancelledError)
+async def _handle_download_cancelled(request: Request, exc: DownloadCancelledError):
+	"""A user cancelling a download is not a server error."""
+	logger.info("[cancelled] %s %s: %s", request.method, request.url.path, exc)
+	return JSONResponse(
+		status_code=HTTP_STATUS_CANCELLED,
+		content={
+			"error": "download_cancelled",
+			"message": str(exc) or "Download cancelled by user",
+			"endpoint": request.url.path,
+		},
+	)
+
+
+@app.exception_handler(DuplicateDownloadError)
+async def _handle_duplicate_download(request: Request, exc: DuplicateDownloadError):
+	"""409 with the structured shape the frontend already understands."""
+	detail = _duplicate_detail_from_error(exc)
+	logger.info(
+		"[duplicate] %s %s: existing_download_id=%s",
+		request.method,
+		request.url.path,
+		exc.download_id,
+	)
+	return JSONResponse(status_code=409, content=detail)
+
+
+@app.exception_handler(Exception)
+async def _handle_unexpected_error(request: Request, exc: Exception):
+	"""Last resort: log the traceback against an ID the user can quote back."""
+	correlation_id = _new_correlation_id()
+	logger.exception(
+		"[unhandled %s] %s %s raised %s: %s",
+		correlation_id,
+		request.method,
+		request.url.path,
+		type(exc).__name__,
+		exc,
+	)
+	return JSONResponse(
+		status_code=500,
+		content={
+			"error": "internal_error",
+			"message": (
+				"An unexpected error occurred. Quote reference "
+				f"{correlation_id} when reporting this."
+			),
+			"correlation_id": correlation_id,
+			"endpoint": request.url.path,
+		},
+	)
 
 try:  # pragma: no cover - optional dependency
 	_HAS_MULTIPART = True
@@ -1569,28 +1664,6 @@ def _author_avatar_url(member_id: Optional[int], profile_url: Optional[str]) -> 
 	return f"https://avatars.nexusmods.com/{resolved}/100"
 
 
-class DuplicateDownloadError(Exception):
-	"""Raised when an ingest matches an existing local download."""
-
-	def __init__(
-		self,
-		download_id: int,
-		*,
-		existing_name: Optional[str] = None,
-		existing_version: Optional[str] = None,
-		existing_path: Optional[str] = None,
-		candidate_name: Optional[str] = None,
-		candidate_version: Optional[str] = None,
-	) -> None:
-		super().__init__(f"duplicate download detected (id={download_id})")
-		self.download_id = download_id
-		self.existing_name = existing_name
-		self.existing_version = existing_version
-		self.existing_path = existing_path
-		self.candidate_name = candidate_name
-		self.candidate_version = candidate_version
-
-
 def _normalize_download_name(value: Optional[str]) -> str:
 	return str(value or "").strip().lower()
 
@@ -2360,8 +2433,6 @@ def toggle_favourite(payload: Dict[str, Any] = Body(...)) -> Dict[str, Any]:
 			cur.execute("INSERT INTO favourites (mod_id) VALUES (?)", (mod_id,))
 			conn.commit()
 			return {"ok": True, "favourited": True}
-	except Exception as e:
-		raise HTTPException(status_code=500, detail=str(e))
 	finally:
 		try:
 			conn.close()
@@ -2376,8 +2447,6 @@ def list_favourites() -> Dict[str, Any]:
 	try:
 		rows = conn.execute("SELECT mod_id FROM favourites ORDER BY created_at DESC").fetchall()
 		return {"ok": True, "mod_ids": [row[0] for row in rows]}
-	except Exception as e:
-		raise HTTPException(status_code=500, detail=str(e))
 	finally:
 		try:
 			conn.close()
@@ -4729,9 +4798,6 @@ def get_custom_images_preview(mod_ids: str = Query(..., description="Comma-separ
 		
 	except HTTPException:
 		raise
-	except Exception as e:
-		logger.error(f"[get_custom_images_preview] Error: {e}")
-		raise HTTPException(status_code=500, detail=str(e))
 	finally:
 		try:
 			conn.close()
@@ -4924,8 +4990,6 @@ def get_mod_files_endpoint(mod_id: int) -> List[Dict[str, Any]]:
 	conn = get_db()
 	try:
 		files = list_mod_files(conn, mod_id)
-	except Exception as e:
-		raise HTTPException(status_code=500, detail=str(e))
 	finally:
 		try:
 			conn.close()
@@ -4949,9 +5013,6 @@ def get_mod_changelogs_endpoint(mod_id: int, response: Response) -> List[Dict[st
 		logger.info(f"[get_mod_changelogs] mod_id={mod_id}, returned {len(logs)} changelogs")
 		if logs:
 			logger.info(f"[get_mod_changelogs] First changelog: version={logs[0].get('version')}, changelog_len={len(logs[0].get('changelog', ''))}")
-	except Exception as e:
-		logger.error(f"[get_mod_changelogs] Error: {e}")
-		raise HTTPException(status_code=500, detail=str(e))
 	finally:
 		try:
 			conn.close()
@@ -5001,9 +5062,6 @@ def get_mod_images(mod_id: int) -> Dict[str, Any]:
 			"nexus_images": nexus_images,
 			"custom_images": custom_images,
 		}
-	except Exception as e:
-		logger.error(f"[get_mod_images] Error: {e}")
-		raise HTTPException(status_code=500, detail=str(e))
 	finally:
 		try:
 			conn.close()
@@ -5117,10 +5175,11 @@ def update_mod_details(mod_id: int, payload: UpdateModDetailsPayload) -> Dict[st
 
 	except HTTPException:
 		raise
-	except Exception as e:
-		logger.error(f"[update_mod_details] Error: {e}")
+	except Exception:
+		# Roll back, then let the global handler log the traceback
+		# against a correlation id.
 		conn.rollback()
-		raise HTTPException(status_code=500, detail=str(e))
+		raise
 	finally:
 		try:
 			conn.close()
@@ -5211,10 +5270,11 @@ def upload_mod_images(mod_id: int, payload: UploadImagePayload) -> Dict[str, Any
 		}
 	except HTTPException:
 		raise
-	except Exception as e:
-		logger.error(f"[upload_mod_images] Error: {e}")
+	except Exception:
+		# Roll back, then let the global handler log the traceback
+		# against a correlation id.
 		conn.rollback()
-		raise HTTPException(status_code=500, detail=str(e))
+		raise
 	finally:
 		try:
 			conn.close()
@@ -5304,10 +5364,11 @@ def upload_mod_images_by_path(mod_id: int, payload: UploadImageByPathPayload) ->
 		}
 	except HTTPException:
 		raise
-	except Exception as e:
-		logger.error(f"[upload_mod_images_by_path] Error: {e}")
+	except Exception:
+		# Roll back, then let the global handler log the traceback
+		# against a correlation id.
 		conn.rollback()
-		raise HTTPException(status_code=500, detail=str(e))
+		raise
 	finally:
 		try:
 			conn.close()
@@ -5336,10 +5397,11 @@ def delete_mod_image(image_id: int) -> Dict[str, Any]:
 		return {"ok": True, "deleted_id": image_id}
 	except HTTPException:
 		raise
-	except Exception as e:
-		logger.error(f"[delete_mod_image] Error: {e}")
+	except Exception:
+		# Roll back, then let the global handler log the traceback
+		# against a correlation id.
 		conn.rollback()
-		raise HTTPException(status_code=500, detail=str(e))
+		raise
 	finally:
 		try:
 			conn.close()
