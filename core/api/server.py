@@ -1713,12 +1713,47 @@ def _find_duplicate_download(
 	candidate_name: str,
 	candidate_version: str,
 	mod_id: Optional[int],
+	file_md5: Optional[str] = None,
 ) -> Optional[Tuple[int, Optional[str], Optional[str], Optional[str]]]:
 	"""Check if a download with the same name + version + mod_id already exists.
-	
+
 	Returns (download_id, name, version, path) if duplicate found AND file exists.
 	Uses exact string matching for name and version (case-insensitive).
+
+	When ``file_md5`` is known it is checked FIRST. Name+version matching cannot
+	catch the same archive re-downloaded under a different filename (Nexus appends
+	"-1", browsers append " (2)", users rename), so those ingested twice. Content
+	hash is the only identity that survives renaming.
 	"""
+	# --- Tier 1: content hash -------------------------------------------------
+	normalized_md5 = (file_md5 or "").strip().lower()
+	if normalized_md5:
+		rows = cur.execute(
+			"""
+			SELECT id, name, version, path
+			FROM local_downloads
+			WHERE file_md5 = ? COLLATE NOCASE
+			""",
+			(normalized_md5,),
+		).fetchall()
+		for existing_id, existing_name, existing_version, existing_path in rows:
+			# Same physical-existence rule as the name tier: a DB row whose file is
+			# gone must not block re-ingestion.
+			if resolve_absolute_download_path(existing_path).exists():
+				logger.info(
+					"[dupe_check] MD5 match: '%s' (%s) already present at '%s'",
+					existing_name,
+					existing_version,
+					existing_path,
+				)
+				return existing_id, existing_name, existing_version, existing_path
+			logger.info(
+				"[dupe_check] MD5 matched '%s' but file is missing at '%s'; permitting re-ingestion.",
+				existing_name,
+				existing_path,
+			)
+
+	# --- Tier 2: name + version (+ mod_id) -----------------------------------
 	# "name = ? COLLATE NOCASE" is sargable against idx_local_downloads_name_nocase.
 	# The previous "LOWER(name) = LOWER(?)" wrapped the column in a function,
 	# which made the predicate non-sargable and forced a full table scan on
@@ -1858,14 +1893,26 @@ def _ingest_resolved_download(
 	path = path.resolve()
 	normalized_path = normalize_download_path(path)
 	
+	# Hash the incoming file up front so duplicate detection can match on content.
+	# Name+version matching cannot recognise the same archive under a different
+	# filename (Nexus "-1" suffixes, browser " (2)", user renames), so those
+	# ingested twice. Hashing is one sequential read -- cheaper than the archive
+	# extraction it lets us skip when the file turns out to be a duplicate.
+	incoming_md5: Optional[str] = None
+	try:
+		if path.exists() and path.is_file():
+			incoming_md5 = compute_file_md5(path)
+	except Exception as exc:
+		logger.debug("[ingest] Could not hash %s for dedup: %s", path.name, exc)
+
 	# 1. EARLY DUPLICATION CHECK (Before expensive extraction)
 	conn = get_db()
 	try:
 		cur = conn.cursor()
-		
-		# A. Check by name + version + mod_id (logical check)
-		duplicate = _find_duplicate_download(cur, name, version, mod_id)
-		
+
+		# A. Check by content hash, then name + version + mod_id (logical check)
+		duplicate = _find_duplicate_download(cur, name, version, mod_id, incoming_md5)
+
 		# B. Check by physical path (physical check)
 		# If the exact same path is already in DB, it's a duplicate.
 		if duplicate is None:
@@ -2016,7 +2063,9 @@ def _ingest_resolved_download(
 				mod_id = norm_res["backendModId"]
 				
 			# Capture MD5 if it was computed (for non-conforming files)
-			file_md5 = norm_res.get("file_md5")
+			# Fall back to the hash computed for dedup above, so the row always
+			# carries one and future ingests can match on content.
+			file_md5 = norm_res.get("file_md5") or incoming_md5
 
 			# If normalization successfully discovered a Mod ID and renamed it, 
 			# we should aggressively sync the metadata right now!
@@ -2028,7 +2077,7 @@ def _ingest_resolved_download(
 			logger.warning(f"[_ingest_resolved_download] normalization failed: {e}")
 			rename_status = "idle"
 			needs_manual = 0
-			file_md5 = None
+			file_md5 = incoming_md5
 
 		cur.execute(
 			"""
