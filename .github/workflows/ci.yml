@@ -1,0 +1,159 @@
+name: CI
+
+on:
+  push:
+    branches-ignore: []
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Fast backend job. Deliberately does NOT build the rust_ue_tools PyO3
+  # extension: tests/backend/conftest.py stubs it, so pure-Python logic is
+  # covered in ~1 minute instead of ~15. The real extension is exercised by
+  # the `desktop` job below.
+  # ---------------------------------------------------------------------------
+  backend:
+    name: Backend (pytest + ruff)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          # Skip pyinstaller/pylocres here: not needed for unit tests and slow to build.
+          grep -viE '^(pyinstaller|pylocres)' requirements.txt > requirements-ci.txt
+          pip install -r requirements-ci.txt -r requirements-dev.txt
+
+      - name: Lint (ruff)
+        run: ruff check core scripts tests
+
+      - name: Test (pytest)
+        run: pytest tests/ -v --tb=short --cov=core --cov-report=term-missing
+
+  frontend:
+    name: Frontend (tsc + vitest + build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test (vitest)
+        run: npm run test
+
+      - name: Build
+        run: npm run build
+
+  # ---------------------------------------------------------------------------
+  # Expensive full-stack build. PR-only so the branch is proven end-to-end
+  # before merge, without paying the cost on every intermediate push.
+  # Mirrors release.yml's build chain minus the release-upload steps.
+  # ---------------------------------------------------------------------------
+  desktop:
+    name: Desktop build (Windows)
+    if: github.event_name == 'pull_request'
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            src-tauri
+            src-tauri/src/rust-ue-tools
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller maturin
+          pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Build PyO3 module
+        shell: pwsh
+        run: |
+          cd src-tauri/src/rust-ue-tools
+          maturin build --release --features pyo3
+          $wheel = Get-ChildItem -Path target/wheels -Filter *.whl | Select-Object -First 1
+          if (-not $wheel) { Write-Error "No wheel produced"; exit 1 }
+          pip install $wheel.FullName --force-reinstall
+          python -c "import rust_ue_tools; print('rust_ue_tools OK')"
+
+      # With the real extension installed, re-run the backend suite so any
+      # test marked `requires_pyo3` actually executes.
+      - name: Test against real PyO3 extension
+        run: pytest tests/ -v --tb=short
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Build backend binary
+        shell: pwsh
+        run: |
+          python -m PyInstaller --noconfirm --clean rivalnxt_backend_merged.spec
+          if (-not (Test-Path dist\rivalnxt_backend.exe)) {
+            Write-Error "Backend executable not found"; exit 1
+          }
+          if (-not (Test-Path src-tauri\sidecars)) {
+            New-Item -ItemType Directory -Path src-tauri\sidecars | Out-Null
+          }
+          Copy-Item dist\rivalnxt_backend.exe `
+            src-tauri\sidecars\rivalnxt_backend-x86_64-pc-windows-msvc.exe -Force
+
+      - name: Build Tauri app (no publish)
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: --verbose
+
+      - name: Upload build logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-build-logs
+          path: |
+            build/*.txt
+            src-tauri/target/release/bundle/**/*.log
+          retention-days: 3
+          if-no-files-found: ignore

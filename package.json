@@ -66,6 +66,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
     "activate-mods": "python -X utf8 -m scripts.activate_mods",
     "deactivate-mods": "python -X utf8 -m scripts.deactivate_mods",
     "py:build": "python -m PyInstaller --noconfirm --clean rivalnxt_backend_merged.spec",

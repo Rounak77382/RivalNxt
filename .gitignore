@@ -171,3 +171,8 @@ graphify-out/
 .agents/
 .codex/
 .cursor/
+
+# Test scaffolding (local only)
+.venv-test/
+.pytest-data/
+requirements-ci.txt
