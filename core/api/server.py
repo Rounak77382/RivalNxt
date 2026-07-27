@@ -387,6 +387,16 @@ _CONFLICT_REBUILD_THREAD: Optional[threading.Thread] = None
 _CONFLICT_REBUILD_RUNS = 0
 
 
+def _conflict_rebuild_clock() -> float:
+	"""Indirection so tests can freeze the debounce clock.
+
+	A coalescing test that depends on five real ingests finishing inside a
+	wall-clock window is flaky by construction: under load the window expires
+	mid-burst and extra rebuilds fire.
+	"""
+	return time.monotonic()
+
+
 def _merge_active_only(current: Optional[bool], incoming: Optional[bool]) -> Optional[bool]:
 	"""Widen the pending scope so no requested snapshot is skipped.
 
@@ -407,7 +417,7 @@ def _conflict_rebuild_worker() -> None:
 
 	while True:
 		with _CONFLICT_REBUILD_LOCK:
-			remaining = _CONFLICT_REBUILD_DEADLINE - time.monotonic()
+			remaining = _CONFLICT_REBUILD_DEADLINE - _conflict_rebuild_clock()
 			if remaining <= 0:
 				active_only = _CONFLICT_REBUILD_ACTIVE_ONLY
 				_CONFLICT_REBUILD_PENDING = False
@@ -442,7 +452,7 @@ def _schedule_conflict_rebuild(*, active_only: Optional[bool], purpose: str) -> 
 	global _CONFLICT_REBUILD_DEADLINE, _CONFLICT_REBUILD_THREAD
 
 	with _CONFLICT_REBUILD_LOCK:
-		_CONFLICT_REBUILD_DEADLINE = time.monotonic() + CONFLICT_REBUILD_DEBOUNCE_SECONDS
+		_CONFLICT_REBUILD_DEADLINE = _conflict_rebuild_clock() + CONFLICT_REBUILD_DEBOUNCE_SECONDS
 		if _CONFLICT_REBUILD_PENDING:
 			_CONFLICT_REBUILD_ACTIVE_ONLY = _merge_active_only(
 				_CONFLICT_REBUILD_ACTIVE_ONLY, active_only
@@ -1873,6 +1883,107 @@ def _find_duplicate_download(
 
 
 _PAK_ENTRY_SUFFIXES = (".pak", ".utoc", ".ucas", ".sig")
+
+
+def _index_mods_dir(mods_dir: Path) -> Dict[str, List[Path]]:
+	"""Index every file under ``mods_dir`` by lowercased basename.
+
+	set_active_paks called ``mods_dir.rglob(name)`` from inside three separate
+	loops, so activating a mod with N paks walked the entire ~mods tree N times
+	(O(names x tree size)). One walk up front makes it O(tree size + names).
+
+	Keyed lowercase because every comparison in set_active_paks is already
+	case-insensitive, and the app's target platform (Windows) resolves filenames
+	case-insensitively anyway -- so this matches what rglob did there.
+	"""
+	index: Dict[str, List[Path]] = {}
+	try:
+		if not mods_dir.is_dir():
+			return index
+		for found in mods_dir.rglob("*"):
+			try:
+				if not found.is_file():
+					continue
+			except OSError:
+				continue
+			index.setdefault(found.name.lower(), []).append(found)
+	except Exception as exc:
+		logger.warning("[set_active_paks] Could not index %s: %s", mods_dir, exc)
+	return index
+
+
+def _index_lookup(index: Dict[str, List[Path]], filename: str) -> List[Path]:
+	"""Paths in the index matching ``filename``, still present on disk.
+
+	The existence re-check matters: the index is built once, but the prune passes
+	delete files, so a later pass must not act on an already-removed entry. The
+	original code re-globbed each time and relied on the same ``is_file()``
+	guards this preserves.
+	"""
+	base = os.path.basename(filename or "").lower()
+	if not base:
+		return []
+	out: List[Path] = []
+	for candidate in index.get(base, ()):
+		try:
+			if candidate.is_file():
+				out.append(candidate)
+		except OSError:
+			continue
+	return out
+
+
+def _resolve_desired_paks(
+	desired_raw: List[str],
+	contents: List[Any],
+	valid_basenames: Dict[str, str],
+	alt_ext: Callable[[str], List[str]],
+) -> Tuple[List[str], Dict[str, str], Optional[str]]:
+	"""Map requested pak names onto entries in the download's ``contents``.
+
+	Pure: no filesystem, no database, no HTTP. Extracted from set_active_paks so
+	the matching rules (exact relative path, then basename, then alternate
+	extension) can be tested directly.
+
+	Returns ``(desired_relative_paths, rel_path_to_basename, unresolved_name)``.
+	``unresolved_name`` is the first request that matched nothing; the caller
+	turns it into a 400, since it must close the DB connection before raising.
+	"""
+	valid_lower = {k.lower() for k in valid_basenames}
+	desired: List[str] = []
+	rel_to_basename: Dict[str, str] = {}
+
+	for d in desired_raw:
+		base_d = os.path.basename(d)
+		dl = base_d.lower()
+		# Exact relative-path match first (the frontend may send a full path).
+		exact = next(
+			(c for c in contents if isinstance(c, str) and c.lower() == d.lower()), None
+		)
+		if exact:
+			desired.append(exact)
+			rel_to_basename[exact] = os.path.basename(exact)
+			continue
+		# Basename match against contents.
+		if dl in valid_lower:
+			rel_path = valid_basenames[dl]
+			desired.append(rel_path)
+			rel_to_basename[rel_path] = os.path.basename(rel_path)
+			continue
+		# Alternate extension (.pak <-> .utoc bundle members).
+		found_rel = None
+		for alt in alt_ext(base_d):
+			al = alt.lower()
+			if al in valid_lower:
+				found_rel = valid_basenames[al]
+				break
+		if found_rel:
+			desired.append(found_rel)
+			rel_to_basename[found_rel] = os.path.basename(found_rel)
+			continue
+		return desired, rel_to_basename, d
+
+	return desired, rel_to_basename, None
 
 
 def _merge_pak_bundle(
@@ -6778,7 +6889,7 @@ def set_active_paks(download_id: int, payload: Dict[str, Any] = Body(...)) -> Di
 	# Validate desired names against contents, case-insensitive, with .pak/.utoc stem fallback
 	# Build lookup: basename.lower() → full relative path from contents
 	valid_basenames = {os.path.basename(c).lower(): c for c in contents if isinstance(c, str) and c}
-	valid_lower = set(valid_basenames.keys())
+	# (valid_lower is derived inside _resolve_desired_paks now.)
 	def _alt_ext(name: str) -> List[str]:
 		try:
 			stem, ext = os.path.splitext(name)
@@ -6789,41 +6900,19 @@ def set_active_paks(download_id: int, payload: Dict[str, Any] = Body(...)) -> Di
 			return [name]
 		except Exception:
 			return [name]
-	# Resolve each incoming path to the matching contents relative path
-	desired: List[str] = []  # will hold relative paths matching contents
-	rel_to_basename: Dict[str, str] = {}  # relative path → basename (for file ops)
-	for d in desired_raw:
-		base_d = os.path.basename(d)
-		dl = base_d.lower()
-		# Try exact relative path match first (frontend may send full relative path)
-		exact = next((c for c in contents if isinstance(c, str) and c.lower() == d.lower()), None)
-		if exact:
-			desired.append(exact)
-			rel_to_basename[exact] = os.path.basename(exact)
-			continue
-		# Try basename match against contents
-		if dl in valid_lower:
-			rel_path = valid_basenames[dl]
-			desired.append(rel_path)
-			rel_to_basename[rel_path] = os.path.basename(rel_path)
-			continue
-		# Try alt extension
-		alts = _alt_ext(base_d)
-		found_rel = None
-		for a in alts:
-			al = a.lower()
-			if al in valid_lower:
-				found_rel = valid_basenames[al]
-				break
-		if found_rel:
-			desired.append(found_rel)
-			rel_to_basename[found_rel] = os.path.basename(found_rel)
-			continue
+	# Resolve each incoming path to the matching contents relative path.
+	# Extracted to _resolve_desired_paks (pure: no filesystem, no DB) so the
+	# matching rules -- exact relative path, then basename, then alternate
+	# extension -- can be tested directly.
+	desired, rel_to_basename, unresolved = _resolve_desired_paks(
+		desired_raw, contents, valid_basenames, _alt_ext
+	)
+	if unresolved is not None:
 		try:
 			conn.close()
 		except Exception:
 			pass
-		raise HTTPException(status_code=400, detail=f"Requested pak '{d}' is not part of this download's contents")
+		raise HTTPException(status_code=400, detail=f"Requested pak '{unresolved}' is not part of this download's contents")
 	# desired now contains relative paths from contents
 	# Build basename list for file operations
 	desired_basenames: List[str] = [os.path.basename(d) for d in desired]
@@ -6860,6 +6949,10 @@ def set_active_paks(download_id: int, payload: Dict[str, Any] = Body(...)) -> Di
 
 	# Ensure ~mods exists
 	mods_dir = _mods_folder_from_env()
+	# ONE walk of the ~mods tree, reused by every lookup below. Previously
+	# mods_dir.rglob(name) was called from inside three separate loops, so
+	# activating a mod with N paks walked the whole tree N times.
+	mods_index = _index_mods_dir(mods_dir)
 	_ensure_dir(mods_dir)
 
 	# Determine target subfolder by inferred character tag from DB tags/heuristics
@@ -6911,7 +7004,7 @@ def set_active_paks(download_id: int, payload: Dict[str, Any] = Body(...)) -> Di
 			seen_lower.add(lower)
 			try:
 				candidate_path: Optional[Path] = None
-				for found in mods_dir.rglob(base):
+				for found in _index_lookup(mods_index, base):
 					if not found.is_file():
 						continue
 					parent = found.parent
@@ -7102,7 +7195,7 @@ def set_active_paks(download_id: int, payload: Dict[str, Any] = Body(...)) -> Di
 		# 2. Recursive search by basename in all subfolders
 		if not deleted:
 			try:
-				for found in mods_dir.rglob(base):
+				for found in _index_lookup(mods_index, base):
 					if found.is_file():
 						try:
 							found.unlink()
@@ -7129,7 +7222,7 @@ def set_active_paks(download_id: int, payload: Dict[str, Any] = Body(...)) -> Di
 		for ext in (".pak", ".utoc", ".ucas"):
 			target_name = f"{stem}{ext}"
 			try:
-				for found in mods_dir.rglob(target_name):
+				for found in _index_lookup(mods_index, target_name):
 					if found.is_file():
 						try:
 							found.unlink()
