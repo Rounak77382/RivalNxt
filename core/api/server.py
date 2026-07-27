@@ -21,7 +21,6 @@ import time
 import traceback
 import urllib.error
 import urllib.parse
-import urllib.parse
 import urllib.request
 import uuid
 import ssl
@@ -65,10 +64,8 @@ from core.db import (
 	bulk_upsert_pak_assets,
 	delete_local_downloads,
 	get_changelogs,
-	get_latest_file,
 	get_file_by_id,
 	get_latest_file_by_version,
-	get_mod,
 	init_schema,
 	list_mod_files,
 	make_version_key,
@@ -88,14 +85,14 @@ from core.db import (
 )
 from core.ingestion.scan_active_mods import main as scan_active_main
 from core.nexus import DEFAULT_GAME, collect_all_for_mod, get_api_key, get_mod_file_download_link
-from core.nexus.nxm import NXMParseError, NXMRequest, parse_nxm_uri
+from core.nexus.nxm import NXMParseError, parse_nxm_uri
 from core.utils.archive import build_entry_lookup, extract_archive, extract_member, list_entries, resolve_entry
 from core.utils.download_paths import normalize_download_path, resolve_absolute_download_path
 from core.utils.pak_files import collapse_pak_bundle
 
 from core.utils.mod_filename import parse_mod_filename
 from core.utils.nexus_metadata import derive_changelogs_from_files, extract_description_text
-from core.config.settings import SETTINGS, configure, save_settings, load_settings
+from core.config.settings import SETTINGS, configure, load_settings
 from core.extraction.service import run_extraction_if_needed
 
 from field_prefs import filter_aggregate_payload, load_prefs
@@ -114,8 +111,9 @@ logger = logging.getLogger("modmanager.api")
 
 
 
-# Reload settings from disk on startup (in case of external changes)
-SETTINGS = load_settings()
+# Reload settings from disk on startup (in case of external changes).
+# Intentionally shadows the module-level import above.
+SETTINGS = load_settings()  # noqa: F811
 logger.info("=" * 70)
 logger.info("FastAPI Backend - Database Configuration")
 logger.info("=" * 70)
@@ -518,7 +516,6 @@ app.add_middleware(
 )
 
 try:  # pragma: no cover - optional dependency
-	import multipart  # type: ignore
 	_HAS_MULTIPART = True
 except Exception:  # pragma: no cover - fallback when optional dep missing
 	_HAS_MULTIPART = False
@@ -888,7 +885,7 @@ def _normalize_optional_str(value: Optional[str]) -> Optional[str]:
 
 def _task_delete_outdated_versions() -> int:
 	from core.db.db import get_connection, delete_local_downloads, make_version_key
-	import os, re, shutil
+	import shutil
 	from pathlib import Path
 	
 	conn = get_connection()
@@ -1112,7 +1109,7 @@ def _task_ingest_download_assets() -> int:
 
 def _get_scan_active_args() -> list:
 	"""Build arguments for scan_active_main with game-root from settings."""
-	from core.config.settings import SETTINGS, load_settings
+	from core.config.settings import load_settings
 	
 	# Reload settings to ensure we have the latest saved configuration
 	current_settings = load_settings()
@@ -1121,7 +1118,7 @@ def _get_scan_active_args() -> list:
 	if current_settings.marvel_rivals_root:
 		args.extend(["--game-root", str(current_settings.marvel_rivals_root)])
 	else:
-		print(f"[WARNING] marvel_rivals_root is not configured in settings")
+		print("[WARNING] marvel_rivals_root is not configured in settings")
 		print(f"[WARNING] Current SETTINGS: {current_settings}")
 	
 	return args
@@ -1360,7 +1357,7 @@ def _task_bootstrap_rebuild() -> int:
 				busy, log_frames, checkpointed = result if result else (0, 0, 0)
 			
 			if busy == 0:
-				print(f"✓ WAL checkpoint completed successfully")
+				print("✓ WAL checkpoint completed successfully")
 				print(f"  - Checkpointed {checkpointed} frames from WAL")
 				print(f"  - Total WAL frames: {log_frames}")
 				
@@ -1940,7 +1937,6 @@ def _ingest_resolved_download(
 			pass
 
 
-	repo_root = _ROOT
 	current = _get_current_settings()
 	aes_key = current.aes_key_hex or None
 
@@ -2967,7 +2963,12 @@ def add_mod(payload: Dict[str, Any] = Body(...)) -> Dict[str, Any]:
 		provided_version=payload.get("version"),
 	)
 
-	created_at_hint = _extract_created_at_hint(payload)
+	# NOTE: computed but deliberately NOT passed below -- the ingest receives
+	# datetime.now() instead, so created_at records install time rather than the
+	# file's Nexus upload time. _extract_created_at_hint/_CREATED_AT_KEYS exist to
+	# supply the latter, so one of the two is wrong. Behaviour left unchanged:
+	# switching it would alter the sort order of every newly ingested mod.
+	created_at_hint = _extract_created_at_hint(payload)  # noqa: F841
 	try:
 		return _ingest_resolved_download(
 			path,
@@ -3496,13 +3497,13 @@ def ingest_nxm_handoff(handoff_id: str, payload: Optional[Dict[str, Any]] = Body
 		logger.warning(f"[nxm_handoff] Skipping handoff {handoff_id}: {skip_reason}")
 		raise HTTPException(status_code=429, detail=f"Too many failed attempts. {skip_reason}")
 	
-	print(f"[INGEST] Fetching handoff record...", file=sys.stderr)
+	print("[INGEST] Fetching handoff record...", file=sys.stderr)
 	record = get_handoff_or_404(handoff_id)
 	handoff_identifier = record.get("id") if isinstance(record.get("id"), str) else None
 	print(f"[INGEST] Handoff record fetched: {handoff_identifier}", file=sys.stderr)
 	
 	# Early API key validation to prevent wasted processing
-	print(f"[INGEST] Checking API key...", file=sys.stderr)
+	print("[INGEST] Checking API key...", file=sys.stderr)
 	api_key = get_api_key()
 	if not api_key:
 		error_msg = "NEXUS_API_KEY not configured. Please add your Nexus Mods API key in Settings."
@@ -3644,7 +3645,8 @@ def ingest_nxm_handoff(handoff_id: str, payload: Optional[Dict[str, Any]] = Body
 			provided_version=version,
 		)
 		
-		file_created_at_hint = _extract_created_at_hint(selected_entry)
+		# Same discrepancy as add_mod above: computed, then now() is passed.
+		file_created_at_hint = _extract_created_at_hint(selected_entry)  # noqa: F841
 		ingest_result = _ingest_resolved_download(
 			download_path,
 			name=final_name,
@@ -5606,11 +5608,9 @@ def downloads_summary() -> Dict[str, Any]:
 		except Exception:
 			pass
 
-	downloads_root = _downloads_root_from_env()
 	total_bytes = 0
 	missing: List[str] = []
 	latest_mtime: Optional[float] = None
-	any_existing = False
 	count = 0
 
 	for _id, raw_path, created_at in rows:
@@ -5624,7 +5624,6 @@ def downloads_summary() -> Dict[str, Any]:
 
 		try:
 			if p.exists():
-				any_existing = True
 				# If directory, sum files recursively; if file, take stat
 				if p.is_dir():
 					for root, _dirs, files in os.walk(p):
@@ -7757,7 +7756,6 @@ def import_collection(body: Dict[str, Any]) -> Dict[str, Any]:
 @app.post("/api/collections/import-raw")
 def import_collection_raw(body: Dict[str, Any]) -> Dict[str, Any]:
 	"""Import a collection from a raw GraphQL response payload (for seeding from JSON)."""
-	import json as _json
 	revision = body.get("revision")
 	slug = body.get("slug")
 	if not revision or not slug:
@@ -7935,12 +7933,10 @@ def assign_mod_id(payload: Dict[str, Any] = Body(...)) -> Dict[str, Any]:
 				ext=path.suffix.lstrip('.')
 			)
 			canonical_path = path.parent / canonical_name
-			renamed = False
 			if path.name != canonical_name:
 				try:
 					if not canonical_path.exists():
 						os.rename(path, canonical_path)
-						renamed = True
 					else:
 						canonical_path = path
 				except Exception:

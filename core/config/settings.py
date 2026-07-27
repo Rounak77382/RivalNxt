@@ -236,7 +236,7 @@ def configure(**overrides: object) -> AppSettings:
 		Path(target).mkdir(parents=True, exist_ok=True)
 	except Exception:
 		pass
-	print(f"[Settings] Updated SETTINGS object:")
+	print("[Settings] Updated SETTINGS object:")
 	print(f"[Settings]   marvel_rivals_root: {SETTINGS.marvel_rivals_root}")
 	print(f"[Settings]   marvel_rivals_local_downloads_root: {SETTINGS.marvel_rivals_local_downloads_root}")
 	save_settings(SETTINGS)

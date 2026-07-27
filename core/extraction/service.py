@@ -8,20 +8,13 @@ Provides functions to:
 """
 
 import sys
-import json
-import re
 from pathlib import Path
-from collections import defaultdict
 from typing import Dict, Set, Any
 
 # Add project root to path if needed
 if '.' not in sys.path:
     sys.path.insert(0, '.')
 
-from core.config.settings import SETTINGS
-from rust_ue_tools import PyUnpacker
-from pylocres import LocresFile
-from core.assets.zip_to_asset_paths import extract_pak_asset_map_from_folder
 from core.db.db import (
     get_connection,
     has_character_data,
@@ -30,7 +23,7 @@ from core.db.db import (
     insert_skins,
     get_all_characters
 )
-from typing import Dict, Set, Any, List, Optional
+from typing import List
 
 
 def extract_character_and_skin_data() -> Dict[str, Any]:
@@ -230,6 +223,6 @@ def run_extraction_if_needed() -> bool:
     finally:
         try:
             conn.close()
-        except:
+        except Exception:
             pass
 

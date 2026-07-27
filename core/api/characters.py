@@ -2,7 +2,7 @@
 API endpoints for Marvel Rivals character and skin data.
 """
 
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
@@ -170,7 +170,7 @@ async def rebuild_character_data():
             
             return RebuildResponse(
                 success=True,
-                message=f"Successfully rebuilt character data",
+                message="Successfully rebuilt character data",
                 characters_count=char_count,
                 skins_count=skin_count
             )
@@ -228,7 +228,7 @@ async def get_all_custom_tags():
                             for part in t.split(","):
                                 if part.strip():
                                     all_tags.add(part.strip())
-            except:
+            except Exception:
                 pass
 
         # 4. Official characters

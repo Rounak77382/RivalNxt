@@ -13,7 +13,6 @@ Can be used as:
 """
 
 import sys
-import json
 import re
 from pathlib import Path
 from collections import defaultdict
@@ -166,11 +165,18 @@ def extract_skin_ids_from_pak(paks_dir):
         if '9999999' in pak_name or '9999998' in pak_name:
              continue
         # Check if this PAK contains character data (Base, Patch, or Character specific)
-        is_relevant = False
+        #
+        # is_relevant is vestigial -- every surviving pak is appended
+        # unconditionally below. The elif CHAIN, however, is load-bearing: a name
+        # matching both 'patch' and 'pakchunklocres' takes the second branch and is
+        # therefore NOT skipped. Collapsing this to a bare
+        # `if "pakchunklocres" in pak_name: continue` would change which paks are
+        # scanned, so the structure stays and the dead flag is silenced instead.
+        is_relevant = False  # noqa: F841
         if "marvel" in pak_name and "character" in pak_name: # e.g. pakchunkMarvel-Characters-...
-            is_relevant = True
+            is_relevant = True  # noqa: F841
         elif any(keyword in pak_name for keyword in ['patch', 'dlc', 'season', '_p']):
-            is_relevant = True
+            is_relevant = True  # noqa: F841
         elif "pakchunklocres" in pak_name:
             continue # Skip locres paks for asset scanning
         

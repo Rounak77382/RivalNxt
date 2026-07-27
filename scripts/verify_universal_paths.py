@@ -82,7 +82,7 @@ def test_tauri_mode() -> None:
     # Test directory creation
     try:
         updated_settings.data_dir.mkdir(parents=True, exist_ok=True)
-        print(f"Directory Creation: ✓ Success")
+        print("Directory Creation: ✓ Success")
         print(f"Directory Writable: {os.access(updated_settings.data_dir, os.W_OK)}")
     except Exception as e:
         print(f"Directory Creation: ✗ Failed - {e}")
@@ -106,12 +106,12 @@ def test_cli_override() -> None:
     # Test directory creation
     try:
         updated_settings.data_dir.mkdir(parents=True, exist_ok=True)
-        print(f"Directory Creation: ✓ Success")
+        print("Directory Creation: ✓ Success")
         
         # Cleanup test directory
         if custom_dir.exists() and not any(custom_dir.iterdir()):
             custom_dir.rmdir()
-            print(f"Cleanup: ✓ Removed empty test directory")
+            print("Cleanup: ✓ Removed empty test directory")
     except Exception as e:
         print(f"Directory Creation: ✗ Failed - {e}")
 

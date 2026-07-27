@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import os
 import shutil
-import tempfile
 import unicodedata
 import zipfile
 from pathlib import Path
@@ -108,7 +107,7 @@ def list_entries(archive_path: str) -> List[str]:
         try:
             with rarfile.RarFile(archive_path, "r") as rf:
                 return [f.filename for f in rf.infolist() if not f.is_dir()]
-        except Exception as e:
+        except Exception:
             # Reconfigure rarfile and retry
             _configure_rarfile()
             try:
@@ -152,7 +151,7 @@ def extract_archive(archive_path: str, dest_dir: str) -> List[str]:
                     if not f.is_dir():
                         extracted.append(f.filename)
             return extracted
-        except Exception as e:
+        except Exception:
             # Reconfigure rarfile and retry
             _configure_rarfile()
             try:
@@ -319,7 +318,7 @@ def extract_member(archive_path: str, member_path: str, dest_path: str) -> None:
                 # Clean up empty intermediate directories created by archive extraction
                 _cleanup_empty_parents(src_path.parent, dstdir)
                 return
-            except Exception as e:
+            except Exception:
                 # Reconfigure rarfile and retry
                 _configure_rarfile()
                 try:

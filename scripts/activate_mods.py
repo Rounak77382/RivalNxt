@@ -28,7 +28,8 @@ def _load_env_mods_folder() -> Path:
                     if not line or line.startswith("#") or "=" not in line:
                         continue
                     k, v = line.split("=", 1)
-                    k = k.strip(); v = v.strip().strip('"').strip("'")
+                    k = k.strip()
+                    v = v.strip().strip('"').strip("'")
                     if k and k not in os.environ:
                         os.environ[k] = v
                 root = os.environ.get("MARVEL_RIVALS_ROOT")

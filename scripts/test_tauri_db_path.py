@@ -26,7 +26,7 @@ def test_tauri_environment():
         / "com.rivalnxt.modmanager"
     )
     
-    print(f"\n1. Simulating Tauri environment:")
+    print("\n1. Simulating Tauri environment:")
     print(f"   Setting MODMANAGER_DATA_DIR = {tauri_data_dir}")
     
     os.environ["MODMANAGER_DATA_DIR"] = str(tauri_data_dir)
@@ -34,21 +34,21 @@ def test_tauri_environment():
     # Now import and configure settings (this is what run_server.py does)
     from core.config.settings import SETTINGS, configure
     
-    print(f"\n2. Before configure():")
+    print("\n2. Before configure():")
     print(f"   SETTINGS.data_dir = {SETTINGS.data_dir}")
     
     # Configure with Tauri path
     data_dir_override = os.environ.get("MODMANAGER_DATA_DIR")
     configure(data_dir=data_dir_override)
     
-    print(f"\n3. After configure():")
+    print("\n3. After configure():")
     print(f"   SETTINGS.data_dir = {SETTINGS.data_dir}")
     
     # Check if paths match
     expected_path = tauri_data_dir
     actual_path = SETTINGS.data_dir
     
-    print(f"\n4. Path verification:")
+    print("\n4. Path verification:")
     print(f"   Expected: {expected_path}")
     print(f"   Actual:   {actual_path}")
     print(f"   Match: {'✓ YES' if str(expected_path) == str(actual_path) else '✗ NO'}")
@@ -57,21 +57,21 @@ def test_tauri_environment():
     from core.db.db import _data_root, DB_FILENAME
     
     db_path = _data_root() / DB_FILENAME
-    print(f"\n5. Database path:")
+    print("\n5. Database path:")
     print(f"   {db_path}")
     print(f"   Exists: {db_path.exists()}")
     
     # Test directory creation
-    print(f"\n6. Directory creation test:")
+    print("\n6. Directory creation test:")
     try:
         SETTINGS.data_dir.mkdir(parents=True, exist_ok=True)
-        print(f"   ✓ SUCCESS - Directory created/verified")
+        print("   ✓ SUCCESS - Directory created/verified")
         print(f"   Writable: {os.access(SETTINGS.data_dir, os.W_OK)}")
     except Exception as e:
         print(f"   ✗ FAILED - {e}")
     
     # Test schema initialization
-    print(f"\n7. Database schema test:")
+    print("\n7. Database schema test:")
     try:
         from core.db.db import get_connection, init_schema
         conn = get_connection()
@@ -84,7 +84,7 @@ def test_tauri_environment():
         
         conn.close()
         
-        print(f"   ✓ Schema initialized successfully")
+        print("   ✓ Schema initialized successfully")
         print(f"   Tables created: {len(tables)}")
         
         key_tables = ["local_downloads", "mods", "pak_assets", "asset_conflicts"]
@@ -93,7 +93,7 @@ def test_tauri_environment():
         if missing:
             print(f"   ⚠ Missing tables: {missing}")
         else:
-            print(f"   ✓ All key tables present")
+            print("   ✓ All key tables present")
             
     except Exception as e:
         print(f"   ✗ Schema initialization failed: {e}")

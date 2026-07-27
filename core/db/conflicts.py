@@ -1,6 +1,6 @@
 from __future__ import annotations
 import sqlite3
-from typing import Iterable, List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional
 
 __all__ = [
     "list_asset_conflicts",

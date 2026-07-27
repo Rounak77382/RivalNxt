@@ -8,7 +8,6 @@ stdout for easy verification.
 """
 from __future__ import annotations
 
-import os
 import socket
 import sys
 from pathlib import Path

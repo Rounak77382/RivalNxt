@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 import sqlite3
 
 def _row_to_dict(cur: sqlite3.Cursor, row: Tuple[Any, ...]) -> Dict[str, Any]:

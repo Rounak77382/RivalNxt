@@ -1,0 +1,45 @@
+# Ruff configuration for RivalNxt.
+#
+# Scope is deliberately narrow: correctness rules (pyflakes + the pycodestyle
+# error subset), not stylistic modernisation. Running ruff's broad 0.16 defaults
+# over this codebase reports ~1770 findings, almost all pre-existing patterns
+# (PEP 585 annotations, blind excepts, try/except/pass). Turning those into CI
+# failures would either block every PR or force a sweeping unrelated refactor.
+#
+# Widen this list deliberately, ideally one rule family per PR with the fixes in
+# the same change.
+
+line-length = 120
+target-version = "py311"
+
+exclude = [
+    ".venv",
+    ".venv-test",
+    "node_modules",
+    "build",
+    "dist",
+    "src-tauri",
+    "graphify-out",
+]
+
+[lint]
+select = [
+    "E7",   # statement-level errors (bare except, comparisons to None/True)
+    "E9",   # syntax / IO errors
+    "F",    # pyflakes: undefined names, unused imports, unused variables
+]
+# NOT selected: E401/E402 (import placement). This codebase uses function-local
+# imports deliberately and pervasively -- to break import cycles between
+# core.api.server and core.db, and to keep optional native dependencies
+# (rust_ue_tools, pylocres) off module-import paths. 88 findings, all intentional.
+
+[lint.per-file-ignores]
+# Package inits re-export names on purpose.
+"__init__.py" = ["F401", "F403", "F405"]
+# core/db/__init__.py and core/__init__.py use star re-exports.
+"core/db/__init__.py" = ["F401", "F403", "F405"]
+# One-off diagnostic/demo scripts, not shipped logic.
+"scripts/demo_*.py" = ["F401", "F841"]
+"scripts/test_*.py" = ["F401", "F841"]
+"scripts/inspect_*.py" = ["F401", "F841"]
+"scripts/verify_*.py" = ["F401", "F841"]

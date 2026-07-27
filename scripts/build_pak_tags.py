@@ -7,15 +7,16 @@ from typing import Dict, List, Tuple
 from pathlib import Path
 import sys
 
-# Reuse tagger from scripts.tag_assets (support both module and script execution)
-try:
-    from . import tag_assets as tagger  # type: ignore
-except Exception:
-    # When executed as a plain script, add project root to sys.path and import via absolute package name
-    ROOT = Path(__file__).resolve().parents[1]
-    if str(ROOT) not in sys.path:
-        sys.path.insert(0, str(ROOT))
-    from scripts import tag_assets as tagger  # type: ignore
+# Support both `python -m scripts.build_x` and `python scripts/build_x.py` by
+# putting the project root on sys.path before importing core.*.
+#
+# NOTE: this was previously a `try: from . import tag_assets` / `except: sys.path
+# bootstrap` pair. Once the tagger import became unnecessary, ruff --fix reduced
+# the try body to `pass`, which never raises -- silently disabling the bootstrap
+# and breaking plain-script execution. Made unconditional so it cannot rot.
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from core.db.db import get_connection, init_schema, run_migrations
 

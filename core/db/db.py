@@ -1313,7 +1313,7 @@ def delete_local_downloads(
                     # Update database to mark as inactive
                     update_local_download_active_paks(conn, download_id, [])
                     print(f"[delete_local_downloads] Deactivated download_id={download_id}, removed {len(removed_files)} files from ~mods")
-            except Exception as e:
+            except Exception:
                 # If we can't parse the active paks, try to deactivate anyway
                 try:
                     update_local_download_active_paks(conn, download_id, [])
@@ -1961,11 +1961,9 @@ def rebuild_conflicts(conn: sqlite3.Connection, *, active_only: bool | None = No
     # half-rebuilt (or empty) conflicts table. BEGIN IMMEDIATE takes the write
     # lock up front rather than upgrading from a read lock mid-transaction, which
     # avoids a busy/deadlock window under concurrency.
-    started_txn = False
     if not conn.in_transaction:
         try:
             cur.execute("BEGIN IMMEDIATE;")
-            started_txn = True
         except sqlite3.OperationalError:
             # Another writer holds the lock, or a transaction is already open;
             # fall back to the implicit transaction.

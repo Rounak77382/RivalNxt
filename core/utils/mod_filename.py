@@ -22,7 +22,6 @@ def parse_mod_filename(filename: str) -> Tuple[str, Optional[int], str]:
         
     p = Path(filename)
     base = p.stem
-    ext = p.suffix
     
     # 1. Check for official Nexus naming convention (dash-separated)
     # Pattern: <Name>-<ModID>-<Version>-<Timestamp>[optional suffix]
@@ -104,10 +103,8 @@ def parse_mod_filename(filename: str) -> Tuple[str, Optional[int], str]:
         version_match = re.search(r"(\d+\.\d+(?:\.\d+)*)", base)
 
     version = ""
-    name_for_id_search = base
     if version_match:
         version = version_match.group(1)
-        name_for_id_search = base[:version_match.start()].strip("-_ ")
 
     # For non-official files, we are much stricter about what looks like a Mod ID.
     # We only take it if it's explicitly labeled or if it's a large number 

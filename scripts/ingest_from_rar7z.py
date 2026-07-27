@@ -6,7 +6,7 @@ import shutil
 import sys
 import tempfile
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Optional
 
 # Ensure project root on sys.path for direct execution
 _ROOT = Path(__file__).resolve().parents[1]

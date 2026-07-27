@@ -1,8 +1,6 @@
 # PyO3-based Rust UE Tools integration (PyO3 is now mandatory)
 from __future__ import annotations
-import os
 import tempfile
-import shutil
 from pathlib import Path
 from typing import List, Optional, Dict
 
@@ -20,7 +18,10 @@ try:
             break
     
     # Try PyO3 import
-    from rust_ue_tools import PyUnpacker, PyAssetPath
+    # PyAssetPath is imported to probe that the extension exports the full
+    # expected surface, not just PyUnpacker; the ImportError below is the
+    # availability signal.
+    from rust_ue_tools import PyUnpacker, PyAssetPath  # noqa: F401
     
     _unpacker = PyUnpacker()
     RUST_LIBRARY_AVAILABLE = True
@@ -141,7 +142,7 @@ def extract_pak_asset_map_from_folder(folder_path: str, repak_bin: Optional[str]
         proc.join(timeout=180)  # 3 minute timeout
 
         if proc.is_alive():
-            print(f"[extract_pak_asset_map] Worker timed out after 180s — killing")
+            print("[extract_pak_asset_map] Worker timed out after 180s — killing")
             proc.kill()
             proc.join(5)
             return {}

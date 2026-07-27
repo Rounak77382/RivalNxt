@@ -100,7 +100,7 @@ def test_build_download_row():
         pak_file.write_text("dummy")
         
         row = build_download_row(pak_file, relative_to=tmp_path)
-        print(f"\n1. Single .pak file")
+        print("\n1. Single .pak file")
         print(f"   Name: {row['name']}")
         print(f"   Mod ID: {row['modID']}")
         print(f"   Version: {row['version']}")
@@ -116,7 +116,7 @@ def test_build_download_row():
         (folder / "part2.pak").write_text("dummy")
         
         row = build_download_row(folder, relative_to=tmp_path)
-        print(f"\n2. Folder with .pak files")
+        print("\n2. Folder with .pak files")
         print(f"   Name: {row['name']}")
         print(f"   Mod ID: {row['modID']}")
         print(f"   Version: {row['version']}")
