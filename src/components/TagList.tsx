@@ -28,7 +28,7 @@ export function TagList({ tags, className, maxVisible = 3 }: TagListProps) {
             variant="secondary"
             className="text-xs whitespace-nowrap"
           >
-            {tag}
+            {tag.toLowerCase()}
           </Badge>
         ))}
         {extra > 0 && (

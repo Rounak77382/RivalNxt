@@ -561,7 +561,7 @@ export function DownloadsSidebar({
                                   }
                                 }}
                               >
-                                <span className="truncate flex-1 text-left text-sm font-semibold">{character}</span>
+                                <span className="truncate flex-1 text-left text-sm font-semibold">{character.toLowerCase()}</span>
                                 {modCount > 0 && (
                                   <Badge variant="secondary" className="shrink-0 text-xs">
                                     {modCount}
@@ -613,7 +613,7 @@ export function DownloadsSidebar({
                                             }
                                           }}
                                         >
-                                          <span className="truncate">{skin}</span>
+                                          <span className="truncate">{skin.toLowerCase()}</span>
                                         </Button>
                                       );
                                     })}
@@ -682,7 +682,7 @@ export function DownloadsSidebar({
                         }`}
                         onClick={() => onCustomTagToggle(tag)}
                       >
-                        <span className="truncate flex-1 text-left">{tag}</span>
+                        <span className="truncate flex-1 text-left">{tag.toLowerCase()}</span>
                         {modCount > 0 && (
                           <Badge variant="secondary" className="shrink-0 text-xs opacity-70">
                             {modCount}

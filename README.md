@@ -508,6 +508,20 @@ git push origin v0.8.0
 # The workflow will automatically build and attach the installer
 ```
 
+## 🏷️ Automatic Tagging System
+
+RivalNxt includes an intelligent, zero-configuration tagging system that automatically parses mod files to discover and associate relevant metadata. 
+
+### How It Works
+
+1. **Asset Path Parsing (`tag_assets.py`)**: When a mod is loaded, the system examines the directory structure and file paths of its assets (e.g., `characters/1029/1029303/materials/`). It uses heuristics and known patterns (like 4-digit character IDs and 7-digit skin IDs) to identify which characters and skins the mod affects.
+2. **Game Data Extraction (`marvel_rivals_ids.py`)**: The `rust-ue-tools` integration unpacks `.locres` localization files directly from the game's `Paks` directory. This script extracts the official in-game names for characters and skins (e.g., matching character ID `1029` to "Magik").
+3. **Database Population (`characters.py`)**: The extracted mappings are stored in the local SQLite database. The original casing (e.g. "Magik") is preserved exactly as it appears in the localization files.
+4. **UI Integration (`DownloadsSidebar.tsx`)**: In the UI, tags are resolved dynamically against the database (`tagLookupMap`). The frontend normalizes case discrepancies (e.g. if a Nexus mod uses "magik" instead of "Magik"), avoiding duplicated filters in the sidebar and properly nesting skins under their parent characters.
+
+### Custom Tags
+Any tags provided by a mod that do not map to known characters or categories are treated as **Custom Tags** (e.g., "required", "optional", or modder-specific tags) and are also merged case-insensitively for a cleaner user interface.
+
 ## ⚙️ Configuration
 
 Configuration is stored at: `%APPDATA%/com.rivalnxt.modmanager/settings.json`

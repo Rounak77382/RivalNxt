@@ -1895,7 +1895,7 @@ export function ModModal({
                                  variant="secondary"
                                  className="text-xs"
                                >
-                                 {tag}
+                                 {tag.toLowerCase()}
                                </Badge>
                              ))}
  
@@ -1906,7 +1906,7 @@ export function ModModal({
                                  variant="secondary"
                                  className="text-xs gap-1 pr-1"
                                >
-                                 {ct.tag}
+                                 {ct.tag.toLowerCase()}
                                  <button
                                    type="button"
                                    onClick={() =>
@@ -1995,7 +1995,7 @@ export function ModModal({
                                             <Plus className="w-3 h-3 shrink-0" />
                                             Create&nbsp;
                                             <span className="font-semibold truncate">
-                                              "{tagSearchValue.trim()}"
+                                              "{tagSearchValue.trim().toLowerCase()}"
                                             </span>
                                           </button>
                                         )}
@@ -2019,7 +2019,7 @@ export function ModModal({
                                                 onClick={() => handleAddCustomTag(suggestion)}
                                                 className="w-full text-left px-3 py-2 text-xs flex items-center justify-between gap-2 hover:bg-accent cursor-pointer transition-colors"
                                               >
-                                                <span className="truncate">{suggestion}</span>
+                                                <span className="truncate">{suggestion.toLowerCase()}</span>
                                               </button>
                                             ))}
                                             {filtered.length > 50 && (

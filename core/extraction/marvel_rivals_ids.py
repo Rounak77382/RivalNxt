@@ -122,7 +122,7 @@ def extract_character_names_from_locres(paks_dir):
             char_id = char_id_match.group(1)
             key_to_find = f'MarvelItemTable_{char_id}_ItemName'
             if key_to_find in entries:
-                value = entries[key_to_find].strip().lower()
+                value = entries[key_to_find].strip()
                 if len(value) < 30:
                     character_names[char_id] = value
         
@@ -133,7 +133,7 @@ def extract_character_names_from_locres(paks_dir):
                 if hero_match:
                     char_id = hero_match.group(1)
                     if char_id not in character_names:
-                        clean_name = value.strip().replace('Lobby NPC - ', '').lower()
+                        clean_name = value.strip().replace('Lobby NPC - ', '')
                         if len(clean_name) < 30:
                             character_names[char_id] = clean_name
         
@@ -302,7 +302,7 @@ def extract_skin_names_from_locres(paks_dir):
                 if match:
                     skin_id = match.group(1)
                     if skin_id not in skin_names:
-                        cleaned = value.strip().lower()
+                        cleaned = value.strip()
                         if not is_internal_name(cleaned):
                             skin_names[skin_id] = cleaned
                         

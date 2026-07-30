@@ -80,6 +80,7 @@ class TagLookupRequest(BaseModel):
 
 class TagInfo(BaseModel):
     type: str  # "character" or "skin"
+    name: str | None = None
     character_id: str | None = None
     parent: str | None = None  # Primary parent (first match)
     parents: List[str] = []    # All possible parents for disambiguation
@@ -103,13 +104,14 @@ async def lookup_tags(request: TagLookupRequest):
             # Check if it's a character name
             cur = conn.cursor()
             char = cur.execute(
-                "SELECT character_id FROM characters WHERE LOWER(name) = ?",
+                "SELECT character_id, name FROM characters WHERE LOWER(name) = ?",
                 (tag_lower,)
             ).fetchone()
             
             if char:
                 result[tag] = TagInfo(
                     type="character",
+                    name=char[1],
                     character_id=char[0],
                     parent=None,
                     parents=[]
@@ -119,7 +121,7 @@ async def lookup_tags(request: TagLookupRequest):
             # Check if it's a skin name - fetch ALL matches to handle ambiguity
             # e.g. "The Life Fantastic" -> ["Mister Fantastic", "Invisible Woman"]
             skins = cur.execute(
-                """SELECT s.character_id, c.name 
+                """SELECT s.character_id, c.name, s.name 
                    FROM skins s 
                    JOIN characters c ON s.character_id = c.character_id 
                    WHERE LOWER(s.name) = ?""",
@@ -135,6 +137,7 @@ async def lookup_tags(request: TagLookupRequest):
                 
                 result[tag] = TagInfo(
                     type="skin",
+                    name=primary_skin[2],
                     character_id=primary_skin[0],
                     parent=primary_skin[1],
                     parents=all_parents

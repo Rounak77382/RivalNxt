@@ -314,8 +314,8 @@ def tag_asset(path: str, entity_map: Dict[str, str]) -> str:
     if cat:
         tags.append(cat)
     
-    # Return comma-separated tags (all lowercase)
-    return ",".join(tags).lower() if tags else ""
+    # Return comma-separated tags
+    return ",".join(tags) if tags else ""
 
 # ---------- CLI ----------
 

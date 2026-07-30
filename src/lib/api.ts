@@ -279,8 +279,9 @@ export type RebuildCharacterDataResponse = {
 // Tag Lookup Types
 export type TagInfo = {
   type: "character" | "skin";
+  name?: string;
   character_id?: string;
-  parent?: string; // Parent character name for skins
+  parent?: string; // Primary parent character name for skins
   parents?: string[]; // All possible parents for disambiguation
 };
 
