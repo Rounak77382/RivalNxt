@@ -44,6 +44,17 @@ const server = (over: Partial<ServerBackupInfo> = {}): ServerBackupInfo => ({
   ...over,
 });
 
+const mockStorage = new Map<string, string>();
+Object.defineProperty(global, 'localStorage', {
+  value: {
+    getItem: (key: string) => mockStorage.get(key) ?? null,
+    setItem: (key: string, value: string) => mockStorage.set(key, value.toString()),
+    removeItem: (key: string) => mockStorage.delete(key),
+    clear: () => mockStorage.clear(),
+  },
+  writable: true
+});
+
 beforeEach(() => {
   localStorage.clear();
 });

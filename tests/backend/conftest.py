@@ -32,7 +32,8 @@ if str(REPO_ROOT) not in sys.path:
 # --------------------------------------------------------------------------
 _TEST_DATA_DIR = REPO_ROOT / ".pytest-data"
 _TEST_DATA_DIR.mkdir(parents=True, exist_ok=True)
-os.environ.setdefault("MOD_MANAGER_DATA_DIR", str(_TEST_DATA_DIR))
+os.environ["MOD_MANAGER_DATA_DIR"] = str(_TEST_DATA_DIR)
+(_TEST_DATA_DIR / "settings.json").write_text("{}")
 
 # --------------------------------------------------------------------------
 # rust_ue_tools stub

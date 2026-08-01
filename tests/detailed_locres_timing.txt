@@ -1,0 +1,132 @@
+================================================================================
+DETAILED LOCRES EXTRACTION PROFILE
+================================================================================
+Generated: 2025-12-11T19:15:20.779759
+
+TOTAL TIME: 97.42s (1.62 minutes)
+
+================================================================================
+DETAILED BREAKDOWN
+================================================================================
+
+Find PAKs (4 found)
+  0.00s (0.0%)
+
+  Unpack pakchunkLocres-Windows.pak
+    0.21s (0.2%)
+
+  Find .locres files (17 found)
+    0.00s (0.0%)
+
+  Filter English files (1 selected)
+    0.00s (0.0%)
+
+    Read locres file 1/1
+      0.15s (0.2%)
+
+    Merge namespace data
+      0.00s (0.0%)
+
+  Cleanup temp files
+    0.02s (0.0%)
+
+  Unpack Patch_-Windows_1.1.2614174_P.pak
+    91.72s (94.2%)
+
+  Find .locres files (17 found)
+    0.01s (0.0%)
+
+  Filter English files (1 selected)
+    0.00s (0.0%)
+
+    Read locres file 1/1
+      0.14s (0.1%)
+
+    Merge namespace data
+      0.01s (0.0%)
+
+  Cleanup temp files
+    0.06s (0.1%)
+
+  Unpack Patch_-Windows_1.1.2650101_P.pak
+    2.04s (2.1%)
+
+  Find .locres files (17 found)
+    0.01s (0.0%)
+
+  Filter English files (1 selected)
+    0.00s (0.0%)
+
+    Read locres file 1/1
+      0.14s (0.1%)
+
+    Merge namespace data
+      0.01s (0.0%)
+
+  Cleanup temp files
+    0.22s (0.2%)
+
+  Unpack Patch_-Windows_1.1.2673388_P.pak
+    2.30s (2.4%)
+
+  Find .locres files (17 found)
+    0.01s (0.0%)
+
+  Filter English files (1 selected)
+    0.00s (0.0%)
+
+    Read locres file 1/1
+      0.15s (0.2%)
+
+    Merge namespace data
+      0.01s (0.0%)
+
+  Cleanup temp files
+    0.19s (0.2%)
+
+Pattern 1: HeroUIAsset (92 matches)
+  0.00s (0.0%)
+
+Pattern 2: UISkinTable (19 matches)
+  0.00s (0.0%)
+
+Pattern 3: MarvelItemTable (688 matches)
+  0.01s (0.0%)
+
+Pattern 4: Color variants (ps prefix) (37 matches)
+  0.00s (0.0%)
+
+================================================================================
+TOP 10 SLOWEST OPERATIONS
+================================================================================
+
+1. Unpack Patch_-Windows_1.1.2614174_P.pak
+   91.72s (94.2%)
+
+2. Unpack Patch_-Windows_1.1.2673388_P.pak
+   2.30s (2.4%)
+
+3. Unpack Patch_-Windows_1.1.2650101_P.pak
+   2.04s (2.1%)
+
+4. Cleanup temp files
+   0.22s (0.2%)
+
+5. Unpack pakchunkLocres-Windows.pak
+   0.21s (0.2%)
+
+6. Cleanup temp files
+   0.19s (0.2%)
+
+7. Read locres file 1/1
+   0.15s (0.2%)
+
+8. Read locres file 1/1
+   0.15s (0.2%)
+
+9. Read locres file 1/1
+   0.14s (0.1%)
+
+10. Read locres file 1/1
+   0.14s (0.1%)
+
