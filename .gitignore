@@ -45,6 +45,11 @@ test_api_output.json
 # Backup artifacts
 backup/
 *.bak
+# ...but core/backup/ is the backup/restore SOURCE MODULE, not an artifact
+# directory. The blanket "backup/" pattern above matches any directory of that
+# name at any depth, which silently excluded it from every commit.
+!core/backup/
+!core/backup/**
 
 # Python caches and artifacts
 __pycache__/
@@ -135,7 +140,11 @@ test-results/
 
 # Documentation and developer-only assets
 docs/
-tests/
+# NOTE: "tests/" used to be ignored here as a developer scratch area. It now
+# holds the pytest suite that .github/workflows/ci.yml runs, so it MUST be
+# tracked -- with the blanket ignore in place a fresh clone contained no tests
+# and the backend CI job silently passed on an empty suite.
+# __pycache__ is already excluded globally (see above).
 
 # Additional paths tracked locally for build hygiene
 tauri_non_build_files.txt
