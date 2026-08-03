@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { SearchHeader } from "./SearchHeader";
@@ -40,8 +40,12 @@ import {
   listNxmHandoffs,
   listDownloads,
 } from "../lib/api";
-import { nextPollDelay } from "../lib/pollingHelpers";
-import { pruneRecentlyCompleted, useGatedInterval } from "../lib/intervalHelpers";
+import { anyHandoffInFlight, nextPollDelay } from "../lib/pollingHelpers";
+import {
+  pruneRecentlyCompleted,
+  useAdaptivePoll,
+  useGatedInterval,
+} from "../lib/intervalHelpers";
 
 const normalizeFilename = (filename: string): string => {
   if (!filename) return "";
@@ -357,15 +361,30 @@ export function CollectionsPage({
     }
   }, [backupsRefreshTrigger]);
 
-  useEffect(() => {
-    fetchCollections(false);
-    const interval = setInterval(() => {
-      fetchCollections(true);
-    }, 4000);
-    return () => clearInterval(interval);
-  }, []);
+  // The fast cadence is only justified while a download is actually running.
+  const hasInFlightDownloads = useCallback(
+    () => anyHandoffInFlight(activeHandoffs),
+    [activeHandoffs],
+  );
 
-  const fetchCollections = async (_silent = false) => {
+  // Collections refresh.
+  //
+  // Was setInterval(…, 4000) with [] deps: every 4s, forever, it ran
+  // listCollections() and then getCollection() for EVERY collection — an N+1
+  // request burst — regardless of whether the window was even visible.
+  //
+  // Now: fast only while a download is in flight, slow otherwise, and fully
+  // paused while the tab is hidden (with an immediate refresh on return).
+  useAdaptivePoll(
+    () => fetchCollections(true),
+    {
+      activeMs: 4000,
+      idleMs: 30_000,
+      isActive: hasInFlightDownloads,
+    },
+  );
+
+  const fetchCollections = useCallback(async (_silent = false) => {
     try {
       const summaries = await listCollections();
       const detailed = await Promise.all(
@@ -393,7 +412,7 @@ export function CollectionsPage({
     } catch (err) {
       console.error("Error fetching collections:", err);
     }
-  };
+  }, []);
 
   const handleDeleteCollection = async (id: number) => {
     if (!confirm("Are you sure you want to remove this collection?")) return;
