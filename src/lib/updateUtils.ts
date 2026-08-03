@@ -1,4 +1,3 @@
-import type { ApiDownload } from "./api";
 
 /**
  * Normalizes a version string for robust comparison (e.g. "v1.2" vs "1.2")

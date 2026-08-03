@@ -41,6 +41,7 @@ import {
   listDownloads,
 } from "../lib/api";
 import { nextPollDelay } from "../lib/pollingHelpers";
+import { pruneRecentlyCompleted, useGatedInterval } from "../lib/intervalHelpers";
 
 const normalizeFilename = (filename: string): string => {
   if (!filename) return "";
@@ -227,29 +228,28 @@ export function CollectionsPage({
     prevHandoffsRef.current = activeHandoffs;
   }, [activeHandoffs]);
 
-  useEffect(() => {
-    // Periodically run clean up
-    const interval = setInterval(() => {
-      const now = Date.now();
-      setRecentlyCompletedFileIds(prevMap => {
-        let changed = false;
-        const nextMap = new Map(prevMap);
-        
-        for (const [fileId, timestamp] of prevMap.entries()) {
-          const isDownloaded = installedModsIndex.sourceFileIdsSet.has(fileId);
-          
-          if (isDownloaded || now - timestamp > 20000) {
-            nextMap.delete(fileId);
-            changed = true;
-          }
-        }
-        
-        return changed ? nextMap : prevMap;
-      });
-    }, 2000);
+  // Prune the "recently completed" flags.
+  //
+  // Was a flat setInterval(…, 2000) with [installedModsIndex] as its dependency:
+  // it woke every 2s for the whole life of the page even when the map was empty,
+  // and every change to the installed mod list tore the timer down and restarted
+  // it. Now it only runs while there is something to prune, and the callback lives
+  // in a ref so changing installedModsIndex no longer resubscribes.
+  const hasRecentlyCompleted = recentlyCompletedFileIds.size > 0;
+  const installedIndexRef = useRef(installedModsIndex);
+  installedIndexRef.current = installedModsIndex;
 
-    return () => clearInterval(interval);
-  }, [installedModsIndex]);
+  useGatedInterval(
+    () => {
+      const now = Date.now();
+      setRecentlyCompletedFileIds((prevMap) =>
+        pruneRecentlyCompleted(prevMap, now, (fileId) =>
+          installedIndexRef.current.sourceFileIdsSet.has(fileId),
+        ),
+      );
+    },
+    hasRecentlyCompleted ? 2000 : null,
+  );
 
   // Adaptive handoff polling. Previously a flat setInterval(…, 1000) with an
   // empty dep array, so it hammered the backend once a second for as long as
@@ -725,7 +725,7 @@ export function CollectionsPage({
     let deactivatedCount = 0;
     try {
       await scanActive();
-      const allDownloads = await listDownloads(1000);
+      const allDownloads = await listDownloads();
       const activeDownloads = allDownloads.filter(
         (dl) => dl.active_paks && dl.active_paks.length > 0
       );
@@ -880,20 +880,6 @@ export function CollectionsPage({
     toast.success("Backup removed from list");
   };
 
-  const handleInstall = async (modId: string, gameName: string, fileId: number, modName: string) => {
-    const game = gameName || "marvelrivals";
-    const url = `https://www.nexusmods.com/${game}/mods/${modId}?tab=files&file_id=${fileId}&nmm=1`;
-
-    try {
-      toast.info("Opening Nexus Mods download page", {
-        description: `Setting up download for ${modName}...`,
-      });
-      await openInBrowser(url);
-    } catch (error) {
-      console.error("Failed to open Nexus download path", error);
-      toast.error("Failed to open download helper");
-    }
-  };
 
   return (
     <>
@@ -1591,7 +1577,7 @@ export function CollectionsPage({
                                     key={modObj.id}
                                     mod={modObj}
                                     viewMode={viewMode}
-                                    onInstall={(mId) => {
+                                    onInstall={(_mId) => {
                                       // Just open the Files tab in-app so the user can
                                       // see the variants and click download there.
                                       handleViewFilesTab(modObj);

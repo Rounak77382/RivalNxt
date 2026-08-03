@@ -122,7 +122,7 @@ describe("index.css transition hygiene", () => {
     const offenders: string[] = [];
     for (const d of decls) {
       for (const target of targetedProps(d.value)) {
-        if (LAYOUT_PROPS.includes(target) && !target.stepped) {
+        if (LAYOUT_PROPS.includes(target.prop) && !target.stepped) {
           offenders.push(
             `index.css:${d.line} -> ${d.prop}: ${d.value} (interpolates layout prop "${target.prop}")`,
           );

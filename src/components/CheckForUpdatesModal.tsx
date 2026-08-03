@@ -518,7 +518,6 @@ export function CheckForUpdatesModal({
 
                 const renderRow = (pending?: any, idx?: number) => {
                   const rawFileName = pending?.variantName || mod.updateVariantName || pending?.pakName || mod.latestFileName;
-                  const targetFileId = pending?.referenceFileId ?? mod.latestFileId ?? undefined;
                   const rowKey = pending ? `${mod.id}-${pending.referenceFileId || idx}` : mod.id;
 
                   return (

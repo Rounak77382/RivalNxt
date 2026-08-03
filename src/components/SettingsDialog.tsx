@@ -17,10 +17,7 @@ import {
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import { open } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
-import { Switch } from "./ui/switch";
-import { ScrollArea } from "./ui/scroll-area";
 import { Loader2, RefreshCw, Play, Folder, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 
@@ -281,12 +278,6 @@ export function SettingsDialog({
       setFormValues((prev) => ({ ...prev, [field]: value }));
     };
 
-  const handleToggleChange = (value: boolean) => {
-    setFormValues((prev) => ({
-      ...prev,
-      allow_direct_api_downloads: value,
-    }));
-  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
