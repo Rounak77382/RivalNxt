@@ -53,6 +53,12 @@ export default defineConfig({
   build: {
     target: "esnext",
     outDir: "build",
+    // Emits build/.vite/manifest.json with Rollup's real per-chunk `imports` and
+    // `dynamicImports`. bundleSplitting.test.ts uses it to compute what actually
+    // loads at startup. The alternative -- regex-scanning minified chunks for
+    // relative specifiers -- silently miscounts, because Vite's __vite__mapDeps
+    // preload table lists lazy chunk paths as plain strings and reads as static.
+    manifest: true,
     rollupOptions: {
       output: {
         /**

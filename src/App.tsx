@@ -5,12 +5,38 @@ import { listen } from "@tauri-apps/api/event";
 import type { SettingsFormValues } from "./components/SettingsDialog";
 import { TabHeader } from "./components/TabHeader";
 import { DownloadsSidebar } from "./components/DownloadsSidebar";
-import { DownloadsPage } from "./components/DownloadsPage";
-import { ActiveModsView } from "./components/ActiveModsView";
-import { CollectionsPage } from "./components/CollectionsPage";
 import { ServerStartupOverlay } from "./components/ServerStartupOverlay";
 import { NxmBackgroundListener } from "./components/NxmBackgroundListener";
 import { GameUpdateModal, type GameUpdateStep, type GameUpdatePhase } from "./components/GameUpdateModal";
+
+// ── Tab pages, code-split ───────────────────────────────────────────────────
+// The three tabs are mutually exclusive — only one is ever mounted — but all
+// three were imported statically, so startup parsed every page plus each page's
+// exclusive dependency tree. Splitting them keeps the eager graph to the tab the
+// app actually opens on ("downloads"), and gets every emitted chunk under the
+// 300 kB budget asserted in bundleSplitting.test.ts.
+//
+// The cost of lazy() here would be a Suspense fallback on the user's first visit
+// to a tab, which is worse than what it replaces. prefetchWhenIdle below removes
+// that: the other two pages are warmed after first paint, so switching tabs
+// still renders immediately.
+const DownloadsPage = lazy(() =>
+  import("./components/DownloadsPage").then((m) => ({ default: m.DownloadsPage })),
+);
+const ActiveModsView = lazy(() =>
+  import("./components/ActiveModsView").then((m) => ({ default: m.ActiveModsView })),
+);
+const CollectionsPage = lazy(() =>
+  import("./components/CollectionsPage").then((m) => ({ default: m.CollectionsPage })),
+);
+
+/**
+ * Placeholder while a page chunk resolves. Deliberately empty rather than a
+ * spinner: the chunk comes off the local filesystem in a few ms, so a spinner
+ * would only ever flash. It keeps the content box at full size so the tab header
+ * above it does not reflow.
+ */
+const PAGE_FALLBACK = <div className="h-full w-full" aria-busy="true" />;
 
 // ── Heavy modals, code-split ────────────────────────────────────────────────
 // Each is only reachable after a user action, but all were imported statically
@@ -86,6 +112,7 @@ import {
 } from "./lib/api";
 import { nextPollDelay } from "./lib/pollingHelpers";
 import { useHasBeenTrue } from "./lib/lazyMount";
+import { prefetchWhenIdle } from "./lib/prefetch";
 import {
   deriveCategoryTags,
   categoriesMatchTag,
@@ -238,6 +265,18 @@ export default function App() {
   useEffect(() => {
     nxmEntriesRef.current = nxmEntries;
   }, [nxmEntries]);
+
+  // The app opens on "downloads", so the other two page chunks are not needed to
+  // paint — but they ARE needed the instant the user clicks a tab. Warm them once
+  // the app is idle so lazy() costs no visible fallback.
+  useEffect(
+    () =>
+      prefetchWhenIdle([
+        () => import("./components/ActiveModsView"),
+        () => import("./components/CollectionsPage"),
+      ]),
+    [],
+  );
 
   // Listen for author assignment events from AuthorPopover
   useEffect(() => {
@@ -2456,6 +2495,7 @@ export default function App() {
 
               {/* Tab Content */}
               <div className="flex-1 overflow-hidden">
+                <Suspense fallback={PAGE_FALLBACK}>
                 {activeTab === "downloads" ? (
                   <DownloadsPage
                     mods={mods}
@@ -2504,6 +2544,7 @@ export default function App() {
                     backupsRefreshTrigger={backupsRefreshTrigger}
                   />
                 )}
+                </Suspense>
               </div>
             </div>
           </div>
