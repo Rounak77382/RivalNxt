@@ -73,13 +73,14 @@ def big_conflict_db(tmp_path: Path):
 
 
 def _legacy_detected_at_restore(conn, conflicts_tbl: str) -> float:
-    """Time the OLD approach: snapshot into Python, then UPDATE per row."""
+    """Run the OLD approach: snapshot into Python, then UPDATE per row."""
     cur = conn.cursor()
     start = time.perf_counter()
     prev: dict[str, str] = {}
-    for row in cur.execute(
+    rows = cur.execute(
         f"SELECT asset_path, detected_at FROM {conflicts_tbl} WHERE detected_at IS NOT NULL"
-    ).fetchall():
+    ).fetchall()
+    for row in rows:
         prev[row[0]] = row[1]
     for asset_path, detected_at in prev.items():
         cur.execute(
@@ -101,7 +102,7 @@ def test_seed_is_the_expected_size(big_conflict_db):
 
 
 def _new_detected_at_carry_forward(conn, conflicts_tbl: str) -> float:
-    """Time the NEW approach's detected_at handling in isolation: temp-table
+    """Run the NEW approach's detected_at handling in isolation: temp-table
     snapshot + indexed LEFT JOIN carry-forward + drop."""
     cur = conn.cursor()
     start = time.perf_counter()
@@ -130,32 +131,57 @@ def _new_detected_at_carry_forward(conn, conflicts_tbl: str) -> float:
     return time.perf_counter() - start
 
 
-def test_detected_at_handling_is_faster_than_per_row_updates(big_conflict_db):
-    """Compare like with like: the detected_at snapshot+restore step alone,
-    old design vs new design, over the same 10k populated rows.
+def test_detected_at_handling_avoids_per_row_round_trips(big_conflict_db, recorder):
+    """Compare like with like: the detected_at snapshot+restore step alone, old
+    design vs new design, over the same 10k populated rows.
+
+    The claim under test is algorithmic -- O(N) statements became O(1) -- so that
+    is what is asserted. Wall clock is printed as a diagnostic but deliberately
+    NOT asserted on: measured idle, the ratio here runs 2.9x-4.4x, but the new
+    path's absolute cost is only ~30 ms, so a single scheduling hiccup on a loaded
+    machine (or a shared CI runner) moves the ratio more than the optimisation
+    does. A statement count cannot be perturbed by load.
 
     NOTE on scope. The total rebuild at this size is ~1s and is dominated by the
-    pak_assets aggregation, not by this step -- so the >=2x target applies to the
-    detected_at handling that actually changed, not to end-to-end rebuild time.
-    Claiming the latter would be measuring aggregation cost and attributing it
-    here.
+    pak_assets aggregation, not by this step -- so the improvement claimed applies
+    to the detected_at handling that actually changed, not to end-to-end rebuild
+    time. Claiming the latter would be measuring aggregation cost and attributing
+    it here.
     """
     conn = big_conflict_db
     rebuild_conflicts(conn, active_only=False)  # 10k rows with detected_at set
 
-    legacy = min(_legacy_detected_at_restore(conn, "asset_conflicts") for _ in range(3))
-    new = min(_new_detected_at_carry_forward(conn, "asset_conflicts") for _ in range(3))
+    # Counts come from sqlite's own trace callback, not from a hand-maintained
+    # counter in the helpers -- otherwise the assertions below would just be
+    # restating a literal I wrote.
+    conn.set_trace_callback(recorder)
+    legacy_ms = _legacy_detected_at_restore(conn, "asset_conflicts")
+    conn.set_trace_callback(None)
+    legacy_stmts = len(recorder.statements)
+
+    recorder.reset()
+    conn.set_trace_callback(recorder)
+    new_ms = _new_detected_at_carry_forward(conn, "asset_conflicts")
+    conn.set_trace_callback(None)
+    new_stmts = len(recorder.statements)
 
     print(
         f"\n  detected_at handling over {N_ASSETS} rows:"
-        f"\n    OLD  snapshot into dict + {N_ASSETS} UPDATEs : {legacy*1000:8.1f} ms"
-        f"\n    NEW  temp table + set-based carry-forward   : {new*1000:8.1f} ms"
-        f"\n    ratio: {legacy/new:.2f}x"
+        f"\n    OLD  snapshot into dict + {N_ASSETS} UPDATEs : "
+        f"{legacy_ms*1000:8.1f} ms, {legacy_stmts:6d} statements"
+        f"\n    NEW  temp table + set-based carry-forward   : "
+        f"{new_ms*1000:8.1f} ms, {new_stmts:6d} statements"
+        f"\n    round trips saved: {legacy_stmts - new_stmts}"
     )
 
-    assert legacy / new >= 2.0, (
-        f"expected >=2x on the detected_at step; old {legacy*1000:.1f} ms vs "
-        f"new {new*1000:.1f} ms"
+    # The old design issued one UPDATE per populated row (plus the snapshot SELECT
+    # and the transaction control statements the trace also reports).
+    assert legacy_stmts >= N_ASSETS, f"{legacy_stmts} statements for {N_ASSETS} rows"
+    # The new design is a fixed handful, independent of row count.
+    assert new_stmts <= 12, f"{new_stmts} statements: {recorder.statements}"
+    assert legacy_stmts / new_stmts > 100, (
+        f"expected an order-of-magnitude round-trip reduction; "
+        f"{legacy_stmts} -> {new_stmts}"
     )
 
 
