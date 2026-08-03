@@ -53,6 +53,52 @@ export default defineConfig({
   build: {
     target: "esnext",
     outDir: "build",
+    rollupOptions: {
+      output: {
+        /**
+         * Split the vendor libraries out of the app chunk.
+         *
+         * Honest scope note: this app ships as a Tauri bundle, loading assets from
+         * the local filesystem rather than over a network. So unlike a web app,
+         * this does NOT reduce download size or benefit from CDN caching, and the
+         * total bytes parsed at startup are essentially unchanged — every chunk
+         * below is a static import of the entry, so all of them load eagerly.
+         *
+         * What it does buy:
+         *  - React and Radix churn far less often than app code, so incremental
+         *    rebuilds and dev-server reloads touch much less output;
+         *  - it clears Vite's >500 kB chunk warning, which was masking genuine
+         *    regressions in the noise;
+         *  - it makes `npm run build` output legible, so a future dependency
+         *    bloat shows up against a named chunk instead of vanishing into one
+         *    570 kB blob.
+         *
+         * The real startup win came from F5 (lazy modals), which removes code
+         * from the eager graph entirely rather than merely relabelling it.
+         */
+        manualChunks(id) {
+          // ONLY the React runtime is split out.
+          //
+          // Measured, not assumed: an earlier version of this config also split
+          // @radix-ui and a catch-all "vendor" chunk. That made startup WORSE.
+          // Radix modules used only by the lazily-loaded modals had been living
+          // inside those lazy chunks; hoisting them into an eagerly-loaded vendor
+          // chunk pulled them back into the startup path:
+          //
+          //   eager bytes  563.46 kB -> 593.43 kB  (+29.97 kB)
+          //   eager gzip   169.36 kB -> 177.38 kB  (+8.02 kB)
+          //
+          // React is different: it is genuinely needed eagerly by every entry
+          // path, so naming it costs nothing and keeps it out of the app chunk's
+          // rebuild surface. Everything else is left to Rollup, which correctly
+          // keeps modal-only dependencies inside the modal chunks.
+          if (/[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/.test(id)) {
+            return "vendor-react";
+          }
+          return undefined;
+        },
+      },
+    },
   },
   server: {
     port: 3000,

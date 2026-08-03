@@ -75,4 +75,60 @@ describe.skipIf(!hasBuild)("shipped bundle is code-split", () => {
       );
     }
   });
+
+  it("the React runtime is its own chunk", () => {
+    expect(findChunk(jsChunks(), "vendor-react")).toBeDefined();
+  });
+
+  it("EAGER startup bytes are below the baseline", () => {
+    // The metric that actually matters for a Tauri app: everything statically
+    // imported by the entry is parsed at startup, whether or not it is a separate
+    // file. Lazy modal chunks are excluded because they are fetched on demand.
+    const chunks = jsChunks();
+    const LAZY_STEMS = [
+      "ModModal",
+      "GetStartedDialog",
+      "SettingsDialog",
+      "BackupModal",
+      "AssignModIdModal",
+      "CrashDetectorModal",
+      "TaskOutputSummary",
+      "textarea",
+      "chevron-up",
+    ];
+    const eager = chunks.filter(
+      (c) => !LAZY_STEMS.some((stem) => c.name.startsWith(stem + "-")),
+    );
+    const eagerBytes = eager.reduce((sum, c) => sum + c.bytes, 0);
+
+    expect(eagerBytes).toBeLessThan(726_840);
+    // Must beat the un-chunked F5 result too, or manualChunks is not earning its
+    // keep. (Measured: 563.46 kB unsplit vs 561.34 kB with the React-only split.)
+    expect(eagerBytes).toBeLessThanOrEqual(570_000);
+  });
+
+  it("modal-only dependencies stay INSIDE the lazy chunks", () => {
+    // Regression guard for a mistake made while writing this config. An earlier
+    // manualChunks also split @radix-ui and a catch-all "vendor" chunk. Radix
+    // modules used only by the lazy modals were hoisted into an EAGER vendor
+    // chunk, pulling previously-deferred code back into the startup path and
+    // pushing eager bytes from 563.46 kB to 593.43 kB.
+    //
+    // ModModal shrank from 71.14 kB to 44.16 kB under that config — the missing
+    // 27 kB had moved into the eager graph. So a small ModModal chunk is the
+    // symptom to watch for.
+    const modModal = findChunk(jsChunks(), "ModModal");
+    expect(modModal).toBeDefined();
+    expect(
+      modModal!.bytes,
+      "ModModal chunk shrank: its dependencies were probably hoisted into an " +
+        "eagerly-loaded vendor chunk, which defeats the lazy load",
+    ).toBeGreaterThan(60_000);
+
+    // And there must be no catch-all eager vendor chunk beyond the React one.
+    const vendorChunks = jsChunks().filter((c) => c.name.startsWith("vendor"));
+    expect(vendorChunks.map((c) => c.name.replace(/-[^-]+\.js$/, ""))).toEqual([
+      "vendor-react",
+    ]);
+  });
 });

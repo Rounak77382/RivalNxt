@@ -5,7 +5,10 @@
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,
-    "types": ["node", "react", "react-dom"],
+    /* `types` is an explicit allowlist, so ambient packages must be named here.
+       Without the jest-dom entry, tsc rejects its matchers (toBeInTheDocument,
+       toHaveTextContent) even though they work at runtime. */
+    "types": ["node", "react", "react-dom", "@testing-library/jest-dom"],
 
     /* Bundler mode */
     /* Mirror vite.config.ts resolve.alias so tsc resolves the same modules the
