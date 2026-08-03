@@ -50,7 +50,17 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          # NOT 18. vitest 4 requires ^20 || ^22 || >=24 and jsdom 27 requires
+          # ^20.19 || ^22.12 || >=24; on Node 18 `npm ci` only warns EBADENGINE,
+          # then `vitest run` prints its banner and hangs forever -- this job was
+          # killed by the 15 minute timeout, which reads as "cancelled" rather
+          # than a clear version error.
+          #
+          # The desktop job below and release.yml stay on 18 deliberately: they
+          # only build (vite 6 supports 18) and the desktop job exists to mirror
+          # release.yml's chain, so bumping one without the other would defeat it.
+          # ciNodeVersion.test.ts asserts this pin stays compatible.
+          node-version: "22"
           cache: "npm"
 
       - name: Install dependencies
