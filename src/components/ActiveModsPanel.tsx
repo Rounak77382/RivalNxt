@@ -201,7 +201,6 @@ export function ActiveModsPanel({
                             <Switch
                               checked={mod.isActive !== false}
                               onCheckedChange={() => onToggleMod(mod.id)}
-                              size="sm"
                             />
                           </div>
 
@@ -275,7 +274,6 @@ export function ActiveModsPanel({
                                 <Switch
                                   checked={false}
                                   onCheckedChange={() => onToggleMod(mod.id)}
-                                  size="sm"
                                 />
                               </div>
 

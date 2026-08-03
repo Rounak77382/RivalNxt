@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Badge } from "./ui/badge";
 import { AlertTriangle } from "lucide-react";
-import { ModModal } from "./ModModal";
+import { LazyModModal as ModModal } from "./LazyModModal";
 import { useState } from "react";
 import type { Mod } from "./ModCard";
 

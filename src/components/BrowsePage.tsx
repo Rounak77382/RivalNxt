@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useMemo, useRef } from "react";
 import { SearchHeader } from "./SearchHeader";
 import { ModCard } from "./ModCard";
-import { ModModal } from "./ModModal";
+import { VirtualizedModList, useGridColumns } from "./VirtualizedModList";
+import { LazyModModal as ModModal } from "./LazyModModal";
 import type { Mod } from "./ModCard";
 
 interface BrowsePageProps {
@@ -19,6 +20,9 @@ export function BrowsePage({
 }: BrowsePageProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const gridColumns = useGridColumns(viewMode);
+
   const [sortBy, setSortBy] = useState("Popular");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [selectedMod, setSelectedMod] = useState<Mod | null>(null);
@@ -27,135 +31,148 @@ export function BrowsePage({
   >("overview");
 
   // Build filtered mods from live data (no mock helpers)
-  let filteredMods = [...mods];
+  // Filter + sort chain, memoised.
+  //
+  // Ran on EVERY render before, including renders caused by unrelated parent
+  // state. Includes a search filter and a multi-key sort.
+  const filteredMods = useMemo(() => {
+    let filteredMods = [...mods];
 
-  // No category or character filters - BrowsePage shows all mods
+    // No category or character filters - BrowsePage shows all mods
 
-  // No tag filters
+    // No tag filters
 
-  // Search filter
-  if (searchQuery) {
-    const q = searchQuery.toLowerCase();
-    filteredMods = filteredMods.filter(
-      (mod) =>
-        mod.name.toLowerCase().includes(q) ||
-        mod.description.toLowerCase().includes(q) ||
-        mod.author.toLowerCase().includes(q) ||
-        (mod.tags || []).some((t) => t.toLowerCase().includes(q)),
-    );
-  }
-
-  // Sorting
-  const toNullableTimestamp = (value?: string | null): number | null => {
-    if (!value) return null;
-    const time = Date.parse(value);
-    return Number.isNaN(time) ? null : time;
-  };
-  const applyOrder = (val: number) => (sortOrder === "asc" ? -val : val);
-
-  switch (sortBy) {
-    case "Popular":
-    case "Downloads":
-      filteredMods.sort((a, b) =>
-        applyOrder((b.downloads || 0) - (a.downloads || 0)),
+    // Search filter
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      filteredMods = filteredMods.filter(
+        (mod) =>
+          mod.name.toLowerCase().includes(q) ||
+          mod.description.toLowerCase().includes(q) ||
+          mod.author.toLowerCase().includes(q) ||
+          (mod.tags || []).some((t) => t.toLowerCase().includes(q)),
       );
-      break;
-    case "Uploaded":
-      // Uploaded: sort by backendModId (numeric), then by installDate for missing ids
-      filteredMods.sort((a, b) => {
-        const aId = a.backendModId;
-        const bId = b.backendModId;
+    }
 
-        // If both have mod ids, sort by mod id
-        if (aId != null && bId != null) {
-          const idDiff = sortOrder === "asc" ? aId - bId : bId - aId;
-          if (idDiff !== 0) return idDiff;
-          // If mod ids are equal, fallback to install date
+    // Sorting
+    const toNullableTimestamp = (value?: string | null): number | null => {
+      if (!value) return null;
+      const time = Date.parse(value);
+      return Number.isNaN(time) ? null : time;
+    };
+    const applyOrder = (val: number) => (sortOrder === "asc" ? -val : val);
+
+    switch (sortBy) {
+      case "Popular":
+      case "Downloads":
+        filteredMods.sort((a, b) =>
+          applyOrder((b.downloads || 0) - (a.downloads || 0)),
+        );
+        break;
+      case "Uploaded":
+        // Uploaded: sort by backendModId (numeric), then by installDate for missing ids
+        filteredMods.sort((a, b) => {
+          const aId = a.backendModId;
+          const bId = b.backendModId;
+
+          // If both have mod ids, sort by mod id
+          if (aId != null && bId != null) {
+            const idDiff = sortOrder === "asc" ? aId - bId : bId - aId;
+            if (idDiff !== 0) return idDiff;
+            // If mod ids are equal, fallback to install date
+            const aDate = toNullableTimestamp(a.installDate);
+            const bDate = toNullableTimestamp(b.installDate);
+            if (aDate == null && bDate == null) return 0;
+            if (aDate == null) return 1;
+            if (bDate == null) return -1;
+            return sortOrder === "asc" ? aDate - bDate : bDate - aDate;
+          }
+
+          // If only one has mod id, that one comes first (regardless of sort order)
+          if (aId != null && bId == null) return -1;
+          if (aId == null && bId != null) return 1;
+
+          // If neither has mod id, sort by install date
           const aDate = toNullableTimestamp(a.installDate);
           const bDate = toNullableTimestamp(b.installDate);
           if (aDate == null && bDate == null) return 0;
           if (aDate == null) return 1;
           if (bDate == null) return -1;
           return sortOrder === "asc" ? aDate - bDate : bDate - aDate;
-        }
+        });
+        break;
+      case "Recent":
+        // Recent: sort by install date
+        filteredMods.sort((a, b) => {
+          const aDate = toNullableTimestamp(a.installDate);
+          const bDate = toNullableTimestamp(b.installDate);
+          if (aDate == null && bDate == null) return 0;
+          if (aDate == null) return 1;
+          if (bDate == null) return -1;
+          return sortOrder === "asc" ? aDate - bDate : bDate - aDate;
+        });
+        break;
+      case "Updated":
+        // Updated: prioritize mods that have an update available, then sort by updated_at
+        filteredMods.sort((a, b) => {
+          const aUpdate = a.hasUpdate || a.isUpdating ? 1 : 0;
+          const bUpdate = b.hasUpdate || b.isUpdating ? 1 : 0;
+          if (aUpdate !== bUpdate) {
+            return bUpdate - aUpdate;
+          }
 
-        // If only one has mod id, that one comes first (regardless of sort order)
-        if (aId != null && bId == null) return -1;
-        if (aId == null && bId != null) return 1;
-
-        // If neither has mod id, sort by install date
-        const aDate = toNullableTimestamp(a.installDate);
-        const bDate = toNullableTimestamp(b.installDate);
-        if (aDate == null && bDate == null) return 0;
-        if (aDate == null) return 1;
-        if (bDate == null) return -1;
-        return sortOrder === "asc" ? aDate - bDate : bDate - aDate;
-      });
-      break;
-    case "Recent":
-      // Recent: sort by install date
-      filteredMods.sort((a, b) => {
-        const aDate = toNullableTimestamp(a.installDate);
-        const bDate = toNullableTimestamp(b.installDate);
-        if (aDate == null && bDate == null) return 0;
-        if (aDate == null) return 1;
-        if (bDate == null) return -1;
-        return sortOrder === "asc" ? aDate - bDate : bDate - aDate;
-      });
-      break;
-    case "Updated":
-      // Updated: prioritize mods that have an update available, then sort by updated_at
-      filteredMods.sort((a, b) => {
-        const aUpdate = a.hasUpdate || a.isUpdating ? 1 : 0;
-        const bUpdate = b.hasUpdate || b.isUpdating ? 1 : 0;
-        if (aUpdate !== bUpdate) {
-          return bUpdate - aUpdate;
-        }
-
-        const ta = toNullableTimestamp(
-          a.lastUpdatedRaw ?? a.lastUpdated ?? null,
+          const ta = toNullableTimestamp(
+            a.lastUpdatedRaw ?? a.lastUpdated ?? null,
+          );
+          const tb = toNullableTimestamp(
+            b.lastUpdatedRaw ?? b.lastUpdated ?? null,
+          );
+          if (ta == null && tb == null) return 0;
+          if (ta == null) return 1;
+          if (tb == null) return -1;
+          if (ta === tb) return 0;
+          return sortOrder === "asc" ? ta - tb : tb - ta;
+        });
+        break;
+      case "Rating":
+        filteredMods.sort((a, b) =>
+          applyOrder((b.rating || 0) - (a.rating || 0)),
         );
-        const tb = toNullableTimestamp(
-          b.lastUpdatedRaw ?? b.lastUpdated ?? null,
+        break;
+      case "Performance":
+        filteredMods.sort((a, b) =>
+          applyOrder((b.performanceImpact || 0) - (a.performanceImpact || 0)),
         );
-        if (ta == null && tb == null) return 0;
-        if (ta == null) return 1;
-        if (tb == null) return -1;
-        if (ta === tb) return 0;
-        return sortOrder === "asc" ? ta - tb : tb - ta;
-      });
-      break;
-    case "Rating":
-      filteredMods.sort((a, b) =>
-        applyOrder((b.rating || 0) - (a.rating || 0)),
-      );
-      break;
-    case "Performance":
-      filteredMods.sort((a, b) =>
-        applyOrder((b.performanceImpact || 0) - (a.performanceImpact || 0)),
-      );
-      break;
-    case "Name":
-      filteredMods.sort((a, b) => applyOrder(a.name.localeCompare(b.name)));
-      break;
-    case "Category":
-      filteredMods.sort((a, b) => {
-        const categoryA = a.categoryTags?.[0] ?? a.category ?? "";
-        const categoryB = b.categoryTags?.[0] ?? b.category ?? "";
-        return applyOrder(categoryA.localeCompare(categoryB));
-      });
-      break;
-    case "Favourites":
-      filteredMods.sort((a, b) => {
-        const aFav = a.isFavorited ? 1 : 0;
-        const bFav = b.isFavorited ? 1 : 0;
-        if (bFav !== aFav) return applyOrder(bFav - aFav);
-        return a.name.localeCompare(b.name);
-      });
-      break;
-    default:
-      break;
-  }
+        break;
+      case "Name":
+        filteredMods.sort((a, b) => applyOrder(a.name.localeCompare(b.name)));
+        break;
+      case "Category":
+        filteredMods.sort((a, b) => {
+          const categoryA = a.categoryTags?.[0] ?? a.category ?? "";
+          const categoryB = b.categoryTags?.[0] ?? b.category ?? "";
+          return applyOrder(categoryA.localeCompare(categoryB));
+        });
+        break;
+      case "Favourites":
+        filteredMods.sort((a, b) => {
+          const aFav = a.isFavorited ? 1 : 0;
+          const bFav = b.isFavorited ? 1 : 0;
+          if (bFav !== aFav) return applyOrder(bFav - aFav);
+          return a.name.localeCompare(b.name);
+        });
+        break;
+      default:
+        break;
+    }
+
+    return filteredMods;
+  }, [
+    mods,
+    searchQuery,
+    sortBy,
+    sortOrder,
+  ]);
 
   // Event handlers
 
@@ -214,7 +231,7 @@ export function BrowsePage({
               grid-template-columns: repeat(5, 1fr);
             }
           }`}</style>
-        <div className="flex-1 overflow-auto p-6">
+        <div ref={scrollRef} className="flex-1 overflow-auto p-6">
           {/* Results Info */}
           <div className="mb-6">
             <h2 className="text-2xl font-semibold mb-2">All Mods</h2>
@@ -250,10 +267,15 @@ export function BrowsePage({
               </p>
             </div>
           ) : (
-            <div className={viewMode === "grid" ? "mods-grid" : "space-y-0"}>
-              {filteredMods.map((mod) => (
+            <VirtualizedModList
+              items={filteredMods}
+              scrollRef={scrollRef}
+              columns={gridColumns}
+              estimateRowHeight={viewMode === "grid" ? 320 : 96}
+              rowClassName={viewMode === "grid" ? "mods-grid" : "space-y-0"}
+              getKey={(mod) => mod.id}
+              renderItem={(mod) => (
                 <ModCard
-                  key={mod.id}
                   mod={mod}
                   viewMode={viewMode}
                   onInstall={onInstall}
@@ -261,25 +283,32 @@ export function BrowsePage({
                   onView={handleViewMod}
                   onOpenFilesTab={handleOpenFilesTab}
                 />
-              ))}
-            </div>
+              )}
+            />
           )}
         </div>
       </div>
 
-      {/* Mod Details Modal */}
-      <ModModal
-        mod={selectedMod}
-        isOpen={!!selectedMod}
-        onClose={() => {
-          setSelectedMod(null);
-          setModalInitialTab("overview");
-        }}
-        onInstall={onInstall}
-        onFavorite={onFavorite}
-        initialTab={modalInitialTab}
-        onUpdate={onUpdate}
-      />
+      {/* Mod Details Modal.
+          Guarded on selectedMod so the lazily-loaded chunk is not fetched until a
+          mod is actually opened — the other four call sites already did this. The
+          modal was already closed whenever selectedMod was null (isOpen={!!mod}),
+          and a Radix Dialog with open=false renders nothing, so this is
+          behaviour-preserving. */}
+      {selectedMod && (
+        <ModModal
+          mod={selectedMod}
+          isOpen={!!selectedMod}
+          onClose={() => {
+            setSelectedMod(null);
+            setModalInitialTab("overview");
+          }}
+          onInstall={onInstall}
+          onFavorite={onFavorite}
+          initialTab={modalInitialTab}
+          onUpdate={onUpdate}
+        />
+      )}
     </div>
   );
 }

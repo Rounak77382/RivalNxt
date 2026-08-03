@@ -1285,6 +1285,21 @@ export async function listCollections(): Promise<ApiCollectionSummary[]> {
   return r.collections ?? [];
 }
 
+/**
+ * Every collection WITH its mod_files, in ONE request.
+ *
+ * Replaces listCollections() followed by getCollection() per collection — with 20
+ * collections that was 21 requests to render one page, repeated on every poll.
+ * The backend answers it in a fixed two SQL queries regardless of how many
+ * collections exist.
+ */
+export async function listCollectionsDetailed(): Promise<ApiCollection[]> {
+  const r = await getJson<{ ok: boolean; collections: ApiCollection[] }>(
+    "/api/collections/detailed",
+  );
+  return r.collections ?? [];
+}
+
 export async function getCollection(id: number): Promise<ApiCollection> {
   const r = await getJson<{ ok: boolean; collection: ApiCollection }>(`/api/collections/${id}`);
   return r.collection;

@@ -7970,6 +7970,61 @@ def list_collections() -> Dict[str, Any]:
 			pass
 
 
+@app.get("/api/collections/detailed")
+def list_collections_detailed() -> Dict[str, Any]:
+	"""Every collection WITH its mod_files, in a fixed two queries.
+
+	The frontend previously called GET /api/collections and then
+	GET /api/collections/{id} once per collection — an N+1 burst on every poll,
+	each request paying its own connection, HTTP round trip and JSON encode. With
+	20 collections that is 21 requests to render one page.
+
+	This returns the same shape as N calls to /api/collections/{id}, so the client
+	can swap one for the other, but the cost is constant in the number of
+	collections: one query for the collections, one for all their files, grouped in
+	Python.
+
+	NOTE: this route must stay declared BEFORE /api/collections/{collection_id} or
+	FastAPI will match "detailed" as a collection_id and fail to parse it as int.
+	"""
+	conn = get_db()
+	try:
+		cur = conn.cursor()
+		ckeys = [
+			"id", "slug", "nexus_id", "revision_id", "revision_num", "game", "name",
+			"summary", "picture_url", "author", "total_mods", "total_size", "status",
+			"created_at", "updated_at", "fetched_at",
+		]
+		crows = cur.execute(
+			"SELECT " + ", ".join(ckeys) + " FROM collections ORDER BY fetched_at DESC"
+		).fetchall()
+		collections = [dict(zip(ckeys, r)) for r in crows]
+
+		fkeys = [
+			"id", "entry_id", "file_id", "mod_id", "optional", "version", "file_name",
+			"file_uri", "size_in_bytes", "mod_name", "picture_url", "download_state",
+		]
+		# Same filter as _serialize_collection so both endpoints agree.
+		frows = cur.execute(
+			"SELECT collection_id, " + ", ".join(fkeys) + " FROM collection_mod_files "
+			"WHERE (mod_id IS NULL OR mod_id != 2940) ORDER BY collection_id, id"
+		).fetchall()
+
+		by_collection: Dict[int, List[Dict[str, Any]]] = {}
+		for row in frows:
+			by_collection.setdefault(row[0], []).append(dict(zip(fkeys, row[1:])))
+
+		for coll in collections:
+			coll["mod_files"] = by_collection.get(coll["id"], [])
+
+		return {"ok": True, "collections": collections, "count": len(collections)}
+	finally:
+		try:
+			conn.close()
+		except Exception:
+			pass
+
+
 @app.get("/api/collections/{collection_id}")
 def get_collection(collection_id: int) -> Dict[str, Any]:
 	"""Get a full collection with its mod_files list."""

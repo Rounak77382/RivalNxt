@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { SearchHeader } from "./SearchHeader";
@@ -17,9 +17,10 @@ import {
 } from "lucide-react";
 import { openInBrowser } from "../lib/tauri-utils";
 import { ModCard } from "./ModCard";
+import { VirtualizedModList, useGridColumns } from "./VirtualizedModList";
 import type { Mod } from "./ModCard";
 import { toast } from "sonner";
-import { ModModal } from "./ModModal";
+import { LazyModModal as ModModal } from "./LazyModModal";
 import { BackupRestoreModal } from "./BackupRestoreModal";
 import {
   loadBackupMetas,
@@ -32,6 +33,7 @@ import {
   refreshConflicts,
   getLocalDownload,
   listCollections,
+  listCollectionsDetailed,
   getCollection,
   deleteCollection,
   ApiCollection,
@@ -40,7 +42,12 @@ import {
   listNxmHandoffs,
   listDownloads,
 } from "../lib/api";
-import { nextPollDelay } from "../lib/pollingHelpers";
+import { anyHandoffInFlight, nextPollDelay } from "../lib/pollingHelpers";
+import {
+  pruneRecentlyCompleted,
+  useAdaptivePoll,
+  useGatedInterval,
+} from "../lib/intervalHelpers";
 
 const normalizeFilename = (filename: string): string => {
   if (!filename) return "";
@@ -122,6 +129,14 @@ export function CollectionsPage({
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"name" | "date">("name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
+  // Each collection's expanded body is a separate list inside the page's own
+  // scroll container. Note the accordion wrapper already has overflow-hidden,
+  // so hover-scale was clipped there before virtualization too -- this changes
+  // nothing about that.
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const gridColumns = useGridColumns(viewMode);
+
 
   const [selectedMod, setSelectedMod] = useState<Mod | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -227,29 +242,28 @@ export function CollectionsPage({
     prevHandoffsRef.current = activeHandoffs;
   }, [activeHandoffs]);
 
-  useEffect(() => {
-    // Periodically run clean up
-    const interval = setInterval(() => {
-      const now = Date.now();
-      setRecentlyCompletedFileIds(prevMap => {
-        let changed = false;
-        const nextMap = new Map(prevMap);
-        
-        for (const [fileId, timestamp] of prevMap.entries()) {
-          const isDownloaded = installedModsIndex.sourceFileIdsSet.has(fileId);
-          
-          if (isDownloaded || now - timestamp > 20000) {
-            nextMap.delete(fileId);
-            changed = true;
-          }
-        }
-        
-        return changed ? nextMap : prevMap;
-      });
-    }, 2000);
+  // Prune the "recently completed" flags.
+  //
+  // Was a flat setInterval(…, 2000) with [installedModsIndex] as its dependency:
+  // it woke every 2s for the whole life of the page even when the map was empty,
+  // and every change to the installed mod list tore the timer down and restarted
+  // it. Now it only runs while there is something to prune, and the callback lives
+  // in a ref so changing installedModsIndex no longer resubscribes.
+  const hasRecentlyCompleted = recentlyCompletedFileIds.size > 0;
+  const installedIndexRef = useRef(installedModsIndex);
+  installedIndexRef.current = installedModsIndex;
 
-    return () => clearInterval(interval);
-  }, [installedModsIndex]);
+  useGatedInterval(
+    () => {
+      const now = Date.now();
+      setRecentlyCompletedFileIds((prevMap) =>
+        pruneRecentlyCompleted(prevMap, now, (fileId) =>
+          installedIndexRef.current.sourceFileIdsSet.has(fileId),
+        ),
+      );
+    },
+    hasRecentlyCompleted ? 2000 : null,
+  );
 
   // Adaptive handoff polling. Previously a flat setInterval(…, 1000) with an
   // empty dep array, so it hammered the backend once a second for as long as
@@ -357,43 +371,68 @@ export function CollectionsPage({
     }
   }, [backupsRefreshTrigger]);
 
-  useEffect(() => {
-    fetchCollections(false);
-    const interval = setInterval(() => {
-      fetchCollections(true);
-    }, 4000);
-    return () => clearInterval(interval);
-  }, []);
+  // The fast cadence is only justified while a download is actually running.
+  const hasInFlightDownloads = useCallback(
+    () => anyHandoffInFlight(activeHandoffs),
+    [activeHandoffs],
+  );
 
-  const fetchCollections = async (_silent = false) => {
+  // Collections refresh.
+  //
+  // Was setInterval(…, 4000) with [] deps: every 4s, forever, it ran
+  // listCollections() and then getCollection() for EVERY collection — an N+1
+  // request burst — regardless of whether the window was even visible.
+  //
+  // Now: fast only while a download is in flight, slow otherwise, and fully
+  // paused while the tab is hidden (with an immediate refresh on return).
+  useAdaptivePoll(
+    () => fetchCollections(true),
+    {
+      activeMs: 4000,
+      idleMs: 30_000,
+      isActive: hasInFlightDownloads,
+    },
+  );
+
+  const fetchCollections = useCallback(async (_silent = false) => {
     try {
-      const summaries = await listCollections();
-      const detailed = await Promise.all(
-        summaries.map(async (c) => {
-          try {
-            return await getCollection(c.id);
-          } catch (e) {
-            console.error(`Failed to load details for collection ${c.id}:`, e);
-            // Fall back to creating a dummy detailed shape based on summary to prevent failures
-            return {
-              ...c,
-              summary: c.summary || "",
-              author: c.author || "Unknown",
-              total_mods: c.total_mods || 0,
-              total_size: c.total_size || 0,
-              game: c.game || "marvelrivals",
-              revision_id: null,
-              created_at: null,
-              mod_files: []
-            } as ApiCollection;
-          }
-        })
-      );
-      setCollectionsData(detailed);
+      // ONE request. This was listCollections() followed by getCollection() per
+      // collection — with 20 collections, 21 requests to render the page, repeated
+      // on every poll. The backend now answers /api/collections/detailed in a
+      // fixed two SQL queries regardless of collection count.
+      setCollectionsData(await listCollectionsDetailed());
     } catch (err) {
       console.error("Error fetching collections:", err);
+      // Fall back to the per-collection path so an older backend (or a failure of
+      // the batched route) still renders rather than showing an empty page.
+      try {
+        const summaries = await listCollections();
+        const detailed = await Promise.all(
+          summaries.map(async (c) => {
+            try {
+              return await getCollection(c.id);
+            } catch (e) {
+              console.error(`Failed to load details for collection ${c.id}:`, e);
+              return {
+                ...c,
+                summary: c.summary || "",
+                author: c.author || "Unknown",
+                total_mods: c.total_mods || 0,
+                total_size: c.total_size || 0,
+                game: c.game || "marvelrivals",
+                revision_id: null,
+                created_at: null,
+                mod_files: [],
+              } as ApiCollection;
+            }
+          }),
+        );
+        setCollectionsData(detailed);
+      } catch (fallbackErr) {
+        console.error("Collections fallback also failed:", fallbackErr);
+      }
     }
-  };
+  }, []);
 
   const handleDeleteCollection = async (id: number) => {
     if (!confirm("Are you sure you want to remove this collection?")) return;
@@ -725,7 +764,7 @@ export function CollectionsPage({
     let deactivatedCount = 0;
     try {
       await scanActive();
-      const allDownloads = await listDownloads(1000);
+      const allDownloads = await listDownloads();
       const activeDownloads = allDownloads.filter(
         (dl) => dl.active_paks && dl.active_paks.length > 0
       );
@@ -880,20 +919,6 @@ export function CollectionsPage({
     toast.success("Backup removed from list");
   };
 
-  const handleInstall = async (modId: string, gameName: string, fileId: number, modName: string) => {
-    const game = gameName || "marvelrivals";
-    const url = `https://www.nexusmods.com/${game}/mods/${modId}?tab=files&file_id=${fileId}&nmm=1`;
-
-    try {
-      toast.info("Opening Nexus Mods download page", {
-        description: `Setting up download for ${modName}...`,
-      });
-      await openInBrowser(url);
-    } catch (error) {
-      console.error("Failed to open Nexus download path", error);
-      toast.error("Failed to open download helper");
-    }
-  };
 
   return (
     <>
@@ -974,6 +999,7 @@ export function CollectionsPage({
         <div className="flex flex-1 overflow-hidden">
           {/* MAIN CONTENT AREA */}
           <div
+            ref={scrollRef}
             className="flex-1 overflow-auto custom-scrollbar p-6"
             style={{ overflowY: "auto" }}
           >
@@ -1581,17 +1607,20 @@ export function CollectionsPage({
                         <div className="overflow-hidden">
                           <div className="p-6 pt-4 pb-8 border-t border-border/10">
                             {mappedMods.length > 0 ? (
-                              <div
-                                className={
+                              <VirtualizedModList
+                                items={mappedMods}
+                                scrollRef={scrollRef}
+                                columns={gridColumns}
+                                estimateRowHeight={viewMode === "grid" ? 320 : 96}
+                                rowClassName={
                                   viewMode === "grid" ? "mods-grid" : "flex flex-col gap-0"
                                 }
-                              >
-                                {mappedMods.map(({ modObj }) => (
+                                getKey={({ modObj }) => modObj.id}
+                                renderItem={({ modObj }) => (
                                   <ModCard
-                                    key={modObj.id}
                                     mod={modObj}
                                     viewMode={viewMode}
-                                    onInstall={(mId) => {
+                                    onInstall={(_mId) => {
                                       // Just open the Files tab in-app so the user can
                                       // see the variants and click download there.
                                       handleViewFilesTab(modObj);
@@ -1601,8 +1630,8 @@ export function CollectionsPage({
                                     onToggleActive={onToggleMod}
                                     onView={handleView}
                                   />
-                                ))}
-                              </div>
+                                )}
+                              />
                             ) : (
                               <div className="flex flex-col items-center justify-center py-12 text-center">
                                 <div className="bg-secondary/20 p-6 rounded-full mb-4">
