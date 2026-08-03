@@ -33,6 +33,7 @@ import {
   refreshConflicts,
   getLocalDownload,
   listCollections,
+  listCollectionsDetailed,
   getCollection,
   deleteCollection,
   ApiCollection,
@@ -395,31 +396,41 @@ export function CollectionsPage({
 
   const fetchCollections = useCallback(async (_silent = false) => {
     try {
-      const summaries = await listCollections();
-      const detailed = await Promise.all(
-        summaries.map(async (c) => {
-          try {
-            return await getCollection(c.id);
-          } catch (e) {
-            console.error(`Failed to load details for collection ${c.id}:`, e);
-            // Fall back to creating a dummy detailed shape based on summary to prevent failures
-            return {
-              ...c,
-              summary: c.summary || "",
-              author: c.author || "Unknown",
-              total_mods: c.total_mods || 0,
-              total_size: c.total_size || 0,
-              game: c.game || "marvelrivals",
-              revision_id: null,
-              created_at: null,
-              mod_files: []
-            } as ApiCollection;
-          }
-        })
-      );
-      setCollectionsData(detailed);
+      // ONE request. This was listCollections() followed by getCollection() per
+      // collection — with 20 collections, 21 requests to render the page, repeated
+      // on every poll. The backend now answers /api/collections/detailed in a
+      // fixed two SQL queries regardless of collection count.
+      setCollectionsData(await listCollectionsDetailed());
     } catch (err) {
       console.error("Error fetching collections:", err);
+      // Fall back to the per-collection path so an older backend (or a failure of
+      // the batched route) still renders rather than showing an empty page.
+      try {
+        const summaries = await listCollections();
+        const detailed = await Promise.all(
+          summaries.map(async (c) => {
+            try {
+              return await getCollection(c.id);
+            } catch (e) {
+              console.error(`Failed to load details for collection ${c.id}:`, e);
+              return {
+                ...c,
+                summary: c.summary || "",
+                author: c.author || "Unknown",
+                total_mods: c.total_mods || 0,
+                total_size: c.total_size || 0,
+                game: c.game || "marvelrivals",
+                revision_id: null,
+                created_at: null,
+                mod_files: [],
+              } as ApiCollection;
+            }
+          }),
+        );
+        setCollectionsData(detailed);
+      } catch (fallbackErr) {
+        console.error("Collections fallback also failed:", fallbackErr);
+      }
     }
   }, []);
 
