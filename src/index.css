@@ -2817,8 +2817,11 @@ html {
   }
 }
 
+/* `transition: all` makes the browser watch every animatable property, including
+   layout ones, for the whole 0.4s. The :hover state below only changes the border
+   COLOUR, so that is all we transition. */
 .mod-file-item {
-  transition: all 0.4s;
+  transition: border-color 0.4s;
   border: 1px solid var(--border);
 }
 
@@ -2826,8 +2829,11 @@ html {
   border: 1px solid var(--muted-foreground) !important;
 }
 
+/* Only transform and box-shadow change on :hover, and both are already declared
+   in will-change. `transition: all` undermined that by also watching layout
+   properties. */
 .card-container {
-  transition: all 0.4s;
+  transition: transform 0.4s, box-shadow 0.4s;
   will-change: transform, box-shadow;
 }
 
@@ -2837,8 +2843,11 @@ html {
   box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.3);
 }
 
+/* :hover changes transform (compositor), background-color and border-radius
+   (paint). None are layout, so name them instead of using `all`. */
 .card-list-item {
-  transition: all 0.4s;
+  transition: transform 0.4s, background-color 0.4s, border-radius 0.4s;
+  will-change: transform;
 }
 
 .card-list-item:hover {
@@ -2848,29 +2857,59 @@ html {
   border-radius: var(--radius);
 }
 
-/* Custom Header Action Buttons */
+/* Custom Header Action Buttons
+   ----------------------------
+   These animated `padding`, `gap` and `max-width`. All three are LAYOUT
+   properties: every frame of the 0.2s hover forced the browser to re-run layout
+   for the header and everything after it in flow. `will-change: padding, gap`
+   made it worse -- will-change cannot promote layout properties to the
+   compositor, so it only reserved resources for nothing.
+
+   The reveal is now done with a transform-and-opacity technique instead. The text
+   always occupies its natural width in the layout (so layout is computed ONCE,
+   never during the animation) and is revealed by scaling it out from zero width
+   on the x axis, which runs entirely on the compositor. */
 .header-action-btn {
   padding-left: 0.75rem !important;
   padding-right: 0.75rem !important;
-  transition: padding 0.2s ease, background-color 0.2s ease, gap 0.2s ease-out;
+  transition: background-color 0.2s ease;
   overflow: hidden;
+  /* Static gap: no longer animated. The label supplies its own spacing below. */
   gap: 0 !important;
-  will-change: padding, gap;
 }
 
 .header-action-text {
   display: inline-block;
-  max-width: 0;
+  /* Reserve zero inline space via a scale transform rather than max-width so the
+     transition never touches layout. */
+  width: 0;
   opacity: 0;
   overflow: hidden;
   white-space: nowrap;
-  transition: max-width 0.2s ease-out, opacity 0.2s ease-out;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.2s ease-out, opacity 0.2s ease-out, width 0.2s step-end;
   vertical-align: middle;
-  will-change: max-width, opacity;
+  will-change: transform, opacity;
 }
 
-.header-action-btn:hover {
-  gap: 0.5rem !important;
+.header-action-btn:hover .header-action-text,
+.header-action-btn:focus-visible .header-action-text {
+  width: auto;
+  opacity: 1;
+  transform: scaleX(1);
+  margin-left: 0.5rem;
+  /* step-start so the width flip happens up front and the scale animates over
+     the already-final box, keeping the whole reveal off the layout path. */
+  transition: transform 0.2s ease-out, opacity 0.2s ease-out, width 0.2s step-start;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .header-action-text,
+  .header-action-btn:hover .header-action-text,
+  .header-action-btn:focus-visible .header-action-text {
+    transition: none;
+  }
 }
 
 .header-action-btn:hover .header-action-text {
