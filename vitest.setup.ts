@@ -80,6 +80,70 @@ function ensureStorage(name: "localStorage" | "sessionStorage") {
 ensureStorage("localStorage");
 ensureStorage("sessionStorage");
 
+/**
+ * jsdom implements neither ResizeObserver nor IntersectionObserver.
+ *
+ * @tanstack/react-virtual measures its scroll element through ResizeObserver; with
+ * it missing the virtualizer never learns the viewport height and reports zero
+ * visible items, so a virtualized list renders nothing at all under test. This
+ * polyfill reports each observed element's current getBoundingClientRect, which
+ * tests can stub to describe whatever viewport they need.
+ */
+if (typeof globalThis.ResizeObserver === "undefined") {
+  class TestResizeObserver implements ResizeObserver {
+    private targets = new Set<Element>();
+
+    constructor(private readonly callback: ResizeObserverCallback) {}
+
+    observe(target: Element) {
+      this.targets.add(target);
+      // Deliver an initial measurement synchronously, as browsers do.
+      this.emit();
+    }
+
+    unobserve(target: Element) {
+      this.targets.delete(target);
+    }
+
+    disconnect() {
+      this.targets.clear();
+    }
+
+    private emit() {
+      const entries = Array.from(this.targets).map((target) => {
+        const rect = target.getBoundingClientRect();
+        return {
+          target,
+          contentRect: rect,
+          borderBoxSize: [{ inlineSize: rect.width, blockSize: rect.height }],
+          contentBoxSize: [{ inlineSize: rect.width, blockSize: rect.height }],
+          devicePixelContentBoxSize: [
+            { inlineSize: rect.width, blockSize: rect.height },
+          ],
+        } as unknown as ResizeObserverEntry;
+      });
+      if (entries.length > 0) this.callback(entries, this);
+    }
+  }
+  globalThis.ResizeObserver = TestResizeObserver as unknown as typeof ResizeObserver;
+}
+
+if (typeof globalThis.IntersectionObserver === "undefined") {
+  class TestIntersectionObserver implements IntersectionObserver {
+    readonly root = null;
+    readonly rootMargin = "";
+    readonly thresholds: ReadonlyArray<number> = [];
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+    takeRecords(): IntersectionObserverEntry[] {
+      return [];
+    }
+  }
+  globalThis.IntersectionObserver =
+    TestIntersectionObserver as unknown as typeof IntersectionObserver;
+}
+
 // React Testing Library does not auto-cleanup when `globals` is enabled in some
 // configurations; unmounting between tests stops leaked timers/effects from one
 // test bleeding into the next, which matters a lot for the polling tests here.

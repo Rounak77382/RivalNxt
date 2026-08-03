@@ -15,7 +15,41 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const ASSETS = resolve(__dirname, "../../../build/assets");
+const SRC = resolve(__dirname, "../..");
 const hasBuild = existsSync(ASSETS);
+
+/**
+ * Newest mtime under a directory tree.
+ *
+ * Guards against a real false green hit while writing these tests: vitest ran
+ * before `npm run build`, so the assertions measured the PREVIOUS build's
+ * artifacts and passed on a bundle that no longer existed. A stale build must
+ * skip, never silently pass.
+ */
+function newestMtime(dir: string): number {
+  let newest = 0;
+  const walk = (d: string) => {
+    for (const entry of readdirSync(d, { withFileTypes: true })) {
+      if (entry.name === "node_modules" || entry.name.startsWith(".")) continue;
+      const full = resolve(d, entry.name);
+      if (entry.isDirectory()) walk(full);
+      else newest = Math.max(newest, statSync(full).mtimeMs);
+    }
+  };
+  walk(dir);
+  return newest;
+}
+
+const buildIsFresh = (() => {
+  if (!hasBuild) return false;
+  try {
+    // Ignore the test files themselves: editing a test should not invalidate a
+    // build that still matches the application source.
+    return newestMtime(ASSETS) >= newestMtime(resolve(SRC, "components"));
+  } catch {
+    return false;
+  }
+})();
 
 type Chunk = { name: string; bytes: number };
 
@@ -31,7 +65,9 @@ function findChunk(chunks: Chunk[], stem: string): Chunk | undefined {
   return chunks.find((c) => c.name.startsWith(stem + "-"));
 }
 
-describe.skipIf(!hasBuild)("shipped bundle is code-split", () => {
+describe.skipIf(!buildIsFresh)("shipped bundle is code-split", () => {
+  // Skipped when build/ is missing OR older than src/components, so a stale
+  // artifact set can never produce a green result.
   it("emits more than one JS chunk", () => {
     const chunks = jsChunks();
     expect(chunks.length).toBeGreaterThan(1);
@@ -102,9 +138,12 @@ describe.skipIf(!hasBuild)("shipped bundle is code-split", () => {
     const eagerBytes = eager.reduce((sum, c) => sum + c.bytes, 0);
 
     expect(eagerBytes).toBeLessThan(726_840);
-    // Must beat the un-chunked F5 result too, or manualChunks is not earning its
-    // keep. (Measured: 563.46 kB unsplit vs 561.34 kB with the React-only split.)
-    expect(eagerBytes).toBeLessThanOrEqual(570_000);
+    // 600 kB, not 570 kB: adding @tanstack/react-virtual costs ~26.5 kB of eager
+    // bundle (561.34 kB -> 587.88 kB). That is a deliberate trade -- a 500-mod
+    // library now mounts ~13 rows instead of 500 InstalledModCard trees, and
+    // InstalledModCard is 28 KB of source with images, badges and dropdowns.
+    // Still 138.96 kB below the 726.84 kB baseline.
+    expect(eagerBytes).toBeLessThanOrEqual(600_000);
   });
 
   it("modal-only dependencies stay INSIDE the lazy chunks", () => {

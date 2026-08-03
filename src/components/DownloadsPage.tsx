@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import type { Mod } from "./ModCard";
 import { InstalledModCard } from "./InstalledModCard";
+import { VirtualizedModList, useGridColumns } from "./VirtualizedModList";
 import { SearchHeader } from "./SearchHeader";
 import { LazyModModal as ModModal } from "./LazyModModal";
 import {
@@ -46,6 +47,11 @@ export function DownloadsPage({
   const [sortBy, setSortBy] = useState<string>("Recent");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [selectedMod, setSelectedMod] = useState<Mod | null>(null);
+
+  // Virtualizer measures the existing scroll container rather than owning one.
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const gridColumns = useGridColumns(viewMode);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalInitialTab, setModalInitialTab] = useState<
     "overview" | "files" | "changelog" | "images" | "assets"
@@ -396,6 +402,7 @@ export function DownloadsPage({
             }
           }`}</style>
         <div
+          ref={scrollRef}
           className="flex-1 overflow-auto custom-scrollbar"
           style={{
             overflowY: "auto",
@@ -403,14 +410,17 @@ export function DownloadsPage({
         >
           <div className="p-6">
             {filteredMods.length > 0 ? (
-              <div
-                className={
+              <VirtualizedModList
+                items={filteredMods}
+                scrollRef={scrollRef}
+                columns={gridColumns}
+                estimateRowHeight={viewMode === "grid" ? 320 : 96}
+                rowClassName={
                   viewMode === "grid" ? "mods-grid" : "flex flex-col gap-0"
                 }
-              >
-                {filteredMods.map((mod) => (
+                getKey={(mod) => `mod-${mod.backendModId ?? mod.id}`}
+                renderItem={(mod) => (
                   <InstalledModCard
-                    key={`mod-${mod.backendModId ?? mod.id}`}
                     mod={mod}
                     viewMode={viewMode}
                     onUninstall={onUninstall}
@@ -426,8 +436,8 @@ export function DownloadsPage({
                     onAssignModId={onAssignModId}
                     onRefresh={onRefresh}
                   />
-                ))}
-              </div>
+                )}
+              />
             ) : (
               <div className="text-center py-12">
                 <h3 className="text-lg font-medium mb-2">No mods found</h3>

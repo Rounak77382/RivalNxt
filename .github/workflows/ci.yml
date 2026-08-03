@@ -59,11 +59,15 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Test (vitest)
-        run: npm run test
-
+      # Build BEFORE the tests. bundleSplitting.test.ts measures build/assets, and
+      # it skips when those artifacts are older than src/components — so running
+      # tests first would silently skip the bundle assertions instead of enforcing
+      # them.
       - name: Build
         run: npm run build
+
+      - name: Test (vitest)
+        run: npm run test
 
   # ---------------------------------------------------------------------------
   # Expensive full-stack build. PR-only so the branch is proven end-to-end

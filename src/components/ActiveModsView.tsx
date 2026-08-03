@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import type { Mod } from "./ModCard";
 import { InstalledModCard } from "./InstalledModCard";
+import { VirtualizedModList, useGridColumns } from "./VirtualizedModList";
 import { SearchHeader } from "./SearchHeader";
 import { LazyModModal as ModModal } from "./LazyModModal";
 import {
@@ -47,6 +48,12 @@ export function ActiveModsView({
   const [sortBy, setSortBy] = useState<string>("Recent");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [selectedMod, setSelectedMod] = useState<Mod | null>(null);
+
+  // Both lists share ONE scroll container, so the virtualizer measures the
+  // existing scroller instead of owning its own.
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const gridColumns = useGridColumns(viewMode);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalInitialTab, setModalInitialTab] = useState<
     "overview" | "files" | "changelog" | "images" | "assets"
@@ -415,6 +422,7 @@ export function ActiveModsView({
           }
         `}</style>
         <div
+          ref={scrollRef}
           className="flex-1 overflow-auto custom-scrollbar"
           style={{
             overflowY: "auto",
@@ -427,14 +435,17 @@ export function ActiveModsView({
                 <h2 className="text-xl font-semibold mb-4">
                   Active Mods ({filteredActiveMods.length})
                 </h2>
-                <div
-                  className={
+                <VirtualizedModList
+                  items={filteredActiveMods}
+                  scrollRef={scrollRef}
+                  columns={gridColumns}
+                  estimateRowHeight={viewMode === "grid" ? 320 : 96}
+                  rowClassName={
                     viewMode === "grid" ? "mods-grid" : "flex flex-col gap-0"
                   }
-                >
-                  {filteredActiveMods.map((mod) => (
+                  getKey={(mod) => String(mod.backendModId ?? mod.id)}
+                  renderItem={(mod) => (
                     <InstalledModCard
-                      key={mod.backendModId ?? mod.id}
                       mod={mod}
                       viewMode={viewMode}
                       onUninstall={onUninstall}
@@ -449,8 +460,8 @@ export function ActiveModsView({
                       onOpenFilesTab={handleOpenFilesTab}
                       onAssignModId={onAssignModId}
                     />
-                  ))}
-                </div>
+                  )}
+                />
               </div>
             )}
 
@@ -460,16 +471,19 @@ export function ActiveModsView({
                 <h2 className="text-xl font-semibold mb-4">
                   Disabled Mods ({filteredInactiveMods.length})
                 </h2>
-                <div
-                  className={
+                <VirtualizedModList
+                  items={filteredInactiveMods}
+                  scrollRef={scrollRef}
+                  columns={gridColumns}
+                  estimateRowHeight={viewMode === "grid" ? 320 : 96}
+                  rowClassName={
                     viewMode === "grid"
                       ? "mods-grid opacity-60"
                       : "flex flex-col gap-0 opacity-60"
                   }
-                >
-                  {filteredInactiveMods.map((mod) => (
+                  getKey={(mod) => String(mod.backendModId ?? mod.id)}
+                  renderItem={(mod) => (
                     <InstalledModCard
-                      key={mod.backendModId ?? mod.id}
                       mod={mod}
                       viewMode={viewMode}
                       onUninstall={onUninstall}
@@ -484,8 +498,8 @@ export function ActiveModsView({
                       onOpenFilesTab={handleOpenFilesTab}
                       onAssignModId={onAssignModId}
                     />
-                  ))}
-                </div>
+                  )}
+                />
               </div>
             )}
 

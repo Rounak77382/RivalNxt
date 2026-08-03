@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { openInBrowser } from "../lib/tauri-utils";
 import { ModCard } from "./ModCard";
+import { VirtualizedModList, useGridColumns } from "./VirtualizedModList";
 import type { Mod } from "./ModCard";
 import { toast } from "sonner";
 import { LazyModModal as ModModal } from "./LazyModModal";
@@ -127,6 +128,14 @@ export function CollectionsPage({
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"name" | "date">("name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
+  // Each collection's expanded body is a separate list inside the page's own
+  // scroll container. Note the accordion wrapper already has overflow-hidden,
+  // so hover-scale was clipped there before virtualization too -- this changes
+  // nothing about that.
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const gridColumns = useGridColumns(viewMode);
+
 
   const [selectedMod, setSelectedMod] = useState<Mod | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -979,6 +988,7 @@ export function CollectionsPage({
         <div className="flex flex-1 overflow-hidden">
           {/* MAIN CONTENT AREA */}
           <div
+            ref={scrollRef}
             className="flex-1 overflow-auto custom-scrollbar p-6"
             style={{ overflowY: "auto" }}
           >
@@ -1586,14 +1596,17 @@ export function CollectionsPage({
                         <div className="overflow-hidden">
                           <div className="p-6 pt-4 pb-8 border-t border-border/10">
                             {mappedMods.length > 0 ? (
-                              <div
-                                className={
+                              <VirtualizedModList
+                                items={mappedMods}
+                                scrollRef={scrollRef}
+                                columns={gridColumns}
+                                estimateRowHeight={viewMode === "grid" ? 320 : 96}
+                                rowClassName={
                                   viewMode === "grid" ? "mods-grid" : "flex flex-col gap-0"
                                 }
-                              >
-                                {mappedMods.map(({ modObj }) => (
+                                getKey={({ modObj }) => modObj.id}
+                                renderItem={({ modObj }) => (
                                   <ModCard
-                                    key={modObj.id}
                                     mod={modObj}
                                     viewMode={viewMode}
                                     onInstall={(_mId) => {
@@ -1606,8 +1619,8 @@ export function CollectionsPage({
                                     onToggleActive={onToggleMod}
                                     onView={handleView}
                                   />
-                                ))}
-                              </div>
+                                )}
+                              />
                             ) : (
                               <div className="flex flex-col items-center justify-center py-12 text-center">
                                 <div className="bg-secondary/20 p-6 rounded-full mb-4">

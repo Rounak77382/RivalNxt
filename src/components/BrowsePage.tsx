@@ -1,6 +1,7 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { SearchHeader } from "./SearchHeader";
 import { ModCard } from "./ModCard";
+import { VirtualizedModList, useGridColumns } from "./VirtualizedModList";
 import { LazyModModal as ModModal } from "./LazyModModal";
 import type { Mod } from "./ModCard";
 
@@ -19,6 +20,9 @@ export function BrowsePage({
 }: BrowsePageProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const gridColumns = useGridColumns(viewMode);
+
   const [sortBy, setSortBy] = useState("Popular");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [selectedMod, setSelectedMod] = useState<Mod | null>(null);
@@ -227,7 +231,7 @@ export function BrowsePage({
               grid-template-columns: repeat(5, 1fr);
             }
           }`}</style>
-        <div className="flex-1 overflow-auto p-6">
+        <div ref={scrollRef} className="flex-1 overflow-auto p-6">
           {/* Results Info */}
           <div className="mb-6">
             <h2 className="text-2xl font-semibold mb-2">All Mods</h2>
@@ -263,10 +267,15 @@ export function BrowsePage({
               </p>
             </div>
           ) : (
-            <div className={viewMode === "grid" ? "mods-grid" : "space-y-0"}>
-              {filteredMods.map((mod) => (
+            <VirtualizedModList
+              items={filteredMods}
+              scrollRef={scrollRef}
+              columns={gridColumns}
+              estimateRowHeight={viewMode === "grid" ? 320 : 96}
+              rowClassName={viewMode === "grid" ? "mods-grid" : "space-y-0"}
+              getKey={(mod) => mod.id}
+              renderItem={(mod) => (
                 <ModCard
-                  key={mod.id}
                   mod={mod}
                   viewMode={viewMode}
                   onInstall={onInstall}
@@ -274,8 +283,8 @@ export function BrowsePage({
                   onView={handleViewMod}
                   onOpenFilesTab={handleOpenFilesTab}
                 />
-              ))}
-            </div>
+              )}
+            />
           )}
         </div>
       </div>
