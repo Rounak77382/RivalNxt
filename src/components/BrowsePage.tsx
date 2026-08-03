@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { SearchHeader } from "./SearchHeader";
 import { ModCard } from "./ModCard";
-import { ModModal } from "./ModModal";
+import { LazyModModal as ModModal } from "./LazyModModal";
 import type { Mod } from "./ModCard";
 
 interface BrowsePageProps {
@@ -267,19 +267,26 @@ export function BrowsePage({
         </div>
       </div>
 
-      {/* Mod Details Modal */}
-      <ModModal
-        mod={selectedMod}
-        isOpen={!!selectedMod}
-        onClose={() => {
-          setSelectedMod(null);
-          setModalInitialTab("overview");
-        }}
-        onInstall={onInstall}
-        onFavorite={onFavorite}
-        initialTab={modalInitialTab}
-        onUpdate={onUpdate}
-      />
+      {/* Mod Details Modal.
+          Guarded on selectedMod so the lazily-loaded chunk is not fetched until a
+          mod is actually opened — the other four call sites already did this. The
+          modal was already closed whenever selectedMod was null (isOpen={!!mod}),
+          and a Radix Dialog with open=false renders nothing, so this is
+          behaviour-preserving. */}
+      {selectedMod && (
+        <ModModal
+          mod={selectedMod}
+          isOpen={!!selectedMod}
+          onClose={() => {
+            setSelectedMod(null);
+            setModalInitialTab("overview");
+          }}
+          onInstall={onInstall}
+          onFavorite={onFavorite}
+          initialTab={modalInitialTab}
+          onUpdate={onUpdate}
+        />
+      )}
     </div>
   );
 }

@@ -19,7 +19,7 @@ import { openInBrowser } from "../lib/tauri-utils";
 import { ModCard } from "./ModCard";
 import type { Mod } from "./ModCard";
 import { toast } from "sonner";
-import { ModModal } from "./ModModal";
+import { LazyModModal as ModModal } from "./LazyModModal";
 import { BackupRestoreModal } from "./BackupRestoreModal";
 import {
   loadBackupMetas,

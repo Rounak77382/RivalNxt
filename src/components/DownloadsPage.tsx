@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { Mod } from "./ModCard";
 import { InstalledModCard } from "./InstalledModCard";
 import { SearchHeader } from "./SearchHeader";
-import { ModModal } from "./ModModal";
+import { LazyModModal as ModModal } from "./LazyModModal";
 import {
   categoriesMatchTag,
   extractNonCategoryTags,

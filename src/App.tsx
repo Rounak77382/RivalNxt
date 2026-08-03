@@ -1,23 +1,42 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 // AppHeader migrated into TabHeader; remove separate AppHeader import
-import { GetStartedDialog } from "./components/GetStartedDialog";
-import {
-  SettingsDialog,
-  type SettingsFormValues,
-} from "./components/SettingsDialog";
+import type { SettingsFormValues } from "./components/SettingsDialog";
 import { TabHeader } from "./components/TabHeader";
 import { DownloadsSidebar } from "./components/DownloadsSidebar";
 import { DownloadsPage } from "./components/DownloadsPage";
 import { ActiveModsView } from "./components/ActiveModsView";
 import { CollectionsPage } from "./components/CollectionsPage";
-import { BackupModal } from "./components/BackupModal";
-import { AssignModIdModal } from "./components/AssignModIdModal";
 import { ServerStartupOverlay } from "./components/ServerStartupOverlay";
 import { NxmBackgroundListener } from "./components/NxmBackgroundListener";
 import { GameUpdateModal, type GameUpdateStep, type GameUpdatePhase } from "./components/GameUpdateModal";
-import { CrashDetectorModal } from "./components/CrashDetectorModal";
+
+// ── Heavy modals, code-split ────────────────────────────────────────────────
+// Each is only reachable after a user action, but all were imported statically
+// AND rendered unconditionally, so they sat in the initial bundle. lazy() only
+// fetches when the component is first rendered, so every render site below is
+// gated on a latching useHasBeenTrue(open): deferred until first open, then kept
+// mounted so state, exit animations and prop-driven effects behave as before.
+//
+// GameUpdateModal is deliberately NOT deferred — it auto-dismisses from an effect
+// keyed on `phase`, which the parent can change while the modal is closed, so
+// unmounting it would drop that behaviour.
+const GetStartedDialog = lazy(() =>
+  import("./components/GetStartedDialog").then((m) => ({ default: m.GetStartedDialog })),
+);
+const SettingsDialog = lazy(() =>
+  import("./components/SettingsDialog").then((m) => ({ default: m.SettingsDialog })),
+);
+const BackupModal = lazy(() =>
+  import("./components/BackupModal").then((m) => ({ default: m.BackupModal })),
+);
+const AssignModIdModal = lazy(() =>
+  import("./components/AssignModIdModal").then((m) => ({ default: m.AssignModIdModal })),
+);
+const CrashDetectorModal = lazy(() =>
+  import("./components/CrashDetectorModal").then((m) => ({ default: m.CrashDetectorModal })),
+);
 import { parseCrashContext, type CrashInfo } from "./lib/crashParser";
 import { toast } from "sonner";
 import { Toaster } from "./components/ui/sonner";
@@ -66,6 +85,7 @@ import {
   type ApiBootstrapStatus,
 } from "./lib/api";
 import { nextPollDelay } from "./lib/pollingHelpers";
+import { useHasBeenTrue } from "./lib/lazyMount";
 import {
   deriveCategoryTags,
   categoriesMatchTag,
@@ -150,6 +170,7 @@ export default function App() {
     "downloads" | "active" | "collections"
   >("downloads");
   const [assignModIdTarget, setAssignModIdTarget] = useState<any | null>(null);
+  const assignModIdEverOpened = useHasBeenTrue(!!assignModIdTarget);
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedCharacters, setSelectedCharacters] = useState<string[]>([]);
   const [selectedCustomTags, setSelectedCustomTags] = useState<string[]>([]);
@@ -163,6 +184,7 @@ export default function App() {
   // Ref to always hold the latest refreshMods so event listeners don't go stale
   const refreshModsRef = useRef<() => Promise<void>>(async () => {});
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const settingsEverOpened = useHasBeenTrue(settingsOpen);
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [settingsData, setSettingsData] = useState<ApiSettings | null>(null);
@@ -174,6 +196,10 @@ export default function App() {
   >({});
   const [conflictsReloadToken, setConflictsReloadToken] = useState(0);
   const [getStartedOpen, setGetStartedOpen] = useState(false);
+
+  // Latches: false until the modal is first opened, true thereafter. Keeps the
+  // lazy chunk out of the initial load without unmounting on close.
+  const getStartedEverOpened = useHasBeenTrue(getStartedOpen);
   const [bootstrapStatus, setBootstrapStatus] =
     useState<ApiBootstrapStatus | null>(null);
   const [bootstrapJob, setBootstrapJob] =
@@ -191,11 +217,13 @@ export default function App() {
   const [gameUpdateNewCharacters, setGameUpdateNewCharacters] = useState<string[]>([]);
   const [gameUpdateNewSkins, setGameUpdateNewSkins] = useState<string[]>([]);
   const [backupOpen, setBackupOpen] = useState(false);
+  const backupEverOpened = useHasBeenTrue(backupOpen);
   const [collectionsCount, setCollectionsCount] = useState(0);
   const [backupsRefreshTrigger, setBackupsRefreshTrigger] = useState(0);
 
   // ── Crash Detector state ──────────────────────────────────────────────
   const [crashDetectorOpen, setCrashDetectorOpen] = useState(false);
+  const crashDetectorEverOpened = useHasBeenTrue(crashDetectorOpen);
   const [crashInfo, setCrashInfo] = useState<CrashInfo | null>(null);
   const [crashAllDownloads, setCrashAllDownloads] = useState<ApiDownload[]>([]);
   const [crashPakAssets, setCrashPakAssets] = useState<ApiPakAsset[]>([]);
@@ -2480,54 +2508,62 @@ export default function App() {
             </div>
           </div>
 
-          <GetStartedDialog
-            open={getStartedOpen}
-            loadingSettings={settingsLoading}
-            savingSettings={settingsSaving}
-            settings={settingsData}
-            bootstrapStatus={bootstrapStatus}
-            job={bootstrapJob}
-            jobRunning={bootstrapRunning}
-            onOpenChange={(isOpen) => {
-              const canDismiss =
-                !bootstrapRunning ||
-                !!(
-                  bootstrapJob &&
-                  bootstrapJob.status === "succeeded" &&
-                  bootstrapJob.ok
-                );
-              if (!isOpen && !canDismiss) {
-                return;
-              }
-              setGetStartedOpen(isOpen);
-              if (isOpen) {
-                if (!settingsLoading && settingsData == null) {
-                  void fetchSettings(false);
+          {getStartedEverOpened && (
+            <Suspense fallback={null}>
+            <GetStartedDialog
+              open={getStartedOpen}
+              loadingSettings={settingsLoading}
+              savingSettings={settingsSaving}
+              settings={settingsData}
+              bootstrapStatus={bootstrapStatus}
+              job={bootstrapJob}
+              jobRunning={bootstrapRunning}
+              onOpenChange={(isOpen) => {
+                const canDismiss =
+                  !bootstrapRunning ||
+                  !!(
+                    bootstrapJob &&
+                    bootstrapJob.status === "succeeded" &&
+                    bootstrapJob.ok
+                  );
+                if (!isOpen && !canDismiss) {
+                  return;
                 }
+                setGetStartedOpen(isOpen);
+                if (isOpen) {
+                  if (!settingsLoading && settingsData == null) {
+                    void fetchSettings(false);
+                  }
+                  void fetchBootstrapStatus();
+                }
+              }}
+              onSubmit={saveSettings}
+              onRunBootstrap={handleBootstrapTask}
+              onRefreshSettings={handleSettingsRefresh}
+              onRefreshStatus={() => {
                 void fetchBootstrapStatus();
-              }
-            }}
-            onSubmit={saveSettings}
-            onRunBootstrap={handleBootstrapTask}
-            onRefreshSettings={handleSettingsRefresh}
-            onRefreshStatus={() => {
-              void fetchBootstrapStatus();
-            }}
-          />
+              }}
+            />
+            </Suspense>
+          )}
 
           {/* Toast Notifications */}
-          <SettingsDialog
-            open={settingsOpen}
-            loading={settingsLoading}
-            saving={settingsSaving}
-            settings={settingsData}
-            taskBusy={settingsTaskBusy}
-            taskJobs={settingsTaskJobs}
-            onOpenChange={handleSettingsOpenChange}
-            onRefresh={handleSettingsRefresh}
-            onSubmit={handleSettingsSubmit}
-            onRunTask={handleRunSettingsTask}
-          />
+          {settingsEverOpened && (
+            <Suspense fallback={null}>
+            <SettingsDialog
+              open={settingsOpen}
+              loading={settingsLoading}
+              saving={settingsSaving}
+              settings={settingsData}
+              taskBusy={settingsTaskBusy}
+              taskJobs={settingsTaskJobs}
+              onOpenChange={handleSettingsOpenChange}
+              onRefresh={handleSettingsRefresh}
+              onSubmit={handleSettingsSubmit}
+              onRunTask={handleRunSettingsTask}
+            />
+            </Suspense>
+          )}
           <GameUpdateModal
             open={gameUpdateModalOpen}
             phase={gameUpdatePhase}
@@ -2551,34 +2587,46 @@ export default function App() {
             onModAdded={handleModAdded}
             isHandoffExcluded={isHandoffManagedByUpdate}
           />
-          <BackupModal
-            open={backupOpen}
-            onClose={() => setBackupOpen(false)}
-            mods={mods}
-            onToggleMod={handleToggleMod}
-            onBackupCreated={() => setBackupsRefreshTrigger((t) => t + 1)}
-            onBackupRestored={() => refreshMods({ quiet: true, includeConflicts: true })}
-          />
-          <AssignModIdModal
-            open={!!assignModIdTarget}
-            onOpenChange={(open) => {
-              if (!open) setAssignModIdTarget(null);
-            }}
-            mod={assignModIdTarget}
-            onSuccess={handleAssignModIdSuccess}
-          />
-          <CrashDetectorModal
-            open={crashDetectorOpen}
-            crashInfo={crashInfo}
-            allDownloads={crashAllDownloads}
-            pakAssets={crashPakAssets}
-            onDismiss={() => setCrashDetectorOpen(false)}
-            onDeactivated={() => {
-              setCrashDetectorOpen(false);
-              setCrashInfo(null);
-              void refreshMods({ quiet: true, includeConflicts: true });
-            }}
-          />
+          {backupEverOpened && (
+            <Suspense fallback={null}>
+            <BackupModal
+              open={backupOpen}
+              onClose={() => setBackupOpen(false)}
+              mods={mods}
+              onToggleMod={handleToggleMod}
+              onBackupCreated={() => setBackupsRefreshTrigger((t) => t + 1)}
+              onBackupRestored={() => refreshMods({ quiet: true, includeConflicts: true })}
+            />
+            </Suspense>
+          )}
+          {assignModIdEverOpened && (
+            <Suspense fallback={null}>
+            <AssignModIdModal
+              open={!!assignModIdTarget}
+              onOpenChange={(open) => {
+                if (!open) setAssignModIdTarget(null);
+              }}
+              mod={assignModIdTarget}
+              onSuccess={handleAssignModIdSuccess}
+            />
+            </Suspense>
+          )}
+          {crashDetectorEverOpened && (
+            <Suspense fallback={null}>
+            <CrashDetectorModal
+              open={crashDetectorOpen}
+              crashInfo={crashInfo}
+              allDownloads={crashAllDownloads}
+              pakAssets={crashPakAssets}
+              onDismiss={() => setCrashDetectorOpen(false)}
+              onDeactivated={() => {
+                setCrashDetectorOpen(false);
+                setCrashInfo(null);
+                void refreshMods({ quiet: true, includeConflicts: true });
+              }}
+            />
+            </Suspense>
+          )}
         </div>
       </ThemeProvider>
     </NSFWFilterProvider>
