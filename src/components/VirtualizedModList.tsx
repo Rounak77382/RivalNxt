@@ -48,6 +48,14 @@ export type VirtualizedModListProps<T> = {
   threshold?: number;
   /** Extra rows rendered above and below the viewport. */
   overscan?: number;
+  /**
+   * Vertical gap between rows in virtual mode, as a CSS string (e.g. "1.5rem").
+   * This mirrors the `gap` that `.mods-grid` applies between rows in normal flow —
+   * because each virtual row is absolutely positioned, the CSS gap property only
+   * acts between cards within the same row, not between rows. Defaults to "1.5rem"
+   * to match the original .mods-grid gap. Pass "0" for list mode or any other gap.
+   */
+  rowGap?: string;
 };
 
 export function VirtualizedModList<T>({
@@ -60,6 +68,7 @@ export function VirtualizedModList<T>({
   rowClassName,
   threshold = 60,
   overscan = 4,
+  rowGap = "1.5rem",
 }: VirtualizedModListProps<T>) {
   const safeColumns = Math.max(1, Math.floor(columns) || 1);
 
@@ -104,7 +113,11 @@ export function VirtualizedModList<T>({
             {row.map((item, colIndex) => {
               const flatIndex = rowIndex * safeColumns + colIndex;
               return (
-                <div key={getKey(item, flatIndex)} data-testid="mod-item">
+                <div
+                  key={getKey(item, flatIndex)}
+                  data-testid="mod-item"
+                  style={{ width: "100%", minWidth: 0, display: "flex", flexDirection: "column" }}
+                >
                   {renderItem(item, flatIndex)}
                 </div>
               );
@@ -131,6 +144,7 @@ export function VirtualizedModList<T>({
       {virtualRows.map((virtualRow) => {
         const row = rows[virtualRow.index];
         if (!row) return null;
+        const isLastRow = virtualRow.index === rows.length - 1;
         return (
           <div
             key={virtualRow.key}
@@ -145,12 +159,23 @@ export function VirtualizedModList<T>({
               width: "100%",
               transform: `translateY(${virtualRow.start}px)`,
               overflow: "visible",
+              // Restore the vertical gap that CSS `gap` on .mods-grid provides
+              // between cards in normal flow. In virtual mode each row is its own
+              // absolutely-positioned box, so grid gap only applies within the row.
+              // paddingBottom adds the inter-row gap and is measured by measureElement
+              // so the total scroll height stays correct.
+              // Skip on the last row to avoid extra whitespace at the bottom.
+              paddingBottom: isLastRow ? 0 : rowGap,
             }}
           >
             {row.map((item, colIndex) => {
               const flatIndex = virtualRow.index * safeColumns + colIndex;
               return (
-                <div key={getKey(item, flatIndex)} data-testid="mod-item">
+                <div
+                  key={getKey(item, flatIndex)}
+                  data-testid="mod-item"
+                  style={{ width: "100%", minWidth: 0, display: "flex", flexDirection: "column" }}
+                >
                   {renderItem(item, flatIndex)}
                 </div>
               );

@@ -271,7 +271,7 @@ export function BrowsePage({
               items={filteredMods}
               scrollRef={scrollRef}
               columns={gridColumns}
-              estimateRowHeight={viewMode === "grid" ? 320 : 96}
+              estimateRowHeight={viewMode === "grid" ? 400 : 96}
               rowClassName={viewMode === "grid" ? "mods-grid" : "space-y-0"}
               getKey={(mod) => mod.id}
               renderItem={(mod) => (

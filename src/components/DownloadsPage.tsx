@@ -414,7 +414,7 @@ export function DownloadsPage({
                 items={filteredMods}
                 scrollRef={scrollRef}
                 columns={gridColumns}
-                estimateRowHeight={viewMode === "grid" ? 320 : 96}
+                estimateRowHeight={viewMode === "grid" ? 400 : 96}
                 rowClassName={
                   viewMode === "grid" ? "mods-grid" : "flex flex-col gap-0"
                 }
