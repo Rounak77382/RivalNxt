@@ -89,6 +89,11 @@ def _parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
+    # SETTINGS is reassigned below from configure(). Without this declaration
+    # the assignment makes it local to main(), so reading SETTINGS.data_dir on
+    # the right-hand side raises UnboundLocalError before the server starts.
+    global SETTINGS
+
     repo_root = _ensure_repo_on_path()
     os.environ.setdefault("PROJECT_MODMANAGER_ROOT", str(repo_root))
 
