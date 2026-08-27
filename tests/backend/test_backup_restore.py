@@ -225,6 +225,80 @@ def test_stale_wal_sidecars_are_removed(env):
     assert not shm.exists(), "stale -shm survived the restore"
 
 
+class TestRestoreWhileTheAppIsRunning:
+    """Restore must work with the app's own connections still open.
+
+    Every real restore happens with the backend serving requests, so worker
+    threads hold connections opened by core/db/db.py -- which sets
+    ``PRAGMA mmap_size = 268435456``. SQLite therefore keeps mods.db
+    memory-mapped, and copying a file onto it hits Windows'
+    ERROR_USER_MAPPED_FILE. CPython has no errno for that code, so it arrives
+    as ``OSError: [Errno 22] Invalid argument``.
+
+    The tests above do not catch it: they all close their connection before
+    restoring, which is the one condition under which the file copy worked.
+    """
+
+    @staticmethod
+    def _open_like_the_app(db_path: Path) -> sqlite3.Connection:
+        conn = sqlite3.connect(str(db_path))
+        conn.execute("PRAGMA journal_mode = WAL")
+        conn.execute("PRAGMA mmap_size = 268435456")
+        # Read a page so the mapping is actually established.
+        conn.execute("SELECT COUNT(*) FROM mods").fetchone()
+        return conn
+
+    def test_restore_succeeds_with_a_mapped_connection_open(self, env):
+        result = create_backup(timestamp="2026-01-01T00:00:00+00:00")
+        conn = sqlite3.connect(str(env["db_path"]))
+        conn.execute("DELETE FROM mods")
+        conn.commit()
+        conn.close()
+
+        held = self._open_like_the_app(env["db_path"])
+        try:
+            restore_backup(path=result["path"], timestamp="2026-01-02T00:00:00+00:00")
+        finally:
+            held.close()
+
+        assert [r[1] for r in _snapshot_state(env["db_path"])["mods"]] == ["Alpha", "Beta"]
+
+    def test_a_connection_opened_before_the_restore_sees_the_restored_rows(self, env):
+        """Writing through SQLite means live handles are updated, not orphaned."""
+        result = create_backup(timestamp="2026-01-01T00:00:00+00:00")
+        conn = sqlite3.connect(str(env["db_path"]))
+        conn.execute("DELETE FROM mods")
+        conn.commit()
+        conn.close()
+
+        held = self._open_like_the_app(env["db_path"])
+        try:
+            assert held.execute("SELECT COUNT(*) FROM mods").fetchone()[0] == 0
+            restore_backup(path=result["path"], timestamp="2026-01-02T00:00:00+00:00")
+            assert held.execute("SELECT COUNT(*) FROM mods").fetchone()[0] == 2
+        finally:
+            held.close()
+
+    def test_the_wal_is_not_discarded_after_the_restore(self, env):
+        """The restore writes through the WAL, so deleting the sidecars loses it."""
+        result = create_backup(timestamp="2026-01-01T00:00:00+00:00")
+        conn = sqlite3.connect(str(env["db_path"]))
+        conn.execute("DELETE FROM mods")
+        conn.execute("DELETE FROM local_downloads")
+        conn.commit()
+        conn.close()
+
+        held = self._open_like_the_app(env["db_path"])
+        try:
+            restore_backup(path=result["path"], timestamp="2026-01-02T00:00:00+00:00")
+        finally:
+            held.close()
+
+        # Read with a brand-new connection: whatever is on disk once every
+        # handle is gone is what the user gets on next launch.
+        assert len(_snapshot_state(env["db_path"])["local_downloads"]) == 2
+
+
 # ---------------------------------------------------------------------------
 # Sub-test 2: changed data_dir -> paths remapped
 # ---------------------------------------------------------------------------

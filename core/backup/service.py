@@ -122,6 +122,40 @@ def _snapshot_database(source_db: Path, destination: Path) -> None:
         src.close()
 
 
+def _overwrite_live_database(staged_db: Path, live_db: Path) -> None:
+    """Write the staged database over the live one using SQLite's backup API.
+
+    The counterpart to ``_snapshot_database``, and for a related reason. A file
+    copy onto the live database cannot work while the app is running:
+    ``core/db/db.py`` opens connections with ``PRAGMA mmap_size = 268435456``,
+    so SQLite keeps mods.db memory-mapped, and on Windows the CREATE_ALWAYS
+    that ``shutil.copyfile`` issues fails against a file with a live mapped
+    section (ERROR_USER_MAPPED_FILE). CPython has no errno for that code, so it
+    surfaces as ``OSError: [Errno 22] Invalid argument``.
+
+    Retiring the connection pool first does not help: ``reset_schema_cache``
+    bumps a generation counter, so a worker thread drops its cached handle on
+    its *next* ``get_db()`` -- an idle thread never gets there and its mapping
+    outlives the restore. ``Connection.backup`` writes through the existing
+    handles rather than around them, and is transactional: a failure part-way
+    leaves the live database on its previous contents instead of half-written.
+    """
+    src = sqlite3.connect(str(staged_db))
+    try:
+        dst = sqlite3.connect(str(live_db))
+        try:
+            # A maintenance task holding the write lock is transient; wait for
+            # it rather than failing the restore.
+            dst.execute("PRAGMA busy_timeout = 30000")
+            src.backup(dst)
+        finally:
+            dst.close()
+    except sqlite3.Error as exc:
+        raise BackupError(f"could not write the restored database: {exc}") from exc
+    finally:
+        src.close()
+
+
 def _count_mods(db_file: Path) -> tuple[Optional[int], Optional[int]]:
     """(total, active) local downloads, for display in the backup list."""
     try:
@@ -383,8 +417,10 @@ def restore_backup(
                 mapping[str(old_downloads)] = str(current_downloads)
             remapped = _remap_paths(staged_db, mapping)
 
-        # Release any pooled handles across every thread BEFORE replacing the
-        # file; on Windows a live handle blocks the replacement outright.
+        # Retire pooled handles so no thread keeps serving reads from the
+        # pre-restore state. Housekeeping, not a precondition any more:
+        # _overwrite_live_database writes through SQLite precisely so that
+        # handles outliving this call cannot block the restore.
         try:
             from core.api.dependencies import reset_schema_cache
 
@@ -423,16 +459,13 @@ def restore_backup(
                 safety = None
 
         live_db.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(staged_db, live_db)
-        # The snapshot is self-contained, so stale WAL/SHM sidecars from the
-        # replaced database must not be left behind pointing at old pages.
-        for suffix in ("-wal", "-shm"):
-            sidecar = Path(str(live_db) + suffix)
-            try:
-                if sidecar.exists():
-                    sidecar.unlink()
-            except OSError as exc:
-                logger.warning("[backup] Could not remove %s: %s", sidecar, exc)
+        _overwrite_live_database(staged_db, live_db)
+        # No -wal/-shm cleanup here any more. Unlinking them was right while the
+        # database file was being replaced behind SQLite's back: the sidecars
+        # described pages that no longer existed. Writing through SQLite puts
+        # the restored pages *in* the WAL, so deleting it would throw the
+        # restore away. SQLite removes both sidecars itself when the last
+        # connection to the database closes.
 
         restored_settings = False
         if has_settings:
