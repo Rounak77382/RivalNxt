@@ -13,7 +13,7 @@ import type { Mod } from "./ModCard";
 import {
   checkModUpdate,
 } from "../lib/api";
-import { normalizeVersionForCheck } from "../lib/updateUtils";
+import { normalizeVersionForCheck, getModsWithUpdates } from "../lib/updateUtils";
 import { toast } from "sonner";
 
 interface CheckForUpdatesModalProps {
@@ -155,11 +155,15 @@ export function CheckForUpdatesModal({
   }, [isCheckingAll, installedMods, checkSingleMod, onRefreshMods, onIsCheckingAllChange, onCheckedChange, onStatusesChange]);
 
   const getDerivedStatus = useCallback((mod: Mod): ModUpdateStatus => {
-    // If a real check-all status exists for this mod, trust it unconditionally.
+    // If a real check-all status exists for this mod
     if (statuses[mod.id]) {
+      // If status in cache was has-update but mod was updated (hasUpdate is false), treat as up-to-date
+      if (statuses[mod.id].status === "has-update" && !mod.hasUpdate) {
+        return "up-to-date";
+      }
       return statuses[mod.id].status;
     }
-    // Before a check has been run, surface "has-update" when the backend says so
+    // Before a check has been run, surface "has-update" when the backend/App.tsx says so
     if (mod.hasUpdate) {
       return "has-update";
     }
@@ -167,16 +171,48 @@ export function CheckForUpdatesModal({
   }, [statuses]);
 
   // Mods that are confirmed to have updates (either from a manual check or initial load with genuinely different versions)
-  const modsWithUpdates = useMemo(
-    () => installedMods.filter((m) => getDerivedStatus(m) === "has-update"),
-    [installedMods, getDerivedStatus],
-  );
+  // Uses the same deduplication logic as the sidebar badge (computeUpdatesCount / getModsWithUpdates).
+  const modsWithUpdates = useMemo(() => {
+    // After a full check-all run, trust the backend result per mod
+    if (checked || Object.keys(statuses).length > 0) {
+      // Use backend-verified statuses where available; fall back to mod.hasUpdate for unchecked ones
+      const withUpdate = installedMods.filter((m) => getDerivedStatus(m) === "has-update");
+      return getModsWithUpdates(withUpdate);
+    }
+    // Before any check-all: derive from App state using same dedup as sidebar badge
+    return getModsWithUpdates(installedMods.filter((m) => m.hasUpdate));
+  }, [installedMods, getDerivedStatus, statuses, checked]);
 
   const visibleMods = useMemo(() => {
-    return installedMods.filter((mod) => {
+    // For has-update rows: deduplicate the same way as modsWithUpdates / sidebar badge
+    const hasUpdateMods = getModsWithUpdates(
+      installedMods.filter((m) => getDerivedStatus(m) === "has-update")
+    );
+    const hasUpdateIds = new Set(hasUpdateMods.map((m) => m.id));
+
+    // checking/error mods always show without dedup (they're actively being processed)
+    const others = installedMods.filter((mod) => {
       const s = getDerivedStatus(mod);
-      return s === "has-update" || s === "checking" || s === "error";
+      return s === "checking" || s === "error";
     });
+
+    // Merge: deduplicated has-update first, then checking/error
+    const seen = new Set<string>();
+    const result = [];
+    for (const m of [...hasUpdateMods, ...others]) {
+      if (!seen.has(m.id)) {
+        seen.add(m.id);
+        result.push(m);
+      }
+    }
+    // Also include any non-deduped has-update mods that might have checking/error statuses
+    for (const mod of installedMods) {
+      const s = getDerivedStatus(mod);
+      if (s === "has-update" && !hasUpdateIds.has(mod.id) && !seen.has(mod.id)) {
+        // This is a duplicate (same backendModId already shown) — skip
+      }
+    }
+    return result;
   }, [installedMods, getDerivedStatus]);
 
   const handleUpdateAll = useCallback(async () => {
@@ -197,8 +233,9 @@ export function CheckForUpdatesModal({
       } else {
         await onUpdateMod(mod.id, mod.latestFileId ?? undefined);
       }
+      setModStatus(mod.id, "up-to-date");
     }
-  }, [modsWithUpdates, onUpdateMod, statuses]);
+  }, [modsWithUpdates, onUpdateMod, statuses, setModStatus]);
 
   // Stats for header
   const totalChecked = installedMods.filter((m) =>

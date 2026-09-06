@@ -205,3 +205,68 @@ def test_endpoint_filter_is_consistent_with_returned_flag(schema_db, monkeypatch
         mod_id=1, download_ids=None, only_needs_update=False
     )
     assert len(unfiltered) == 1
+
+
+def test_check_mod_update_superseded_download(schema_db, monkeypatch):
+    """When a mod has an old download (1.0) and a new download (2.0),
+    check_mod_update must report needs_update=False."""
+    import core.api.server as server
+
+    # Mod 1 with old download ID 1 (v1.0) and new download ID 2 (v2.0)
+    _seed_version_rows(schema_db, "1.0", "2.0")
+    schema_db.execute(
+        """
+        INSERT OR REPLACE INTO local_downloads(path, id, name, mod_id, version, contents, active_paks)
+        VALUES('C:/dl/Test_v2.zip', 2, 'Test Mod', 1, '2.0', '["a.pak"]', '["a.pak"]')
+        """
+    )
+    schema_db.commit()
+
+    class _NoCloseConn:
+        def __init__(self, inner):
+            self._inner = inner
+
+        def __getattr__(self, name):
+            return getattr(self._inner, name)
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(server, "get_db", lambda: _NoCloseConn(schema_db))
+    monkeypatch.setattr(server, "_sync_mod_metadata", lambda conn, mod_id, info: {})
+
+    res = server.check_mod_update(mod_id=1)
+    assert res["ok"] is True
+    assert res["needs_update"] is False, f"Expected needs_update=False, got: {res}"
+    assert res["pending"] == []
+
+
+def test_list_downloads_and_get_local_download(schema_db, monkeypatch):
+    """Ensure list_downloads and get_local_download SQL queries run cleanly without schema errors."""
+    import core.api.server as server
+
+    _seed_version_rows(schema_db, "1.0", "2.0")
+
+    class _NoCloseConn:
+        def __init__(self, inner):
+            self._inner = inner
+
+        def __getattr__(self, name):
+            return getattr(self._inner, name)
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(server, "get_db", lambda: _NoCloseConn(schema_db))
+    monkeypatch.setattr(server, "_get_actually_active_filenames", lambda logger: set())
+
+    dls = server.list_downloads()
+    assert len(dls) >= 1
+    assert dls[0]["mod_id"] == 1
+    assert dls[0]["latest_version"] == "2.0"
+
+    single = server.get_local_download(1)
+    assert single["id"] == 1
+    assert single["latest_version"] == "2.0"
+
+

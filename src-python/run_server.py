@@ -167,10 +167,11 @@ def main() -> None:
     )
 
     # Configure settings
-    SETTINGS = configure(
-        data_dir=data_dir_override or SETTINGS.data_dir,
-        backend_host=host_override or SETTINGS.backend_host,
-        backend_port=port_override if port_override is not None else SETTINGS.backend_port,
+    from core.config.settings import SETTINGS as DEFAULT_SETTINGS
+    cfg = configure(
+        data_dir=data_dir_override or DEFAULT_SETTINGS.data_dir,
+        backend_host=host_override or DEFAULT_SETTINGS.backend_host,
+        backend_port=port_override if port_override is not None else DEFAULT_SETTINGS.backend_port,
     )
 
     # Log startup information
@@ -178,17 +179,17 @@ def main() -> None:
     logger.info("Marvel Rivals Mod Manager - Backend Server")
     logger.info("=" * 70)
     logger.info(f"Mode: {'Tauri Desktop' if data_dir_override else 'Web Development'}")
-    logger.info(f"Data Directory: {SETTINGS.data_dir}")
-    logger.info(f"Database Path: {SETTINGS.data_dir / 'mods.db'}")
-    logger.info(f"Server Host: {SETTINGS.backend_host}")
-    logger.info(f"Server Port: {SETTINGS.backend_port}")
+    logger.info(f"Data Directory: {cfg.data_dir}")
+    logger.info(f"Database Path: {cfg.data_dir / 'mods.db'}")
+    logger.info(f"Server Host: {cfg.backend_host}")
+    logger.info(f"Server Port: {cfg.backend_port}")
     logger.info(f"Repository Root: {repo_root}")
     logger.info("=" * 70)
 
     # Ensure data directory exists
     try:
-        SETTINGS.data_dir.mkdir(parents=True, exist_ok=True)
-        logger.info(f"✓ Data directory ready: {SETTINGS.data_dir}")
+        cfg.data_dir.mkdir(parents=True, exist_ok=True)
+        logger.info(f"✓ Data directory ready: {cfg.data_dir}")
     except Exception as e:
         logger.error(f"✗ Failed to create data directory: {e}")
         sys.exit(1)
@@ -197,15 +198,15 @@ def main() -> None:
     from core.api.server import app  # import after path injection and configuration
     
     # Check database status
-    db_path = SETTINGS.data_dir / "mods.db"
+    db_path = cfg.data_dir / "mods.db"
     if db_path.exists():
         logger.info(f"✓ Database found: {db_path}")
     else:
         logger.warning(f"⚠ Database not found - will be created on first use: {db_path}")
         logger.warning("⚠ Frontend may show 'needs bootstrap' - this is expected for new installations")
 
-    host = SETTINGS.backend_host
-    port = SETTINGS.backend_port
+    host = cfg.backend_host
+    port = cfg.backend_port
 
     logger.info(f"Starting server on {host}:{port}...")
     

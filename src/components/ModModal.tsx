@@ -85,6 +85,7 @@ import {
 } from "../lib/api";
 import { toast } from "sonner";
 import React from "react";
+import { isVariantActuallyUpdatable } from "../lib/updateUtils";
 
 type DownloadEntry = {
   id: number;
@@ -809,22 +810,24 @@ export function ModModal({
           groups: groupPakEntries(entry.contents),
         }))
         .sort((a, b) => {
-          const aNeedsUpdate =
-            a.entry.needs_update &&
-            a.entry.local_version_key != null &&
-            a.entry.latest_version_key != null &&
-            a.entry.local_version_key < a.entry.latest_version_key;
-          const bNeedsUpdate =
-            b.entry.needs_update &&
-            b.entry.local_version_key != null &&
-            b.entry.latest_version_key != null &&
-            b.entry.local_version_key < b.entry.latest_version_key;
+          const aNeedsUpdate = isVariantActuallyUpdatable(
+            a.entry,
+            downloadEntries,
+            mod?.latestVersion,
+            mod?.latestVersionKey,
+          );
+          const bNeedsUpdate = isVariantActuallyUpdatable(
+            b.entry,
+            downloadEntries,
+            mod?.latestVersion,
+            mod?.latestVersionKey,
+          );
 
           if (aNeedsUpdate && !bNeedsUpdate) return -1;
           if (!aNeedsUpdate && bNeedsUpdate) return 1;
           return 0;
         }),
-    [downloadEntries],
+    [downloadEntries, mod?.latestVersion, mod?.latestVersionKey],
   );
 
 
@@ -2495,11 +2498,13 @@ export function ModModal({
                                   </div>
                                   <div className="flex items-center gap-2">
                                       {(() => {
-                                          const variantNeedsUpdate =
-                                            entry.needs_update &&
-                                            entry.local_version_key != null &&
-                                            entry.latest_version_key != null &&
-                                            entry.local_version_key < entry.latest_version_key;
+                                        const allEntries = downloadSections.map((s) => s.entry);
+                                        const variantNeedsUpdate = isVariantActuallyUpdatable(
+                                          entry,
+                                          allEntries,
+                                          mod?.latestVersion,
+                                          mod?.latestVersionKey,
+                                        );
 
                                         if (!variantNeedsUpdate) return null;
 

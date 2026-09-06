@@ -299,6 +299,28 @@ export async function getBaseUrl(): Promise<string> {
   cachedBaseUrl = (import.meta as any).env?.VITE_API_BASE_URL || null;
   if (cachedBaseUrl) return cachedBaseUrl;
 
+  // 1. Check URL query parameters (e.g. ?port=53421 or ?backend=http://127.0.0.1:53421)
+  if (typeof window !== "undefined" && window.location) {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const portParam = params.get("port");
+      const backendParam = params.get("backend");
+      if (backendParam) {
+        cachedBaseUrl = backendParam;
+        localStorage.setItem("rivalnxt_backend_url", backendParam);
+        return cachedBaseUrl;
+      }
+      if (portParam) {
+        cachedBaseUrl = `http://127.0.0.1:${portParam}`;
+        localStorage.setItem("rivalnxt_backend_url", cachedBaseUrl);
+        return cachedBaseUrl;
+      }
+    } catch {
+      // Ignore URL parsing errors
+    }
+  }
+
+  // 2. Check Tauri internals if inside desktop shell
   try {
     if ((window as any).__TAURI_INTERNALS__) {
       const port = await invoke<number>("get_backend_port");
@@ -308,10 +330,41 @@ export async function getBaseUrl(): Promise<string> {
       }
     }
   } catch (e) {
-    console.error("Failed to get dynamic backend port, falling back to 8000", e);
+    // Not running inside Tauri desktop shell
   }
 
-  cachedBaseUrl = "http://127.0.0.1:8000";
+  // 3. Check localStorage from previous session
+  if (typeof window !== "undefined" && window.localStorage) {
+    const saved = localStorage.getItem("rivalnxt_backend_url");
+    if (saved) {
+      cachedBaseUrl = saved;
+      return cachedBaseUrl;
+    }
+  }
+
+  // 4. In browser dev mode, probe known ports (53421, 8000) to find the active server
+  for (const candidatePort of [53421, 8000]) {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 350);
+      const res = await fetch(`http://127.0.0.1:${candidatePort}/health`, {
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+      if (res.ok) {
+        cachedBaseUrl = `http://127.0.0.1:${candidatePort}`;
+        if (typeof window !== "undefined" && window.localStorage) {
+          localStorage.setItem("rivalnxt_backend_url", cachedBaseUrl);
+        }
+        return cachedBaseUrl;
+      }
+    } catch {
+      // Try next port
+    }
+  }
+
+  // 5. Default fallback to 53421 (the standard RivalNxt dev backend port)
+  cachedBaseUrl = "http://127.0.0.1:53421";
   return cachedBaseUrl;
 }
 
